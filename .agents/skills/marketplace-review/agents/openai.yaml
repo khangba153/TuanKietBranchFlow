@@ -1,0 +1,8 @@
+interface:
+  display_name: "Marketplace Review"
+  short_description: "Review architecture correctness security and tests"
+  brand_color: "#D9364B"
+  default_prompt: "Use $marketplace-review to review the current project changes."
+policy:
+  allow_implicit_invocation: false
+

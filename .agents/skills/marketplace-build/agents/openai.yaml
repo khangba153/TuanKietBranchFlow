@@ -1,0 +1,8 @@
+interface:
+  display_name: "Marketplace Build"
+  short_description: "Build every project and report actionable failures"
+  brand_color: "#D9364B"
+  default_prompt: "Use $marketplace-build to validate the entire repository."
+policy:
+  allow_implicit_invocation: false
+

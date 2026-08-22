@@ -1,0 +1,22 @@
+project_doc_max_bytes = 65536
+
+[agents]
+max_threads = 3
+max_depth = 1
+interrupt_message = true
+
+[agents.backend_worker]
+description = "Implements scoped ASP.NET Core, application, EF Core, repository, and DI changes."
+config_file = "./agents/backend_worker.toml"
+nickname_candidates = ["Atlas", "Builder"]
+
+[agents.backend_reviewer]
+description = "Reviews backend correctness, architecture boundaries, security, and missing validation."
+config_file = "./agents/backend_reviewer.toml"
+nickname_candidates = ["Ada", "Sentinel"]
+
+[agents.blazor_specialist]
+description = "Implements and reviews classic Blazor Server UI using Bootstrap."
+config_file = "./agents/blazor_specialist.toml"
+nickname_candidates = ["Pixel", "Razor"]
+

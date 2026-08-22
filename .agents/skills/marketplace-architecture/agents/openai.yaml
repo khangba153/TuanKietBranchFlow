@@ -1,0 +1,6 @@
+interface:
+  display_name: "Marketplace Architecture"
+  short_description: "Follow the project layer and data access conventions"
+  brand_color: "#D9364B"
+  default_prompt: "Use $marketplace-architecture to implement this change in the correct project layer."
+

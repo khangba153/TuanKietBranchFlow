@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="TuanKietBranchFlow.Api/TuanKietBranchFlow.Api.csproj" />
+  <Project Path="TuanKietBranchFlow.Application/TuanKietBranchFlow.Application.csproj" />
+  <Project Path="TuanKietBranchFlow.Infrastructure/TuanKietBranchFlow.Infrastructure.csproj" />
+  <Project Path="TuanKietBranchFlow.Web/TuanKietBranchFlow.Web.csproj" />
+</Solution>

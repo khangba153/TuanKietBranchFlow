@@ -1,0 +1,6 @@
+interface:
+  display_name: "Marketplace Blazor Bootstrap"
+  short_description: "Build Blazor Server UI with Bootstrap conventions"
+  brand_color: "#D9364B"
+  default_prompt: "Use $marketplace-blazor-bootstrap to build this Blazor UI with Bootstrap."
+
