@@ -1,12 +1,26 @@
+using Microsoft.EntityFrameworkCore;
+using TuanKietBranchFlow.Infrastructure.Data;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+// Lấy connection string từ cấu hình và dừng ứng dụng nếu chưa cấu hình.
+string connectionString = 
+    builder.Configuration.GetConnectionString("BranchFlowDatabase")
+    ?? throw new InvalidOperationException(
+        "Chưa cấu hình connection string BranchFlowDatabase.");
+
+// Đăng ký DbContext để các repository có thể truy cập SQL Server.
+builder.Services.AddDbContext<BranchFlowDbContext>(options =>
+{
+    options.UseSqlServer(connectionString);
+});
+
+// Đăng ký OpenAPI
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -14,28 +28,4 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
-
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
