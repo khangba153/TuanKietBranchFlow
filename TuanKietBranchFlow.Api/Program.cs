@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using TuanKietBranchFlow.Infrastructure.Data;
+using TuanKietBranchFlow.Infrastructure.UnitOfWork;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,6 +16,8 @@ builder.Services.AddDbContext<BranchFlowDbContext>(options =>
     options.UseSqlServer(connectionString);
 });
 
+// Đăng ký UnitOfWork để các service có 1 điểm lưu dữ liệu thống nhất.
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 // Đăng ký controller, model binding và chuyển đổi dữ liệu JSON
 builder.Services.AddControllers();
 
