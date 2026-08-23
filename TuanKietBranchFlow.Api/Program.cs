@@ -15,6 +15,9 @@ builder.Services.AddDbContext<BranchFlowDbContext>(options =>
     options.UseSqlServer(connectionString);
 });
 
+// Đăng ký controller, model binding và chuyển đổi dữ liệu JSON
+builder.Services.AddControllers();
+
 // Đăng ký OpenAPI
 builder.Services.AddOpenApi();
 
@@ -27,5 +30,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Ánh xạ các route được khai báo bằng attribute trong controller.
+app.MapControllers();
 
 app.Run();
