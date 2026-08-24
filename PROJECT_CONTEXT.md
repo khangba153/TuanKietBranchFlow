@@ -25,6 +25,16 @@ TuanKietBranchFlow là đồ án cá nhân tốt nghiệp của sinh viên năm 
 - Không thuộc MVP: multi-tenant, khách hàng/khuyến mãi, tự động trừ nguyên liệu theo order, nhà cung cấp/giá nhập, quy đổi đơn vị, chấm công hoàn chỉnh, export, microservices, API Gateway và SignalR nâng cao.
 - Chi tiết đã phân tích được lưu tại `docs/context/business-requirements-v1.5.md`.
 
+## Prototype UI và kế hoạch API
+
+- `PrototypeUI` hiện có 71 ảnh: ADMIN 32, EMPLOYEE 19 và OWNER 20.
+- Prototype dùng để xác định dữ liệu và hành động mà UI cần, nhưng endpoint vẫn
+  phải tuân theo nghiệp vụ, phân quyền và transaction; không thiết kế một endpoint
+  cho mỗi màn hình hoặc popup.
+- Roadmap API ban đầu có khoảng 81 endpoint, chia thành sáu giai đoạn tại
+  `docs/context/api-endpoint-roadmap-v0.1.md`. Đây là kế hoạch có thể điều chỉnh,
+  chưa phải hợp đồng API đã khóa.
+
 ## Baseline database đang đánh giá
 
 - Schema `BranchFlowDB` hiện có 30 bảng theo sáu nhóm: tổ chức/tài khoản, menu, order, kho, payroll và audit.
@@ -89,3 +99,5 @@ Khi tham khảo source thầy hoặc dự án cũ:
 - 2026-08-22: Dùng thư mục LyThuyet và hai source Git của thầy để học flow, không xem đó là chuẩn bắt buộc hoặc tối ưu tuyệt đối.
 - 2026-08-22: Nạp business context v1.5 và schema BranchFlowDB merged vào context; giữ nguyên các điểm mở, chưa chọn chiến lược nguồn sự thật database.
 - 2026-08-22: Chọn Database First cho TuanKietBranchFlow; schema SQL là nguồn sự thật và EF Core model được scaffold từ database.
+- 2026-08-23: Đối chiếu 71 ảnh trong `PrototypeUI` và lập roadmap API v0.1 theo
+  vertical slice; ưu tiên đăng nhập -> menu gọi món -> tạo và xem order.
