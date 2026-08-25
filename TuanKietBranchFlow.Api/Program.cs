@@ -45,11 +45,17 @@ builder.Services.AddDbContext<BranchFlowDbContext>(options =>
 // Đăng ký repository phục vụ truy vấn tài khoản
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 
+// Đăng ký repository để truy vấn chi nhánh
+builder.Services.AddScoped<IBranchRepository, BranchRepository>();
+
 // Đăng ký công cụ tạo và kiểm tra PasswordHash
 builder.Services.AddScoped<IPasswordHasher<AppUser>, PasswordHasher<AppUser>>();
 
 // Đăng ký service sử lý nghiệp vụ đăng nhập
 builder.Services.AddScoped<IAuthService, AuthService>();
+
+// Đăng ký service xử lý nghiệp vụ phạm vi chi nhánh
+builder.Services.AddScoped<IBranchService, BranchService>();
 
 // Đăng ký UnitOfWork để các service có 1 điểm lưu dữ liệu thống nhất
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
