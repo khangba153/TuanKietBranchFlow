@@ -44,4 +44,69 @@ public class BranchService : IBranchService
 
         return result;
     }
+
+    // Lấy 1 chi nhánh và kiểm tra phạm vi truy cập của người dùng
+    public async Task<BranchAccessResultDTO> GetAccessibleBranchByIdAsync(int userId, string role, int branchId)
+    {
+        // Kiểm tra branch có tồn tại và bị xóa không
+        Branch? branch = await _branchRepository.GetNotDeletedByIdAsync(branchId);
+
+        if (branch == null)
+        {
+            return new BranchAccessResultDTO
+            {
+                IsFound = false,
+                HasAccess = false,
+                Branch = null
+            };
+        }
+
+        // OWNER không cần kiểm tra bảng phân công UserBranch
+        if (role == "OWNER")
+        {
+            return new BranchAccessResultDTO
+            {
+                IsFound = true,
+                HasAccess = true,
+                Branch = new AccessibleBranchDTO
+                {
+                    Id = branch.Id,
+                    Code = branch.Code,
+                    Name = branch.Name,
+                    Address = branch.Address,
+                    IsActive = branch.IsActive
+                }
+            };
+        }
+
+        // ADMIN và EMPLOYEE phải có phân công còn hiểu lực
+        DateOnly currentDate = DateOnly.FromDateTime(DateTime.Today);
+
+        bool hasAccess = await _branchRepository.HasActiveAssignmentAsync(userId, branchId, currentDate);
+
+        if (!hasAccess)
+        {
+            return new BranchAccessResultDTO
+            {
+                IsFound = true,
+                HasAccess = false,
+                Branch = null
+            };
+        }
+
+        // Trả thông tin Branch khi người dùng có quyền truy cập
+        return new BranchAccessResultDTO
+        {
+            IsFound = true,
+            HasAccess = true,
+            Branch = new AccessibleBranchDTO
+            {
+                Id = branch.Id,
+                Code = branch.Code,
+                Name = branch.Name,
+                Address = branch.Address,
+                IsActive = branch.IsActive
+            }
+        };
+    }
 }

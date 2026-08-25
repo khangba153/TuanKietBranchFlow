@@ -9,4 +9,10 @@ public interface IBranchRepository : IRepositoryBase<Branch>
 
     // Lấy các chi nhánh đang được phân công chon 1 người dùng
     Task<List<Branch>> GetAssignedBranchesAsync(int userId, DateOnly currentDate);
+
+    // Lấy 1 chi nhánh chưa bị xóa theo id
+    Task<Branch?> GetNotDeletedByIdAsync(int branchId);
+
+    // Kiểm tra người dùng có được phân công tại chi nhánh không
+    Task<bool> HasActiveAssignmentAsync(int userId, int branchId, DateOnly currentDate);
 }
