@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TuanKietBranchFlow.Application.DTOs.Auth;
 using TuanKietBranchFlow.Application.Services;
+using System.Security.Claims;
 
 namespace TuanKietBranchFlow.Api.Controllers;
 
@@ -40,4 +41,39 @@ public class AuthController : ControllerBase
         return Ok(response);
 
     }
+
+    // Đọc thông tin người dùng từ JWT
+    [Authorize]
+    [HttpGet("me")]
+    [ProducesResponseType(typeof(CurrentUserDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    public ActionResult<CurrentUserDTO> GetCurrentUser()
+    {
+        string? userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        string? userName = User.FindFirstValue(ClaimTypes.Name);
+        string? role = User.FindFirstValue(ClaimTypes.Role);
+
+        // Token hợp lệ phải có đủ 3 claim
+        bool isValidUserId = int.TryParse(userIdValue, out int userId);
+
+        if (!isValidUserId
+            || string.IsNullOrWhiteSpace(userName)
+            || string.IsNullOrWhiteSpace(role))
+        {
+            return Problem(
+                statusCode: StatusCodes.Status401Unauthorized,
+                title: "Token không hợp lệ",
+                detail: "Token không chứa đầy đủ thông tin người dùng.");
+        }
+
+        CurrentUserDTO response = new CurrentUserDTO
+        {
+            UserId = userId,
+            Username = userName,
+            Role = role
+        };
+
+        return Ok(response);
+    }
+
 }
