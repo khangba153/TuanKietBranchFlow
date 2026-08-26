@@ -51,8 +51,11 @@ builder.Services.AddScoped<IBranchRepository, BranchRepository>();
 // Đăng ký công cụ tạo và kiểm tra PasswordHash
 builder.Services.AddScoped<IPasswordHasher<AppUser>, PasswordHasher<AppUser>>();
 
-// Đăng ký service sử lý nghiệp vụ đăng nhập
+// Đăng ký service xử lý nghiệp vụ đăng nhập
 builder.Services.AddScoped<IAuthService, AuthService>();
+
+// Đăng ký service xử lý hồ sơ người dùng
+builder.Services.AddScoped<IUserService, UserService>();
 
 // Đăng ký service xử lý nghiệp vụ phạm vi chi nhánh
 builder.Services.AddScoped<IBranchService, BranchService>();
