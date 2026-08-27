@@ -48,6 +48,9 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 // Đăng ký repository để truy vấn chi nhánh
 builder.Services.AddScoped<IBranchRepository, BranchRepository>();
 
+// Đăng ký repository để truy vấn danh sách Role
+builder.Services.AddScoped<IRoleRepository, RoleRepository>();
+
 // Đăng ký công cụ tạo và kiểm tra PasswordHash
 builder.Services.AddScoped<IPasswordHasher<AppUser>, PasswordHasher<AppUser>>();
 
@@ -59,6 +62,9 @@ builder.Services.AddScoped<IUserService, UserService>();
 
 // Đăng ký service xử lý nghiệp vụ phạm vi chi nhánh
 builder.Services.AddScoped<IBranchService, BranchService>();
+
+// Đăng ký service xử lý danh sách Role
+builder.Services.AddScoped<IRoleService, RoleService>();
 
 // Đăng ký UnitOfWork để các service có 1 điểm lưu dữ liệu thống nhất
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
