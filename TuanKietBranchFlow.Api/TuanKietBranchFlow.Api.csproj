@@ -5,6 +5,11 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>d4b78eec-ff78-437d-bd9e-a311d86b1622</UserSecretsId>
+    <!-- Sinh file XML để Swagger đọc các thẻ summary. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+    <!-- Không cảnh báo những public member chưa có XML comment. -->
+    <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

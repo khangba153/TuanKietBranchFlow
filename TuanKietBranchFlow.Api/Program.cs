@@ -51,6 +51,9 @@ builder.Services.AddScoped<IBranchRepository, BranchRepository>();
 // Đăng ký repository để truy vấn danh sách Role
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 
+// Đăng ký repository để truy vấn danh sách nhân viên
+builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
+
 // Đăng ký công cụ tạo và kiểm tra PasswordHash
 builder.Services.AddScoped<IPasswordHasher<AppUser>, PasswordHasher<AppUser>>();
 
@@ -65,6 +68,9 @@ builder.Services.AddScoped<IBranchService, BranchService>();
 
 // Đăng ký service xử lý danh sách Role
 builder.Services.AddScoped<IRoleService, RoleService>();
+
+// Đăng ký service xử lý nghiệp vụ nhân viên
+builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 
 // Đăng ký UnitOfWork để các service có 1 điểm lưu dữ liệu thống nhất
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -121,6 +127,11 @@ builder.Services.AddSwaggerGen(options =>
         Version = "v1",
         Description = "API quản lý hệ thống bán đồ uống BranchFlow."
     });
+    // Xác định đường dẫn file XML được sinh ra khi build APi
+    string xmlFileName = $"{builder.Environment.ApplicationName}.xml";
+    string xmlFilePath = Path.Combine(AppContext.BaseDirectory, xmlFileName);
+    // Cho Swagger đọc nội dung summary từ file XML
+    options.IncludeXmlComments(xmlFilePath);
 
     // Thêm nút Authorize để nhập JWT trong Swagger
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
