@@ -51,8 +51,25 @@ public class EmployeeRepository : RepositoryBase<EmployeeProfile>, IEmployeeRepo
         return await query.OrderBy(employee => employee.EmployeeCode).ToListAsync();
     }
 
-    
-
-
-
+    // Lấy chi tiết 1 nhân viên cùng thông tin User và Lịch sử chi nhánh
+    public async Task<EmployeeProfile?> GetDetailByIdAndBranchAsync(
+        int employeeId,
+        int branchId,
+        DateOnly currentDate)
+    {
+        return await Context.EmployeeProfiles
+            .Include(employee => employee.User)
+            .ThenInclude(user => user.UserBranches)
+            .ThenInclude(userBranch => userBranch.Branch)
+            .SingleOrDefaultAsync(employee =>
+                employee.Id == employeeId
+                && !employee.Deleted
+                && !employee.User.Deleted
+                && employee.User.UserBranches.Any(userBranch =>
+                    userBranch.BranchId == branchId
+                    && userBranch.ActiveFrom <= currentDate
+                    && (userBranch.ActiveTo == null
+                        || userBranch.ActiveTo >= currentDate)
+                    && !userBranch.Branch.Deleted));
+    }
 }

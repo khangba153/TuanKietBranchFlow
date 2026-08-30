@@ -11,4 +11,11 @@ public interface IEmployeeService
         int branchId,
         string keyword,
         bool? isActive);
+    
+    // Lấy chi tiết nhân viên theo quyền truy cập chi nhánh hiện tại
+    Task<EmployeeDetailResultDTO> GetEmployeeDetailAsync(
+        int currentUserId,
+        string currentUserRole,
+        int employeeId,
+        int branchId);
 }

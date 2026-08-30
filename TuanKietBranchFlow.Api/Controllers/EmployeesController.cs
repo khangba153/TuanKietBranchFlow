@@ -85,4 +85,77 @@ public class EmployeesController : ControllerBase
 
         return Ok(result.Employees);
     }
+
+    /// <summary>
+    /// Lấy thông tin chi tiết của 1 nhân viên tại chi nhánh
+    /// </summary>
+    [HttpGet("{employeeId:int}")]
+    [ProducesResponseType(typeof(EmployeeDetailDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<EmployeeDetailDTO>> GetEmployeeDetailAsync(
+        [FromRoute] int employeeId,
+        [FromQuery] int branchId)
+    {
+        // EmployeeId và BranchId phải là số nguyên dương
+        if (employeeId <= 0 || branchId <= 0)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Dữ liệu không hợp lệ",
+                detail: "EmployeeId và BranchId phải lớn hơn 0.");
+        }
+
+        // Đọc thông tin hiện tại người dùng từ JWT
+        string? userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        string? role = User.FindFirstValue(ClaimTypes.Role);
+        bool isValidUser = int.TryParse(userIdValue, out int currentUserId);
+
+        if (!isValidUser || string.IsNullOrWhiteSpace(role))
+        {
+            return Problem(
+                statusCode: StatusCodes.Status401Unauthorized,
+                title: "Token không hợp lệ",
+                detail: "Token không chứa đầy đủ thông tin người dùng.");
+        }
+
+        // Gọi service để kiểm tra quyền và lấy chi tiết nhân viên
+        EmployeeDetailResultDTO result = 
+            await _employeeService.GetEmployeeDetailAsync(
+                currentUserId,
+                role,
+                employeeId,
+                branchId);
+        
+        // Chi nhánh không tồn tại hoặc đã xóa
+        if (!result.IsBranchFound)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status404NotFound,
+                title: "Không tìm thấy chi nhánh",
+                detail: "Chi nhánh được yêu cầu không tồn tại.");
+        }
+
+        // Người dùng không có quyền truy cập chi nhánh
+        if (!result.HasAccess)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status403Forbidden,
+                title: "Không có quyền truy cập",
+                detail: "Bạn không được phân công tại chi nhánh này.");
+        }
+
+        // Không tìm thấy nhân viên hợp lệ tại chi nhánh
+        if (!result.IsEmployeeFound || result.Employee == null)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status404NotFound,
+                title: "Không tìm thấy nhân viên",
+                detail: "Nhân viên không tồn tại hoặc không còn làm việc tại chi nhánh.");
+        }
+
+        return Ok(result.Employee);
+    }
 }   
