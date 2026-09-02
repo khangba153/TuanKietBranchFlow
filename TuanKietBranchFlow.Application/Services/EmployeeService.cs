@@ -441,5 +441,192 @@ public class EmployeeService : IEmployeeService
         };
     }
 
+    // Cập nhật thông tin nhân viên tại chi nhánh ADMIN được phân công
+    public async Task<EmployeeUpdateResultDTO> UpdateEmployeeAsync(
+        int currentAdminId,
+        int employeeId,
+        int branchId,
+        EmployeeUpdateDTO request)
+    {
+        DateOnly currentDate = DateOnly.FromDateTime(DateTime.Today);
+
+        // Bước 1: kiểm tra chi nhánh tồn tại và chưa bị xóa
+        Branch? branch =
+            await _branchRepository.GetNotDeletedByIdAsync(branchId);
+
+        if (branch == null)
+        {
+            return new EmployeeUpdateResultDTO
+            {
+                IsBranchFound = false
+            };
+        }
+
+        // Bước 2: kiểm tra ADMIN còn được phân công tại chi nhánh
+        bool hasAccess =
+            await _branchRepository.HasActiveAssignmentAsync(
+                currentAdminId,
+                branchId,
+                currentDate);
+
+        if (!hasAccess)
+        {
+            return new EmployeeUpdateResultDTO
+            {
+                IsBranchFound = true,
+                HasAccess = false
+            };
+        }
+
+        // Bước 3: Lấy hồ sơ nhân viên cùng AppUser và lịch sử chi nhánh
+        EmployeeProfile? employeeProfile =
+            await _employeeRepository.GetDetailByIdAndBranchAsync(
+                employeeId,
+                branchId,
+                currentDate);
+
+        if (employeeProfile == null)
+        {
+            return new EmployeeUpdateResultDTO
+            {
+                IsBranchFound = true,
+                HasAccess = true,
+                IsEmployeeFound = false
+            };
+        }
+
+        // Bước 4: chuẩn hóa dữ liệu trước khi kiểm tra và cập nhật
+        string fullName = request.FullName.Trim();
+        string employeeCode = request.EmployeeCode.Trim();
+
+        string? email =
+            string.IsNullOrWhiteSpace(request.Email)
+                ? null
+                : request.Email.Trim();
+
+        string? phone =
+            string.IsNullOrWhiteSpace(request.Phone)
+                ? null
+                : request.Phone.Trim();
+
+        string? position =
+            string.IsNullOrWhiteSpace(request.Position)
+                ? null
+                : request.Position.Trim();
+
+        string? address =
+            string.IsNullOrWhiteSpace(request.Address)
+                ? null
+                : request.Address.Trim();
+
+        // Bước 5: chỉ kiểm tra Email khi người dùng có nhập dữ liệu
+        if (email != null)
+        {
+            bool emailExists =
+                await _userRepository.EmailExistsForOtherUserAsync(
+                    email,
+                    employeeProfile.UserId);
+
+            if (emailExists)
+            {
+                return new EmployeeUpdateResultDTO
+                {
+                    IsBranchFound = true,
+                    HasAccess = true,
+                    IsEmployeeFound = true,
+                    IsEmailDuplicated = true
+                };
+            }
+        }
+
+        // Bước 6: kiểm tra mã nhân viên có thuộc hồ sơ khác không
+        bool employeeCodeExists =
+            await _employeeRepository
+                .EmployeeCodeExistsForOtherEmployeeAsync(
+                    employeeCode,
+                    employeeProfile.Id);
+
+        if (employeeCodeExists)
+        {
+            return new EmployeeUpdateResultDTO
+            {
+                IsBranchFound = true,
+                HasAccess = true,
+                IsEmployeeFound = true,
+                IsEmployeeCodeDuplicated = true
+            };
+        }
+
+        // Bước 7: cập nhật các trường thuộc bảng AppUser
+        employeeProfile.User.FullName = fullName;
+        employeeProfile.User.Email = email;
+        employeeProfile.User.Phone = phone;
+        employeeProfile.User.UpdatedAt = DateTime.UtcNow;
+
+        // Cập nhật các trường thuộc bảng EmployeeProfile
+        employeeProfile.EmployeeCode = employeeCode;
+        employeeProfile.DateOfBirth = request.DateOfBirth;
+        employeeProfile.HireDate = request.HireDate;
+        employeeProfile.Position = position;
+        employeeProfile.BaseSalary = request.BaseSalary;
+        employeeProfile.Address = address;
+        employeeProfile.UpdatedAt = DateTime.UtcNow;
+
+        // Bước 8: đánh dấu 2 entity cần được cập nhật
+        _userRepository.Update(employeeProfile.User);
+        _employeeRepository.Update(employeeProfile);
+
+        // Bước 9: lưu các thay đổi xuống db 1 lần
+        await _unitOfWork.SaveChangesAsync();
+
+        // Bước 10: chuyển lịch sử phân công chi nhánh thành DTO
+        List<EmployeeBranchHistoryDTO> branchHistory =
+            new List<EmployeeBranchHistoryDTO>();
+
+        foreach (UserBranch userBranch in employeeProfile.User.UserBranches)
+        {
+            // Không trả chi nhánh đã xóa
+            if (userBranch.Branch.Deleted)
+            {
+                continue;
+            }
+
+            EmployeeBranchHistoryDTO branchHistoryDTO =
+                new EmployeeBranchHistoryDTO
+                {
+                    BranchId = userBranch.BranchId,
+                    BranchName = userBranch.Branch.Name,
+                    ActiveFrom = userBranch.ActiveFrom,
+                    ActiveTo = userBranch.ActiveTo
+                };
+            branchHistory.Add(branchHistoryDTO);
+        }
+
+        // Bước 11: tạo DTO chứa dữ liệu mới nhất sau khi cập nhật
+        EmployeeDetailDTO employeeDTO =
+            new EmployeeDetailDTO
+            {
+                Id = employeeProfile.Id,
+                EmployeeCode = employeeProfile.EmployeeCode,
+                FullName = employeeProfile.User.FullName,
+                DateOfBirth = employeeProfile.DateOfBirth,
+                HireDate = employeeProfile.HireDate,
+                Position = employeeProfile.Position,
+                BaseSalary = employeeProfile.BaseSalary,
+                Phone = employeeProfile.User.Phone,
+                Email = employeeProfile.User.Email,
+                Address = employeeProfile.Address,
+                AvatarUrl = employeeProfile.AvatarUrl,
+                BranchHistory = branchHistory
+            };
+
+        return new EmployeeUpdateResultDTO
+        {
+            IsBranchFound = true,
+            HasAccess = true,
+            IsEmployeeFound = true,
+            Employee = employeeDTO
+        };
+    }
 
 }

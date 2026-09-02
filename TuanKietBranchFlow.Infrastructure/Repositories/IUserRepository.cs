@@ -15,4 +15,7 @@ public interface IUserRepository : IRepositoryBase<AppUser>
 
     // Kiểm tra email đã tồn tại hay chưa
     Task<bool> EmailExistsAsync(string email);
+
+    // Kiểm tra email có được tài khoản nào khác sử dụng hay không
+    Task<bool> EmailExistsForOtherUserAsync(string email, int currentUserId);
 }

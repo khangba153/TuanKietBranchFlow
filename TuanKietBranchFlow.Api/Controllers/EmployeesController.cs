@@ -122,13 +122,13 @@ public class EmployeesController : ControllerBase
         }
 
         // Gọi service để kiểm tra quyền và lấy chi tiết nhân viên
-        EmployeeDetailResultDTO result = 
+        EmployeeDetailResultDTO result =
             await _employeeService.GetEmployeeDetailAsync(
                 currentUserId,
                 role,
                 employeeId,
                 branchId);
-        
+
         // Chi nhánh không tồn tại hoặc đã xóa
         if (!result.IsBranchFound)
         {
@@ -198,7 +198,7 @@ public class EmployeesController : ControllerBase
         // Service kiểm tra nghiệp vụ và tạo nhân viên
         EmployeeCreateResultDTO result =
             await _employeeService.CreateEmployeeAsync(currentAdminId, request);
-        
+
         if (!result.IsBranchFound)
         {
             return Problem(
@@ -265,4 +265,116 @@ public class EmployeesController : ControllerBase
             }, result.Employee);
     }
 
-}   
+    /// <summary>
+    /// Cập nhật thông tin nhân viên tại chi nhánh ADMIN được phân công
+    /// </summary>
+    [HttpPut("{employeeId:int}")]
+    [Authorize(Roles = "ADMIN")]
+    [ProducesResponseType(typeof(EmployeeDetailDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<EmployeeDetailDTO>> UpdateEmployeeAsync(
+        [FromRoute] int employeeId,
+        [FromQuery] int branchId,
+        [FromBody] EmployeeUpdateDTO request)
+    {
+        // EmployeeId và BranchId phải là số nguyên dương
+        if (employeeId <= 0 || branchId <= 0)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Dữ liệu không hợp lệ",
+                detail: "EmployeeId và BranchId phải lớn hơn 0.");
+        }
+
+        // DateOnly mặc định không được xem là ngày vào làm hợp lệ
+        if (request.HireDate == default)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Ngày vào làm không hợp lệ",
+                detail: "Ngày vào làm không được để trống.");
+        }
+
+        // Lấy Id của ADMIN đang thực hiện request từ JWT
+        string? userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        bool isValidUserId = int.TryParse(userIdValue, out int currentAdminId);
+
+        if (!isValidUserId)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status401Unauthorized,
+                title: "Token không hợp lệ",
+                detail: "Token không chứa thông tin người dùng.");
+        }
+
+        // Gọi Service để kiểm tra nghiệp vụ và cập nhật nhân viên
+        EmployeeUpdateResultDTO result =
+            await _employeeService.UpdateEmployeeAsync(
+                currentAdminId,
+                employeeId,
+                branchId,
+                request);
+
+        // Chi nhánh không tồn tại hoặc bị xóa
+        if (!result.IsBranchFound)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status404NotFound,
+                title: "Không tìm thấy chi nhánh",
+                detail: "Chi nhánh được yêu cầu không tồn tại.");
+        }
+
+        // ADMIN không còn được phân công tại chi nhánh
+        if (!result.HasAccess)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status403Forbidden,
+                title: "Không có quyền truy cập",
+                detail: "Bạn không được phân công tại chi nhánh này.");
+        }
+
+        // Nhân viên không tồn tại hoặc không thuộc chi nhánh
+        if (!result.IsEmployeeFound)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status404NotFound,
+                title: "Không tìm thấy nhân viên",
+                detail: "Nhân viên không tồn tại hoặc không còn làm việc tại chi nhánh.");
+        }
+
+        // Email đang được 1 tài khoản khác sử dụng
+        if (result.IsEmailDuplicated)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Email đã tồn tại",
+                detail: "Vui lòng sử dụng Email khác.");
+        }
+
+        // Mã nhân viên đang được 1 hồ sơ khác sử dụng
+        if (result.IsEmployeeCodeDuplicated)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Mã nhân viên đã tồn tại",
+                detail: "Vui lòng sử dụng mã nhân viên khác.");
+        }
+
+        // Bảo vệ trường hợp kết quả từ Service không nhất quán
+        if (result.Employee == null)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status500InternalServerError,
+                title: "Không thể cập nhật nhân viên",
+                detail: "Hệ thống không nhận được dữ liệu nhân viên sau khi cập nhật.");
+        }
+
+        // Trả dữ liệu mới nhất của nhân viên sau khi cập nhật
+        return Ok(result.Employee);
+    }
+}

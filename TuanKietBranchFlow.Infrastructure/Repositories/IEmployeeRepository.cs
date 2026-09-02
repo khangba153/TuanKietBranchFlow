@@ -19,4 +19,7 @@ public interface IEmployeeRepository : IRepositoryBase<EmployeeProfile>
 
     // Kiểm tra mã nhân viên đã tồn tại hay chưa
     Task<bool> EmployeeCodeExistsAsync(string employeeCode);
+
+    // Kiểm tra mã nhân viên có được hồ sơ khác sử dụng hay không
+    Task<bool> EmployeeCodeExistsForOtherEmployeeAsync(string employeeCode, int currentEmployeeId);
 }

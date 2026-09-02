@@ -24,4 +24,10 @@ public interface IEmployeeService
         int currentAdminId,
         EmployeeCreateDTO request);
 
+    // Cập nhật thông tin nhân viên tại chi nhánh ADMIN được phân công
+    Task<EmployeeUpdateResultDTO> UpdateEmployeeAsync(
+        int currentAdminId,
+        int employeeId,
+        int branchId,
+        EmployeeUpdateDTO request);
 }

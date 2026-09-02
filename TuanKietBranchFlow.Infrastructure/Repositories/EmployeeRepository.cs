@@ -80,4 +80,14 @@ public class EmployeeRepository : RepositoryBase<EmployeeProfile>, IEmployeeRepo
             !employee.Deleted
             && employee.EmployeeCode == employeeCode);
     }
+
+    // Kiểm tra mã nhân viên có được hồ sơ khác sử dụng hay không
+    public async Task<bool> EmployeeCodeExistsForOtherEmployeeAsync(
+        string employeeCode, int currentEmployeeId)
+    {
+        return await Context.EmployeeProfiles.AnyAsync(employee =>
+            !employee.Deleted
+            && employee.Id != currentEmployeeId
+            && employee.EmployeeCode == employeeCode);
+    }
 }

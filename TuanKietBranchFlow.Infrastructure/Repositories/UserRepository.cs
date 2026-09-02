@@ -46,4 +46,13 @@ public class UserRepository : RepositoryBase<AppUser>, IUserRepository
             !user.Deleted
             && user.Email == email);
     }
+
+    // Kiểm tra email có được tài khoản khác sử dụng hay không
+    public async Task<bool> EmailExistsForOtherUserAsync(string email, int currentUserId)
+    {
+        return await Context.AppUsers.AnyAsync(user =>
+            !user.Deleted
+            && user.Id != currentUserId
+            && user.Email == email);
+    }
 }
