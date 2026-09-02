@@ -72,4 +72,12 @@ public class EmployeeRepository : RepositoryBase<EmployeeProfile>, IEmployeeRepo
                         || userBranch.ActiveTo >= currentDate)
                     && !userBranch.Branch.Deleted));
     }
+
+    // Kiểm tra mã nhân viên đã tồn tại hay chưa
+    public async Task<bool> EmployeeCodeExistsAsync(string employeeCode)
+    {
+        return await Context.EmployeeProfiles.AnyAsync(employee =>
+            !employee.Deleted
+            && employee.EmployeeCode == employeeCode);
+    }
 }

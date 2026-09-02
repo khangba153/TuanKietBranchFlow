@@ -18,4 +18,10 @@ public interface IEmployeeService
         string currentUserRole,
         int employeeId,
         int branchId);
+
+    // Tạo tài khoản, hồ sơ và phân công chi nhánh cho nhân viên mới
+    Task<EmployeeCreateResultDTO> CreateEmployeeAsync(
+        int currentAdminId,
+        EmployeeCreateDTO request);
+
 }

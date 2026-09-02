@@ -1,6 +1,8 @@
 using TuanKietBranchFlow.Application.DTOs.Employees;
 using TuanKietBranchFlow.Infrastructure.Models;
 using TuanKietBranchFlow.Infrastructure.Repositories;
+using Microsoft.AspNetCore.Identity;
+using TuanKietBranchFlow.Infrastructure.UnitOfWork;
 
 namespace TuanKietBranchFlow.Application.Services;
 
@@ -8,12 +10,29 @@ public class EmployeeService : IEmployeeService
 {
     private readonly IEmployeeRepository _employeeRepository;
     private readonly IBranchRepository _branchRepository;
+    private readonly IUserRepository _userRepository;
+    private readonly IRoleRepository _roleRepository;
+    private readonly IUserBranchRepository _userBranchRepository;
+    private readonly IPasswordHasher<AppUser> _passwordHasher;
+    private readonly IUnitOfWork _unitOfWork;
 
-    // Nhận các Repository cần dùng từ DI
-    public EmployeeService(IEmployeeRepository employeeRepository, IBranchRepository branchRepository)
+    // Nhận các dependency cần dùng từ DI
+    public EmployeeService(
+        IEmployeeRepository employeeRepository,
+        IBranchRepository branchRepository,
+        IUserRepository userRepository,
+        IRoleRepository roleRepository,
+        IUserBranchRepository userBranchRepository,
+        IPasswordHasher<AppUser> passwordHasher,
+        IUnitOfWork unitOfWork)
     {
         _employeeRepository = employeeRepository;
         _branchRepository = branchRepository;
+        _userRepository = userRepository;
+        _roleRepository = roleRepository;
+        _userBranchRepository = userBranchRepository;
+        _passwordHasher = passwordHasher;
+        _unitOfWork = unitOfWork;
     }
 
     // Lấy danh sách nhân viên sau khi kiểm tra tra nhánh và quyền truy cập
@@ -50,7 +69,7 @@ public class EmployeeService : IEmployeeService
         // ADMIN phải có phân công còn hiệu lực tại chi nhánh
         else if (currentUserRole == "ADMIN")
         {
-            hasAccess = 
+            hasAccess =
                 await _branchRepository.HasActiveAssignmentAsync(
                     currentUserId,
                     branchId,
@@ -92,7 +111,7 @@ public class EmployeeService : IEmployeeService
                     IsActive = employee.User.IsActive,
                     AvatarUrl = employee.AvatarUrl
                 };
-            
+
             employees.Add(employeeDTO);
         }
 
@@ -139,13 +158,13 @@ public class EmployeeService : IEmployeeService
         // ADMIN chỉ được xem chi nhánh có phân công còn hiệu lực
         else if (currentUserRole == "ADMIN")
         {
-            hasAccess = 
+            hasAccess =
                 await _branchRepository.HasActiveAssignmentAsync(
                     currentUserId,
                     branchId,
                     currentDate);
         }
-        
+
         if (!hasAccess)
         {
             return new EmployeeDetailResultDTO
@@ -169,14 +188,14 @@ public class EmployeeService : IEmployeeService
             {
                 IsBranchFound = true,
                 HasAccess = true,
-                IsEmployeeFound = false   
+                IsEmployeeFound = false
             };
         }
 
         // Bước 4: chuyển lịch phân công chi nhánh sang DTO
         List<EmployeeBranchHistoryDTO> branchHistory =
             new List<EmployeeBranchHistoryDTO>();
-        
+
         foreach (UserBranch userBranch in employeeProfile.User.UserBranches)
         {
             // Không hiển thị chi nhánh đã xóa
@@ -193,12 +212,12 @@ public class EmployeeService : IEmployeeService
                     ActiveFrom = userBranch.ActiveFrom,
                     ActiveTo = userBranch.ActiveTo
                 };
-            
+
             branchHistory.Add(branchHistoryDTO);
         }
-        
+
         // Bước 5: chuyển Entity thành DTO dành cho màn hình chi tiết
-        EmployeeDetailDTO employeeDTO = 
+        EmployeeDetailDTO employeeDTO =
             new EmployeeDetailDTO
             {
                 Id = employeeProfile.Id,
@@ -214,7 +233,7 @@ public class EmployeeService : IEmployeeService
                 AvatarUrl = employeeProfile.AvatarUrl,
                 BranchHistory = branchHistory
             };
-        
+
         // Tất cả điều kiện hợp lệ mới trả dữ liệu
         return new EmployeeDetailResultDTO
         {
@@ -225,6 +244,202 @@ public class EmployeeService : IEmployeeService
         };
     }
 
+    // Tạo tài khoản, hồ sơ và phân công chi nhánh cho nhân viên mới
+    public async Task<EmployeeCreateResultDTO> CreateEmployeeAsync(
+        int currentAdminId,
+        EmployeeCreateDTO request)
+    {
+        DateOnly currentDate = DateOnly.FromDateTime(DateTime.Today);
 
-    
+        // Bước 1: kiểm tra chi nhánh tồn tại và chưa bị xóa
+        Branch? branch = await _branchRepository.GetNotDeletedByIdAsync(request.BranchId);
+
+        if (branch == null)
+        {
+            return new EmployeeCreateResultDTO
+            {
+                IsBranchFound = false
+            };
+        }
+
+        // Bước 2: kiểm tra ADMIN còn được phân công tại chi nhánh
+        bool hasAccess =
+            await _branchRepository.HasActiveAssignmentAsync(
+                currentAdminId,
+                request.BranchId,
+                currentDate);
+
+        if (!hasAccess)
+        {
+            return new EmployeeCreateResultDTO
+            {
+                IsBranchFound = true,
+                HasAccess = false
+            };
+        }
+
+        // Bước 3: tìm Role EMPLOYEE để gán cho tài khoản mới
+        Role? employeeRole =
+            await _roleRepository.SingleOrDefaultAsync(role =>
+                role.Code == "EMPLOYEE" && !role.Deleted);
+
+        if (employeeRole == null)
+        {
+            return new EmployeeCreateResultDTO
+            {
+                IsBranchFound = true,
+                HasAccess = true,
+                IsEmployeeRoleFound = false
+            };
+        }
+
+        // Chuẩn hóa dữ liệu trước khi kiểm tra trùng và lưu
+        string username = request.Username.Trim();
+        string fullName = request.FullName.Trim();
+        string employeeCode = request.EmployeeCode.Trim();
+        string? email =
+            string.IsNullOrWhiteSpace(request.Email)
+                ? null
+                : request.Email.Trim();
+        string? phone =
+            string.IsNullOrWhiteSpace(request.Phone)
+                ? null
+                : request.Phone.Trim();
+        string? position =
+            string.IsNullOrWhiteSpace(request.Position)
+                ? null
+                : request.Position.Trim();
+        string? address =
+            string.IsNullOrWhiteSpace(request.Address)
+                ? null
+                : request.Address.Trim();
+
+        // Bước 4: Kiểm tra Username đã tồn tại hay chưa
+        bool usernameExists = await _userRepository.UsernameExistsAsync(username);
+
+        if (usernameExists)
+        {
+            return new EmployeeCreateResultDTO
+            {
+                IsBranchFound = true,
+                HasAccess = true,
+                IsEmployeeRoleFound = true,
+                IsUsernameDuplicated = true
+            };
+        }
+
+        // Email là tùy chọn nên chỉ kiểm tra khi có dữ liệu
+        if (email != null)
+        {
+            bool emailExists = await _userRepository.EmailExistsAsync(email);
+
+            if (emailExists)
+            {
+                return new EmployeeCreateResultDTO
+                {
+                    IsBranchFound = true,
+                    HasAccess = true,
+                    IsEmployeeRoleFound = true,
+                    IsEmailDuplicated = true
+                };
+            }
+        }
+
+        // Bước 5: kiểm tra mã nhân viên đã tồn tại hay chưa
+        bool employeeCodeExists =
+            await _employeeRepository.EmployeeCodeExistsAsync(employeeCode);
+
+        if (employeeCodeExists)
+        {
+            return new EmployeeCreateResultDTO
+            {
+                IsBranchFound = true,
+                HasAccess = true,
+                IsEmployeeRoleFound = true,
+                IsEmployeeCodeDuplicated = true
+            };
+        }
+
+        // Bước 6: tạo tài khoản đăng nhập cho nhân viên
+        AppUser appUser = new AppUser
+        {
+            RoleId = employeeRole.Id,
+            Username = username,
+            PasswordHash = string.Empty,
+            FullName = fullName,
+            Email = email,
+            Phone = phone,
+            IsActive = true,
+            Deleted = false
+        };
+
+        // Hash mật khẩu trước khi lưu
+        appUser.PasswordHash = _passwordHasher.HashPassword(appUser, request.Password);
+
+        // Bước 7: tạo hồ sơ nhân viên và liên kết với AppUser
+        EmployeeProfile employeeProfile = new EmployeeProfile
+        {
+            User = appUser,
+            EmployeeCode = employeeCode,
+            DateOfBirth = request.DateOfBirth,
+            HireDate = request.HireDate,
+            Position = position,
+            Address = address,
+            BaseSalary = request.BaseSalary,
+            Deleted = false
+        };
+
+        // Bước 8: tạo phân công chi nhánh đầu tiên
+        UserBranch userBranch = new UserBranch
+        {
+            User = appUser,
+            BranchId = request.BranchId,
+            ActiveFrom = request.HireDate,
+            ActiveTo = null
+        };
+
+        // Đánh dấu 3 Entity cần được thêm vào db
+        await _userRepository.AddAsync(appUser);
+        await _employeeRepository.AddAsync(employeeProfile);
+        await _userBranchRepository.AddAsync(userBranch);
+
+        // Lưu toàn bộ thay đổi
+        await _unitOfWork.SaveChangesAsync();
+
+        // Bước 9: tạo DTO trả về sau khi db đã sinh Id
+        EmployeeDetailDTO employeeDTO = new EmployeeDetailDTO
+        {
+            Id = employeeProfile.Id,
+            EmployeeCode = employeeProfile.EmployeeCode,
+            FullName = appUser.FullName,
+            DateOfBirth = employeeProfile.DateOfBirth,
+            HireDate = employeeProfile.HireDate,
+            Position = employeeProfile.Position,
+            BaseSalary = employeeProfile.BaseSalary,
+            Phone = appUser.Phone,
+            Email = appUser.Email,
+            Address = employeeProfile.Address,
+            AvatarUrl = employeeProfile.AvatarUrl,
+            BranchHistory = new List<EmployeeBranchHistoryDTO>
+            {
+                new EmployeeBranchHistoryDTO
+                {
+                    BranchId = branch.Id,
+                    BranchName = branch.Name,
+                    ActiveFrom = userBranch.ActiveFrom,
+                    ActiveTo = userBranch.ActiveTo
+                }
+            }
+        };
+
+        return new EmployeeCreateResultDTO
+        {
+            IsBranchFound = true,
+            HasAccess = true,
+            IsEmployeeRoleFound = true,
+            Employee = employeeDTO
+        };
+    }
+
+
 }

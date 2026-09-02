@@ -30,4 +30,20 @@ public class UserRepository : RepositoryBase<AppUser>, IUserRepository
             .Include(user => user.UserBranches).ThenInclude(userBranch => userBranch.Branch)
             .SingleOrDefaultAsync(user => user.Id == userId && user.IsActive && !user.Deleted);
     }
+
+    // Kiểm tra Username đã tồn tại hay chưa
+    public async Task<bool> UsernameExistsAsync(string username)
+    {
+        return await Context.AppUsers.AnyAsync(user => 
+            !user.Deleted 
+            && user.Username == username);
+    }
+
+    // Kiểm tra Email đã tồn tại hay chưa
+    public async Task<bool> EmailExistsAsync(string email)
+    {
+        return await Context.AppUsers.AnyAsync(user =>
+            !user.Deleted
+            && user.Email == email);
+    }
 }

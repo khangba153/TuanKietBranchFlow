@@ -89,7 +89,7 @@ public class EmployeesController : ControllerBase
     /// <summary>
     /// Lấy thông tin chi tiết của 1 nhân viên tại chi nhánh
     /// </summary>
-    [HttpGet("{employeeId:int}")]
+    [HttpGet("{employeeId:int}", Name = "GetEmployeeDetail")]
     [ProducesResponseType(typeof(EmployeeDetailDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
@@ -158,4 +158,111 @@ public class EmployeesController : ControllerBase
 
         return Ok(result.Employee);
     }
+
+    /// <summary>
+    /// Tạo tài khoản, hồ sơ và phân công chi nhánh cho nhân viên mới
+    /// </summary>
+    [HttpPost]
+    [Authorize(Roles = "ADMIN")]
+    [ProducesResponseType(typeof(EmployeeDetailDTO), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<EmployeeDetailDTO>> CreateEmployeeAsync(
+        [FromBody] EmployeeCreateDTO request)
+    {
+        // DateOnly mặc định không được xem là ngày vào làm hợp lệ
+        if (request.HireDate == default)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Ngày vào làm không hợp lệ",
+                detail: "Ngày vào làm không được để trống.");
+        }
+
+        // Lấy Id của ADMIN đang thực hiện request từ JWT
+        string? userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        bool isValidUserId = int.TryParse(userIdValue, out int currentAdminId);
+
+        if (!isValidUserId)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status401Unauthorized,
+                title: "Token không hợp lệ",
+                detail: "Token không chứa thông tin người dùng.");
+        }
+
+        // Service kiểm tra nghiệp vụ và tạo nhân viên
+        EmployeeCreateResultDTO result =
+            await _employeeService.CreateEmployeeAsync(currentAdminId, request);
+        
+        if (!result.IsBranchFound)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status404NotFound,
+                title: "Không tìm thấy chi nhánh",
+                detail: "Chi nhánh được yêu cầu không tồn tại.");
+        }
+
+        if (!result.HasAccess)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status403Forbidden,
+                title: "Không có quyền truy cập",
+                detail: "Bạn không được phân công tại chi nhánh này.");
+        }
+
+        if (!result.IsEmployeeRoleFound)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status500InternalServerError,
+                title: "Lỗi cấu hình hệ thống",
+                detail: "Không tìm thấy Role EMPLOYEE.");
+        }
+
+        if (result.IsUsernameDuplicated)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Username đã tồn tại",
+                detail: "Vui lòng sử dụng Username khác.");
+        }
+
+        if (result.IsEmailDuplicated)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Email đã tồn tại",
+                detail: "Vui lòng sử dụng Email khác.");
+        }
+
+        if (result.IsEmployeeCodeDuplicated)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Mã nhân viên đã tồn tại",
+                detail: "Vui lòng sử dụng mã nhân viên khác.");
+        }
+
+        // Bảo vệ trường hợp kết quả từ Service không nhất quán
+        if (result.Employee == null)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status500InternalServerError,
+                title: "Không thể tạo nhân viên",
+                detail: "Hệ thống không nhận được dữ liệu nhân viên vừa tạo.");
+        }
+
+        // Trả 201 và đường dẫn để xem nhân viên vừa tạo
+        return CreatedAtRoute("GetEmployeeDetail",
+            new
+            {
+                employeeId = result.Employee.Id,
+                branchId = request.BranchId
+            }, result.Employee);
+    }
+
 }   

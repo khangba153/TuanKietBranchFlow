@@ -54,6 +54,9 @@ builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 // Đăng ký repository để truy vấn danh sách nhân viên
 builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
 
+// Đăng ký repository để thêm và quản lý phân công chi nhánh
+builder.Services.AddScoped<IUserBranchRepository, UserBranchRepository>();
+
 // Đăng ký công cụ tạo và kiểm tra PasswordHash
 builder.Services.AddScoped<IPasswordHasher<AppUser>, PasswordHasher<AppUser>>();
 
