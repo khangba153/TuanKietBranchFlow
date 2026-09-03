@@ -30,4 +30,11 @@ public interface IEmployeeService
         int employeeId,
         int branchId,
         EmployeeUpdateDTO request);
+
+    // Chuyển nhân viên từ chi nhánh hiện tại sang chi nhánh mới
+    Task<EmployeeChangeBranchResultDTO> ChangeEmployeeBranchAsync(
+        int currentAdminId,
+        int employeeId,
+        int currentBranchId,
+        EmployeeChangeBranchDTO request);
 }

@@ -629,4 +629,205 @@ public class EmployeeService : IEmployeeService
         };
     }
 
+    // Chuyển nhân viên từ chi nhánh hiện tại sang chi nhánh mới
+    public async Task<EmployeeChangeBranchResultDTO> ChangeEmployeeBranchAsync(
+        int currentAdminId,
+        int employeeId,
+        int currentBranchId,
+        EmployeeChangeBranchDTO request)
+    {
+        DateOnly currentDate = DateOnly.FromDateTime(DateTime.Today);
+
+        // Bước 1: kiểm tra chi nhánh hiện tại có tồn tại hay chưa bị xóa
+        Branch? currentBranch =
+            await _branchRepository.GetNotDeletedByIdAsync(currentBranchId);
+
+        if (currentBranch == null)
+        {
+            return new EmployeeChangeBranchResultDTO
+            {
+                IsCurrentBranchFound = false
+            };
+        }
+
+        // Bước 2: kiểm tra chi nhánh mới có tồn tại hoặc chưa bị chưa bị xóa
+        Branch? newBranch =
+            await _branchRepository.GetNotDeletedByIdAsync(request.NewBranchId);
+
+        if (newBranch == null)
+        {
+            return new EmployeeChangeBranchResultDTO
+            {
+                IsCurrentBranchFound  = true,
+                IsNewBranchFound = false
+            };
+        }
+
+        // Bước 3: kiểm tra ADMIN có quyền tại chi nhánh hiện tại hay không
+        bool hasCurrentBranchAccess =
+            await _branchRepository.HasActiveAssignmentAsync(
+                currentAdminId,
+                currentBranchId,
+                currentDate);
+
+        // Kiểm tra ADMIN có quyền tại chi nhánh mới
+        bool hasNewBranchAccess =
+            await _branchRepository.HasActiveAssignmentAsync(
+                currentAdminId,
+                request.NewBranchId,
+                currentDate);
+
+        if (!hasCurrentBranchAccess || !hasNewBranchAccess)
+        {
+            return new EmployeeChangeBranchResultDTO
+            {
+                IsCurrentBranchFound = true,
+                IsNewBranchFound = true,
+                HasAccess = false
+            };
+        }
+
+        // Bước 4: lấy hồ sơ nhân viên tại chi nhánh hiện tại
+        EmployeeProfile? employeeProfile =
+            await _employeeRepository.GetDetailByIdAndBranchAsync(
+                employeeId,
+                currentBranchId,
+                currentDate);
+
+        if (employeeProfile == null)
+        {
+            return new EmployeeChangeBranchResultDTO
+            {
+                IsCurrentBranchFound = true,
+                IsNewBranchFound = true,
+                HasAccess = true,
+                IsEmployeeFound = false
+            };
+        }
+
+        // Bước 5: không cho chuyển đến chi nhánh đang làm
+        if (currentBranchId == request.NewBranchId)
+        {
+            return new EmployeeChangeBranchResultDTO
+            {
+                IsCurrentBranchFound = true,
+                IsNewBranchFound = true,
+                HasAccess = true,
+                IsEmployeeFound = true,
+                IsSameBranch = true
+            };
+        }
+
+        // Bước 6: lấy bản ghi phân công tại chi nhánh hiện tại để cập nhật ngày kết thúc
+        UserBranch? currentAssignment =
+            await _userBranchRepository.GetActiveAssignmentAsync(
+                employeeProfile.UserId,
+                currentBranchId,
+                currentDate);
+
+        if (currentAssignment == null)
+        {
+            return new EmployeeChangeBranchResultDTO
+            {
+                IsCurrentBranchFound = true,
+                IsNewBranchFound = true,
+                HasAccess = true,
+                IsEmployeeFound = false
+            };
+        }
+
+        // Ngày bắt đầu mới phải sau ngày bắt đầu của phân công hiện tại.
+        if (request.ActiveFrom <= currentAssignment.ActiveFrom)
+        {
+            return new EmployeeChangeBranchResultDTO
+            {
+                IsCurrentBranchFound = true,
+                IsNewBranchFound = true,
+                HasAccess = true,
+                IsEmployeeFound = true,
+                IsSameBranch = false,
+                IsActiveFromValid = false
+            };
+        }
+
+        // Bước 7: kết thúc phân công cũ trước ngày chuyển chi nhánh
+        currentAssignment.ActiveTo = request.ActiveFrom.AddDays(-1);
+
+        // Tạo bản ghi phân công mới để giữ lại lịch sử chi nhánh
+        UserBranch newAssignment = new UserBranch
+        {
+            UserId = employeeProfile.UserId,
+            BranchId = newBranch.Id,
+            ActiveFrom = request.ActiveFrom,
+            ActiveTo = null
+        };
+
+        // Bước 8: chuẩn bị lịch sử phân công để trả giao diện
+        List<EmployeeBranchHistoryDTO> branchHistory =
+            new List<EmployeeBranchHistoryDTO>();
+
+        foreach (UserBranch userBranch in employeeProfile.User.UserBranches)
+        {
+            if (userBranch.Branch.Deleted)
+            {
+                continue;
+            }
+
+            EmployeeBranchHistoryDTO historyDTO =
+                new EmployeeBranchHistoryDTO
+                {
+                    BranchId = userBranch.BranchId,
+                    BranchName = userBranch.Branch.Name,
+                    ActiveFrom = userBranch.ActiveFrom,
+                    ActiveTo = userBranch.ActiveTo
+                };
+
+            branchHistory.Add(historyDTO);
+        }
+
+        // Thêm chi nhánh mới vào lịch sử trả về
+        branchHistory.Add(new EmployeeBranchHistoryDTO
+        {
+            BranchId = newBranch.Id,
+            BranchName = newBranch.Name,
+            ActiveFrom = newAssignment.ActiveFrom,
+            ActiveTo = newAssignment.ActiveTo
+        });
+
+        // Bước 9: đánh dấu cập nhật phân công cũ và thêm phân công mới
+        _userBranchRepository.Update(currentAssignment);
+        await _userBranchRepository.AddAsync(newAssignment);
+
+        // Lưu 2 thay đổi cùng lúc
+        await _unitOfWork.SaveChangesAsync();
+
+        // Bước 10: ánh xạ thông tin nhân viên sau khi chuyển chi nhánh
+        EmployeeDetailDTO employeeDTO = new EmployeeDetailDTO
+        {
+          Id = employeeProfile.Id,
+            EmployeeCode = employeeProfile.EmployeeCode,
+            FullName = employeeProfile.User.FullName,
+            DateOfBirth = employeeProfile.DateOfBirth,
+            HireDate = employeeProfile.HireDate,
+            Position = employeeProfile.Position,
+            BaseSalary = employeeProfile.BaseSalary,
+            Phone = employeeProfile.User.Phone,
+            Email = employeeProfile.User.Email,
+            Address = employeeProfile.Address,
+            AvatarUrl = employeeProfile.AvatarUrl,
+            BranchHistory = branchHistory
+        };
+
+        return new EmployeeChangeBranchResultDTO
+        {
+            IsCurrentBranchFound = true,
+            IsNewBranchFound = true,
+            HasAccess = true,
+            IsEmployeeFound = true,
+            IsSameBranch = false,
+            IsActiveFromValid = true,
+            Employee = employeeDTO
+        };
+    }
+
 }

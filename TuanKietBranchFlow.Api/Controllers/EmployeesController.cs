@@ -377,4 +377,128 @@ public class EmployeesController : ControllerBase
         // Trả dữ liệu mới nhất của nhân viên sau khi cập nhật
         return Ok(result.Employee);
     }
+
+    /// <summary>
+    /// Chuyển nhân viên từ chi nhánh hiện tại sang chi nhánh mới
+    /// </summary>
+    [HttpPut("{employeeId:int}/current-branch")]
+    [Authorize(Roles = "ADMIN")]
+    [ProducesResponseType(typeof(EmployeeDetailDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<EmployeeDetailDTO>> ChangeEmployeeBranchAsync(
+        [FromRoute] int employeeId,
+        [FromQuery] int currentBranchId,
+        [FromBody] EmployeeChangeBranchDTO request)
+    {
+        // EmployeeId và BranchId phải là số nguyên dương
+        if (employeeId <= 0 || currentBranchId <= 0)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Dữ liệu không hợp lệ",
+                detail: "EmployeeId và BranchId phải lớn hơn 0.");
+        }
+
+        // DateOnly mặc định không được xem là ngày chuyển hợp lệ
+        if (request.ActiveFrom == default)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Ngày chuyển không hợp lệ",
+                detail: "Ngày bắt đầu tại chi nhánh mới không được để trống.");
+        }
+
+        // Lấy Id của ADMIN đang thực hiện request từ JWT
+        string? userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        bool isValidUserId = int.TryParse(userIdValue, out int currentAdminId);
+
+        if (!isValidUserId)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status401Unauthorized,
+                title: "Token không hợp lệ",
+                detail: "Token không chứa thông tin người dùng.");
+        }
+
+        // Gọi Service để kiểm tra nghiệp vụ chuyển chi nhánh
+        EmployeeChangeBranchResultDTO result =
+            await _employeeService.ChangeEmployeeBranchAsync(
+                currentAdminId,
+                employeeId,
+                currentBranchId,
+                request);
+
+        // Chi nhánh hiện tại không tồn tại hoặc đã bị xóa
+        if (!result.IsCurrentBranchFound)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status404NotFound,
+                title: "Không tìm thấy chi nhánh hiện tại",
+                detail: "Chi nhánh hiện tại không tồn tại hoặc đã bị xóa.");
+        }
+
+        // Chi nhánh mới không tồn tại hoặc đã bị xóa
+        if (!result.IsNewBranchFound)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status404NotFound,
+                title: "Không tìm thấy chi nhánh mới",
+                detail: "Chi nhánh muốn chuyển đến không tồn tại hoặc đã bị xóa.");
+        }
+
+        // ADMIN không có quyền tại 1 trong 2 chi nhánh
+        if (!result.HasAccess)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status403Forbidden,
+                title: "Không có quyền chuyển chi nhánh",
+                detail: "Bạn phải được phân công tại cả chi nhánh hiện tại và chi nhánh mới.");
+        }
+
+        // Nhân viên hoặc phân công hiện tại không tồn tại
+        if (!result.IsEmployeeFound)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status404NotFound,
+                title: "Không tìm thấy nhân viên",
+                detail: "Nhân viên không tồn tại hoặc không làm việc tại chi nhánh hiện tại.");
+        }
+
+        // Không cho chuyển đến chi nhánh hiện tại
+        if (result.IsSameBranch)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Chi nhánh bị trùng",
+                detail: "Chi nhánh mới phải khác chi nhánh hiện tại.");
+        }
+
+        // Ngày bắt đầu mới không phù hợp với lịch sử phân công
+        if (!result.IsActiveFromValid)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Ngày chuyển không hợp lệ",
+                detail: "Ngày bắt đầu tại chi nhánh mới phải sau ngày bắt đầu của phân công hiện tại.");
+        }
+
+        // Bảo vệ trường hợp Service trả kết quả không nhất quán
+        if (result.Employee == null)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status500InternalServerError,
+                title: "Không thể chuyển chi nhánh",
+                detail: "Hệ thống không nhận được thông tin nhân viên sau khi chuyển.");
+        }
+
+        // Trả thông tin nhân viên cùng lịch sử phân công mới nhất
+        return Ok(result.Employee);
+    }
+
+
 }
