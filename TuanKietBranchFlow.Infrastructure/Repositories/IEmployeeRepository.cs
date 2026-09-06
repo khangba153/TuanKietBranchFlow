@@ -11,7 +11,7 @@ public interface IEmployeeRepository : IRepositoryBase<EmployeeProfile>
         bool? isActive,
         DateOnly currentDate);
 
-    // Lấy chi tiết 1 nhân viên nếu đang thuộc chi nhánh được yêu cầu
+    // Lấy chi tiết 1 nhân viên đang làm hoặc đã nghỉ tại chi nhánh được yêu cầu
     Task<EmployeeProfile?> GetDetailByIdAndBranchAsync(
         int employeeId,
         int branchId,
@@ -21,5 +21,10 @@ public interface IEmployeeRepository : IRepositoryBase<EmployeeProfile>
     Task<bool> EmployeeCodeExistsAsync(string employeeCode);
 
     // Kiểm tra mã nhân viên có được hồ sơ khác sử dụng hay không
-    Task<bool> EmployeeCodeExistsForOtherEmployeeAsync(string employeeCode, int currentEmployeeId);
+    Task<bool> EmployeeCodeExistsForOtherEmployeeAsync(
+        string employeeCode,
+        int currentEmployeeId);
+
+    // Lấy nhân viên cùng tài khoản và lịch sử phân công, kể cả nhân viên đã nghỉ.
+    Task<EmployeeProfile?> GetByIdWithUserAndBranchesAsync(int employeeId);
 }

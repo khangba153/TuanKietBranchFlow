@@ -6,8 +6,14 @@ public class EmployeeDetailDTO
     public int Id { get; set; }
     public string EmployeeCode { get; set; } = string.Empty;
     public string FullName { get; set; } = string.Empty;
-    public DateOnly? DateOfBirth { get; set; } 
-    public DateOnly HireDate { get; set; } 
+    public DateOnly? DateOfBirth { get; set; }
+    public DateOnly HireDate { get; set; }
+
+    // Cho biết tài khoản nhân viên còn hoạt động hay không
+    public bool IsActive { get; set; }
+
+    // Ngày nhân viên bắt đầu nghỉ
+    public DateOnly? LeaveDate { get; set; }
     public string? Position { get; set; }
     public decimal BaseSalary { get; set; }
     public string? Phone { get; set; }
@@ -17,5 +23,5 @@ public class EmployeeDetailDTO
 
     // Lịch sử các chi nhánh nhân viên từng được phân công
     public List<EmployeeBranchHistoryDTO> BranchHistory { get; set; } = new List<EmployeeBranchHistoryDTO>();
-    
+
 }

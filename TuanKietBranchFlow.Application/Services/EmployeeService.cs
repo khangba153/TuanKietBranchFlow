@@ -225,6 +225,8 @@ public class EmployeeService : IEmployeeService
                 FullName = employeeProfile.User.FullName,
                 DateOfBirth = employeeProfile.DateOfBirth,
                 HireDate = employeeProfile.HireDate,
+                IsActive = employeeProfile.User.IsActive,
+                LeaveDate = employeeProfile.LeaveDate,
                 Position = employeeProfile.Position,
                 BaseSalary = employeeProfile.BaseSalary,
                 Phone = employeeProfile.User.Phone,
@@ -414,6 +416,8 @@ public class EmployeeService : IEmployeeService
             FullName = appUser.FullName,
             DateOfBirth = employeeProfile.DateOfBirth,
             HireDate = employeeProfile.HireDate,
+            IsActive = employeeProfile.User.IsActive,
+            LeaveDate = employeeProfile.LeaveDate,
             Position = employeeProfile.Position,
             BaseSalary = employeeProfile.BaseSalary,
             Phone = appUser.Phone,
@@ -611,12 +615,14 @@ public class EmployeeService : IEmployeeService
                 FullName = employeeProfile.User.FullName,
                 DateOfBirth = employeeProfile.DateOfBirth,
                 HireDate = employeeProfile.HireDate,
+                LeaveDate = employeeProfile.LeaveDate,
                 Position = employeeProfile.Position,
                 BaseSalary = employeeProfile.BaseSalary,
                 Phone = employeeProfile.User.Phone,
                 Email = employeeProfile.User.Email,
                 Address = employeeProfile.Address,
                 AvatarUrl = employeeProfile.AvatarUrl,
+                IsActive = employeeProfile.User.IsActive,
                 BranchHistory = branchHistory
             };
 
@@ -804,17 +810,19 @@ public class EmployeeService : IEmployeeService
         // Bước 10: ánh xạ thông tin nhân viên sau khi chuyển chi nhánh
         EmployeeDetailDTO employeeDTO = new EmployeeDetailDTO
         {
-          Id = employeeProfile.Id,
+            Id = employeeProfile.Id,
             EmployeeCode = employeeProfile.EmployeeCode,
             FullName = employeeProfile.User.FullName,
             DateOfBirth = employeeProfile.DateOfBirth,
             HireDate = employeeProfile.HireDate,
+            LeaveDate = employeeProfile.LeaveDate,
             Position = employeeProfile.Position,
             BaseSalary = employeeProfile.BaseSalary,
             Phone = employeeProfile.User.Phone,
             Email = employeeProfile.User.Email,
             Address = employeeProfile.Address,
             AvatarUrl = employeeProfile.AvatarUrl,
+            IsActive = employeeProfile.User.IsActive,
             BranchHistory = branchHistory
         };
 
@@ -830,4 +838,260 @@ public class EmployeeService : IEmployeeService
         };
     }
 
+    // Cập nhật trạng thái nghỉ việc hoặc hoạt động trở lại của nhân viên
+    public async Task<EmployeeStatusUpdateResultDTO> UpdateEmployeeStatusAsync(
+        int currentAdminId,
+        int employeeId,
+        int branchId,
+        EmployeeStatusUpdateDTO request)
+    {
+        DateOnly currentDate = DateOnly.FromDateTime(DateTime.Today);
+
+        // Bước 1: kiểm tra chi nhánh tồn tại và chưa bị xóa
+        Branch? branch =
+            await _branchRepository.GetNotDeletedByIdAsync(branchId);
+
+        if (branch == null)
+        {
+            return new EmployeeStatusUpdateResultDTO
+            {
+                IsBranchFound = false
+            };
+        }
+
+        // Bước 2: kiểm tra ADMIN có được phân công tại chi nhánh
+        bool hasAccess =
+            await _branchRepository.HasActiveAssignmentAsync(
+                currentAdminId,
+                branchId,
+                currentDate);
+
+        if (!hasAccess)
+        {
+            return new EmployeeStatusUpdateResultDTO
+            {
+                IsBranchFound = true,
+                HasAccess = false
+            };
+        }
+
+        // Bước 3: lấy nhân viên cùng tài khoản và lịch sử phân công
+        EmployeeProfile? employeeProfile =
+            await _employeeRepository.GetByIdWithUserAndBranchesAsync(employeeId);
+
+        if (employeeProfile == null)
+        {
+            return new EmployeeStatusUpdateResultDTO
+            {
+                IsBranchFound = true,
+                HasAccess = true,
+                IsEmployeeFound = false
+            };
+        }
+
+        // Tìm phân công chứng minh nhân viên thuộc phạm vi chi nhánh
+        UserBranch? employeeBranchAssignment = null;
+
+        // Kiêm tra trạng thái hiện tại từ tài khoản nhân viên
+        if (employeeProfile.User.IsActive)
+        {
+            // Nhân viên đang hoạt động phải có phân công còn hiểu lực
+            employeeBranchAssignment =
+                employeeProfile.User.UserBranches.FirstOrDefault(userBranch =>
+                    userBranch.BranchId == branchId
+                    && !userBranch.Branch.Deleted
+                    && userBranch.ActiveFrom <= currentDate
+                    && (userBranch.ActiveTo  == null
+                        || userBranch.ActiveTo >= currentDate));
+        }
+        else if (employeeProfile.LeaveDate.HasValue)
+        {
+            // Nhân viên đã nghỉ phải được thao tác tại chi nhanh nơi họ nghỉ
+            DateOnly lastWorkingDate =
+                employeeProfile.LeaveDate.Value.AddDays(-1);
+
+            employeeBranchAssignment =
+                employeeProfile.User.UserBranches.FirstOrDefault(userBranch =>
+                    userBranch.BranchId == branchId
+                    && !userBranch.Branch.Deleted
+                    && userBranch.ActiveTo == lastWorkingDate);
+        }
+
+        if (employeeBranchAssignment == null)
+        {
+            return new EmployeeStatusUpdateResultDTO
+            {
+                IsBranchFound = true,
+                HasAccess = true,
+                IsEmployeeFound = false
+            };
+        }
+
+        // Bước 4: ngày hiệu lực phải là ngày hiện tại
+        if (request.EffectiveDate != currentDate)
+        {
+            return new EmployeeStatusUpdateResultDTO
+            {
+                IsBranchFound = true,
+                HasAccess = true,
+                IsEmployeeFound = true,
+                IsEffectiveDateValid = false
+            };
+        }
+
+        // Controller đã kiểm tra Required nên IsActive có giá trị
+        bool newStatus = request.IsActive!.Value;
+        UserBranch? newAssignment = null;
+
+        // Bước 5: không cập nhật khi trạng thái mới giống trạng thái hiện tại
+        if (newStatus == employeeProfile.User.IsActive)
+        {
+            return new EmployeeStatusUpdateResultDTO
+            {
+                IsBranchFound = true,
+                HasAccess = true,
+                IsEmployeeFound = true,
+                IsEffectiveDateValid = true,
+                IsSameStatus = true
+            };
+        }
+
+        // Bổ sung: ngày nghỉ phải sau ngày bắt đầu phân công hiện tại
+        if (!newStatus
+            && request.EffectiveDate <= employeeBranchAssignment.ActiveFrom)
+            {
+                return new EmployeeStatusUpdateResultDTO
+                {
+                    IsBranchFound = true,
+                    HasAccess = true,
+                    IsEmployeeFound = true,
+                    IsEffectiveDateValid = false,
+                    IsSameStatus = false
+                };
+            }
+
+        // Bước 6: không thay đổi trạng thái khi còn phân công tương lai
+        bool hasFutureAssignment =
+            employeeProfile.User.UserBranches.Any(userBranch =>
+                userBranch.ActiveFrom > currentDate);
+
+        if (hasFutureAssignment)
+        {
+            return new EmployeeStatusUpdateResultDTO
+            {
+                IsBranchFound = true,
+                HasAccess = true,
+                IsEmployeeFound = true,
+                IsEffectiveDateValid = true,
+                IsSameStatus =false,
+                HasFutureAssignment = true
+            };
+        }
+
+        // Bước 7: xử lý cho nhân viên nghỉ việc
+        if (!newStatus)
+        {
+            employeeProfile.User.IsActive = false;
+            employeeProfile.LeaveDate = request.EffectiveDate;
+
+            // Phân công kết thúc trước ngày nghỉ 1 ngày
+            employeeBranchAssignment.ActiveTo = request.EffectiveDate.AddDays(-1);
+
+            _userBranchRepository.Update(employeeBranchAssignment);
+        }
+        // Xử lý cho nhân viên hoạt động trở lại
+        else
+        {
+            employeeProfile.User.IsActive = true;
+            employeeProfile.LeaveDate = null;
+
+            // Tạo phân công hồ sơ mới thay vì sửa lịch sử phân công cũ
+            newAssignment = new UserBranch
+            {
+                UserId = employeeProfile.UserId,
+                BranchId = branchId,
+                ActiveFrom = request.EffectiveDate,
+                ActiveTo = null
+            };
+
+            await _userBranchRepository.AddAsync(newAssignment);
+        }
+
+        // Cập nhật thời gian chỉnh sửa của tài khoản và hồ sơ
+        employeeProfile.User.UpdatedAt = DateTime.UtcNow;
+        employeeProfile.UpdatedAt = DateTime.UtcNow;
+
+        // Bước 8: đánh dấu tài khoản và hồ sơ cần cập nhật
+        _userRepository.Update(employeeProfile.User);
+        _employeeRepository.Update(employeeProfile);
+
+        // Lưu các thay đổi xuống db 1 lần
+        await _unitOfWork.SaveChangesAsync();
+
+        // Bước 9: chuyển lịch sử phân công cũ thành DTO
+        List<EmployeeBranchHistoryDTO> branchHistory =
+            new List<EmployeeBranchHistoryDTO>();
+
+        foreach (UserBranch userBranch in employeeProfile.User.UserBranches)
+        {
+            if (userBranch.Branch.Deleted)
+            {
+                continue;
+            }
+
+            EmployeeBranchHistoryDTO historyDTO =
+                new EmployeeBranchHistoryDTO
+                {
+                    BranchId = userBranch.BranchId,
+                    BranchName = userBranch.Branch.Name,
+                    ActiveFrom = userBranch.ActiveFrom,
+                    ActiveTo = userBranch.ActiveTo
+                };
+
+            branchHistory.Add(historyDTO);
+        }
+
+        // Phân công hoạt động lại chưa nằm trong collection nên cần thêm vào DTO
+        if (newAssignment != null)
+        {
+            branchHistory.Add(new EmployeeBranchHistoryDTO
+            {
+                BranchId = branch.Id,
+                BranchName = branch.Name,
+                ActiveFrom = newAssignment.ActiveFrom,
+                ActiveTo = newAssignment.ActiveTo
+            });
+        }
+
+        // Bước 10: tạo DTO chứa dữ liệu sau khi cập nhật
+        EmployeeDetailDTO employeeDTO =
+            new EmployeeDetailDTO
+            {
+                Id = employeeProfile.Id,
+                EmployeeCode = employeeProfile.EmployeeCode,
+                FullName = employeeProfile.User.FullName,
+                DateOfBirth = employeeProfile.DateOfBirth,
+                HireDate = employeeProfile.HireDate,
+                LeaveDate = employeeProfile.LeaveDate,
+                Position = employeeProfile.Position,
+                BaseSalary = employeeProfile.BaseSalary,
+                Phone = employeeProfile.User.Phone,
+                Email = employeeProfile.User.Email,
+                Address = employeeProfile.Address,
+                AvatarUrl = employeeProfile.AvatarUrl,
+                IsActive = employeeProfile.User.IsActive,
+                BranchHistory = branchHistory
+            };
+
+        return new EmployeeStatusUpdateResultDTO
+        {
+            IsBranchFound = true,
+            HasAccess = true,
+            IsEmployeeFound = true,
+            IsEffectiveDateValid = true,
+            IsSameStatus = false,
+            HasFutureAssignment = false,
+            Employee = employeeDTO
+        };
+    }
 }

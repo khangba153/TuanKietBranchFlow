@@ -37,4 +37,11 @@ public interface IEmployeeService
         int employeeId,
         int currentBranchId,
         EmployeeChangeBranchDTO request);
+
+    // Cập nhật trạng thái hoạt động hoặc nghỉ việc của nhân viên
+    Task<EmployeeStatusUpdateResultDTO> UpdateEmployeeStatusAsync(
+        int currentAdminId,
+        int employeeId,
+        int branchId,
+        EmployeeStatusUpdateDTO request);
 }

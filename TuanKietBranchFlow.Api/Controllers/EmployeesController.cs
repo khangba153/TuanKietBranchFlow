@@ -499,6 +499,130 @@ public class EmployeesController : ControllerBase
         // Trả thông tin nhân viên cùng lịch sử phân công mới nhất
         return Ok(result.Employee);
     }
+    /// <summary>
+    /// Cập nhật trạng thái hoạt động hoặc nghỉ việc của nhân viên
+    /// </summary>
+    [HttpPatch("{employeeId:int}/status")]
+    [Authorize(Roles = "ADMIN")]
+    [ProducesResponseType(typeof(EmployeeDetailDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<EmployeeDetailDTO>> UpdateEmployeeStatusAsync(
+        [FromRoute] int employeeId,
+        [FromQuery] int branchId,
+        [FromBody] EmployeeStatusUpdateDTO request)
+    {
+        // EmployeeId và BranchId phải là số nguyên dương
+        if (employeeId <= 0 || branchId <= 0)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Dữ liệu không hợp lệ",
+                detail: "EmployeeId và BranchId phải lớn hơn 0.");
+        }
 
+        // Ngày hiệu lực không được nhận giá trị DateOnly mặc định
+        if (request.EffectiveDate == default)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Ngày hiệu lực không hợp lệ",
+                detail: "Ngày hiệu lực không được để trống.");
+        }
+
+        // Lấy Id của ADMIN đang đăng nhập từ JWT
+        string? userIdValue =
+            User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        bool isValidUserId =
+            int.TryParse(userIdValue, out int currentAdminId);
+
+        if (!isValidUserId)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status401Unauthorized,
+                title: "Token không hợp lệ",
+                detail: "Token không chứa thông tin người dùng.");
+        }
+
+        // Gọi Service để kiểm tra nghiệp vụ và cập nhật trạng thái
+        EmployeeStatusUpdateResultDTO result =
+            await _employeeService.UpdateEmployeeStatusAsync(
+                currentAdminId,
+                employeeId,
+                branchId,
+                request);
+
+        // Chi nhánh không tồn tại hoặc đã bị xóa
+        if (!result.IsBranchFound)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status404NotFound,
+                title: "Không tìm thấy chi nhánh",
+                detail: "Chi nhánh được yêu cầu không tồn tại.");
+        }
+
+        // ADMIN không được phân công tại chi nhánh
+        if (!result.HasAccess)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status403Forbidden,
+                title: "Không có quyền truy cập",
+                detail: "Bạn không được phân công tại chi nhánh này.");
+        }
+
+        // Không tìm thấy nhân viên thuộc phạm vi chi nhánh
+        if (!result.IsEmployeeFound)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status404NotFound,
+                title: "Không tìm thấy nhân viên",
+                detail: "Nhân viên không tồn tại hoặc không thuộc chi nhánh này.");
+        }
+
+        // MVP hiện tại chỉ cho thay đổi trạng thái trong ngày hôm nay
+        if (!result.IsEffectiveDateValid)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Ngày hiệu lực không hợp lệ",
+                detail: "Ngày hiệu lực phải là ngày hiện tại và phải sau ngày bắt đầu phân công.");
+        }
+
+        // Không cập nhật khi trạng thái mới giống trạng thái trong db
+        if (result.IsSameStatus)
+        {
+            return Problem
+            (
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Trạng thái không thay đổi",
+                detail: "Trạng thái mới đang trùng với trạng thái hiện tại");
+        }
+
+        // Không thay đổi trạng thái khi nhân viên đã có lịch phân công tương lai
+        if (result.HasFutureAssignment)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Nhân viên có lịch phân công tương lai",
+                detail: "Hãy xử lý lịch phân công tương lai trước khi đổi trạng thái.");
+        }
+
+        // Bảo vệ trường hợp kết quả từ Service không nhất quán
+        if (result.Employee == null)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status500InternalServerError,
+                title: "Không thể cập nhật trạng thái",
+                detail: "Hệ thống không nhận được thông tin nhân viên sau khi cập nhật.");
+        }
+
+        // Trả dữ liệu nhân viên sau khi cập nhật thành công
+        return Ok(result.Employee);
+    }
 
 }
