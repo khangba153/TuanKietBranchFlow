@@ -1,4 +1,4 @@
 interface:
   display_name: "BranchFlow Guided Learning"
-  short_description: "Học flow thầy và áp dụng có chọn lọc"
-  default_prompt: "Use $branchflow-guided-learning to explain the relevant teacher flow and guide me in applying it to TuanKietBranchFlow."
+  short_description: "Học từng bước, kiểm tra hiểu bài và deploy BranchFlow"
+  default_prompt: "Use $branchflow-guided-learning to review my answers first, read the current checkpoint, and guide one next step toward a working BranchFlow portfolio."

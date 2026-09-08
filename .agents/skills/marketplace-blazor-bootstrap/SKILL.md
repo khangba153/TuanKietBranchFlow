@@ -1,16 +1,16 @@
 ---
 name: marketplace-blazor-bootstrap
-description: Build or fix UI in BE_MarketPlace.Web using the existing classic Blazor Server hosting model, Razor components, Bootstrap, and Bootstrap Icons. Use for layouts, headers, navigation, pages, responsive grids, forms, or Razor compile errors. Do not use for API or EF Core-only work.
+description: Build or fix TuanKietBranchFlow.Web .NET 10 Blazor Web App Interactive Server pages, layouts and forms using Bootstrap. Respect guided-learning steps and Bootstrap-only requests. Do not use for API or EF Core-only work, and do not copy classic BE_MARKET hosting.
 ---
 
-# Marketplace Blazor Bootstrap
+# BranchFlow Blazor Bootstrap (legacy skill name)
 
-Create responsive marketplace UI without accidentally migrating the project to the newer Blazor Web App model.
+Create responsive BranchFlow UI in its existing Blazor Web App model, one requested learning step at a time.
 
 ## Workflow
 
 1. Read `references/blazor-server.md`.
-2. Inspect `Program.cs`, `App.razor`, `_Imports.razor`, `_Host.cshtml`, the affected page, and its layout.
+2. Read root AGENTS-WEB.md and CURRENT_STEP; inspect `Program.cs`, `Components/App.razor`, `Components/Routes.razor`, imports, page render mode and layout.
 3. Confirm the requested component role:
    - Layout: inherit `LayoutComponentBase` and render `@Body`.
    - Page: declare `@page` and use the intended layout.
@@ -18,7 +18,7 @@ Create responsive marketplace UI without accidentally migrating the project to t
 4. Build structure with semantic HTML and Bootstrap utilities first.
 5. Use Bootstrap responsive breakpoints and avoid fixed dimensions unless the reference layout requires them.
 6. If the user says Bootstrap only, add no JavaScript, C# event handler, or custom CSS.
-7. Build `BE_MarketPlace.Web/BE_MarketPlace.Web.csproj`.
+7. Build `TuanKietBranchFlow.Web/TuanKietBranchFlow.Web.csproj` after code changes. Do not complete missing API features during a UI-only task.
 
 ## Quality checks
 
@@ -27,4 +27,3 @@ Create responsive marketplace UI without accidentally migrating the project to t
 - The layout contains exactly one appropriate `@Body`.
 - No interactive behavior is implied by static `href="#"` controls.
 - Vietnamese source text remains valid UTF-8.
-

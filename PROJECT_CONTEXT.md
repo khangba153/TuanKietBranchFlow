@@ -94,6 +94,21 @@ Khi tham khảo source thầy hoặc dự án cũ:
 
 ## Nhật ký quyết định lâu dài
 
+### Định hướng học và production (cập nhật 2026-09-05)
+
+- Người học muốn đi từ biết thuật ngữ đến hiểu, tự làm và giải thích được việc phát triển, kiểm thử, triển khai và vận hành BranchFlow để ứng tuyển .NET Backend Intern.
+- Không chỉ cung cấp code theo yêu cầu từng endpoint: cần chủ động chỉ ra việc còn thiếu để chạy ngoài máy cá nhân, giải thích lý do và dạy theo từng mốc nhỏ.
+- Tiếp tục cách học có kiểm tra câu trả lời trước khi chuyển bước. Không tự hoàn thiện cả backend khi được yêu cầu UI, hoặc tự code khi người học chỉ yêu cầu kiểm tra/hướng dẫn.
+- Triển khai sớm theo một luồng chức năng xuyên UI–API–database; không chờ hoàn thành 80% hoặc toàn bộ backend. CI bắt đầu nhỏ, CD sau khi hiểu và kiểm chứng đường deploy.
+- Lộ trình đề xuất ưu tiên phần nhân viên đang học cho vertical slice đầu, rồi tiếp tục menu/order và các phần MVP. Không tự hủy các module trong nghiệp vụ gốc.
+- Vẫn giữ SQL Server Docker cho local. Azure là hướng đang đánh giá vì người học đã cung cấp ảnh tài khoản Education; chưa xác nhận đã tạo hosting/database cloud, chưa chốt gói dịch vụ, ngân sách hoặc domain.
+- Một production phục vụ portfolio dùng dữ liệu giả lập, có giới hạn được công bố; không đồng nghĩa đã vận hành cho cửa hàng thật hoặc có số liệu người dùng thật.
+- Đọc [lộ trình học–production](docs/learning/production-learning-roadmap.md) để chọn mốc tiếp theo. Đọc [điểm dừng bài học](docs/learning/CURRENT_STEP.md) để tiếp tục buổi học. Roadmap API v0.1 là danh mục tham khảo, không còn là thứ tự thực hiện cứng.
+- Khi hướng dẫn một component Blazor có giao diện và xử lý, chia thành ba lượt: tạo layout tĩnh trước; viết và giải thích logic C# riêng; cuối cùng quay lại gắn binding, event và trạng thái vào layout. Chỉ chuyển lượt sau khi người học hiểu phần trước.
+- Trong vertical slice đăng nhập hiện tại, dùng `Blazor.LocalStorage` để học cách giữ access token và gắn `Authorization: Bearer` vào request. Đây không phải phương án production đã chốt; trước khi public phải đánh giá lại `HttpOnly` cookie hoặc mô hình BFF, đồng thời kiểm tra XSS, logout, token hết hạn và nhiều phiên trình duyệt.
+
+### Các quyết định trước đó
+
 - 2026-08-22: Xác định đây là đồ án cá nhân tốt nghiệp của sinh viên năm 3.
 - 2026-08-22: Dùng BE_MARKET làm dự án cũ để tham khảo khi được yêu cầu.
 - 2026-08-22: Dùng thư mục LyThuyet và hai source Git của thầy để học flow, không xem đó là chuẩn bắt buộc hoặc tối ưu tuyệt đối.

@@ -16,7 +16,6 @@ config_file = "./agents/backend_reviewer.toml"
 nickname_candidates = ["Ada", "Sentinel"]
 
 [agents.blazor_specialist]
-description = "Implements and reviews classic Blazor Server UI using Bootstrap."
+description = "Implements and reviews BranchFlow .NET 10 Blazor Web App Interactive Server UI using Bootstrap."
 config_file = "./agents/blazor_specialist.toml"
 nickname_candidates = ["Pixel", "Razor"]
-

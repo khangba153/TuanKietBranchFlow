@@ -4,7 +4,7 @@ Cập nhật: 2026-09-07. Đây là ghi chú tiếp nối, không thay thế vi�
 
 ## Chủ đề hiện tại
 
-Đang nối giao diện Blazor vào vertical slice xác thực. Login, authentication state, khôi phục sau F5 và logout phía Web đã chạy; bước kế tiếp là tự động gắn access token vào request API được bảo vệ.
+Đang nối giao diện Blazor vào vertical slice xác thực. Login, authentication state, khôi phục sau F5, logout và service gắn Bearer token trong Blazor circuit đã chạy ổn định; bước kế tiếp là dùng trạng thái role cho menu hoặc nối API nghiệp vụ đầu tiên.
 
 ## Mốc vừa hoàn thành
 
@@ -27,6 +27,10 @@ Cập nhật: 2026-09-07. Đây là ghi chú tiếp nối, không thay thế vi�
 - Web build sau phần restore đạt 0 warning, 0 error. Người học báo đã test thủ công đủ ba trường hợp: token hợp lệ giữ username sau F5; không có token hiện nút đăng nhập; token giả bị API từ chối, bị xóa và giao diện trở về anonymous.
 - Provider đã có `LogoutAsync()` để xóa access token, tạo `ClaimsPrincipal` anonymous và thông báo lại authentication state. `MainLayout` hiện username/nút logout khi authorized và nút login khi anonymous.
 - Web build sau phần logout đạt 0 warning, 0 error. Người học báo đã test thủ công: logout chuyển về `/login`, token bị xóa khỏi LocalStorage và F5 vẫn giữ trạng thái anonymous.
+- Thử nghiệm `ApiAuthorizationHandler` build xanh nhưng browser test tái hiện lỗi runtime: handler do `IHttpClientFactory` tạo trong scope riêng, nên `ILocalStorageService` không dùng được JavaScript runtime của circuit và ném `InvalidOperationException`. API đo trực tiếp vẫn nhanh (`/login` khoảng 48 ms và `/me` khoảng 3 ms sau warm-up); cảm giác login lâu là do circuit chờ rồi bị ngắt, không phải SQL/JWT chậm.
+- Đã thay handler bằng `AuthorizedApiService` chạy trong Blazor circuit, gỡ `ApiAuthorizationHandler` và client pipeline lỗi. Web build đạt 0 warning, 0 error.
+- Agent đã chạy browser test thật bằng Playwright trên bản build mới: login hợp lệ chuyển về trang chủ trong khoảng 292 ms, F5 vẫn hiện `admin01`, console không có lỗi và logout xóa sạch LocalStorage. Đây là test tự động hóa local cho flow UI, chưa phải test source được commit vào repository.
+- Người học đã restart Web chính ở cổng `5032` và báo test thủ công đúng dự đoán: login nhanh, restore sau F5 và logout đều hoạt động với cấu hình DI mới.
 
 ## Kiến thức người học đã trình bày đạt
 
@@ -47,12 +51,12 @@ Cập nhật: 2026-09-07. Đây là ghi chú tiếp nối, không thay thế vi�
 
 ## Bước kế tiếp duy nhất
 
-Thiết kế bước tự động gắn `Authorization: Bearer <token>` cho các HttpClient gọi endpoint được bảo vệ. Giải thích `DelegatingHandler` và chỉ triển khai sau khi người học phân biệt được handler phía Web với JWT middleware phía API.
+Chốt bước UI kế tiếp giữa hai mục liên quan: dùng role trong `AuthorizeView` cho menu có trang thật, hoặc tạo Web API service đầu tiên dùng `AuthorizedApiService` để gọi endpoint nghiệp vụ. Không thêm liên kết đến page chưa tồn tại.
 
 ## Việc cần trước khi public production
 
 - JWT đã cấp chưa được chứng minh bị vô hiệu ngay khi `AppUser.IsActive` chuyển thành false; cần chốt chiến lược kiểm tra hoặc thu hồi token.
 - Chưa có automated test cho các luật ngày hiệu lực và phạm vi chi nhánh.
 - Chưa có CI chạy restore/build/test trên máy độc lập.
-- Web đã có authentication state, khôi phục sau F5 và logout phía Web, nhưng chưa tự động gắn token cho các API khác.
+- Web đã có authentication state, khôi phục sau F5, logout và `AuthorizedApiService` gắn Bearer token trong đúng circuit. Chưa có xử lý lỗi tập trung khi API/Web mất kết nối và chưa có automated test được lưu trong source.
 - Chưa có xử lý lỗi production tập trung, health check, log có mã truy vết, cấu hình cloud database hoặc bằng chứng deploy public.

@@ -1,30 +1,24 @@
-# Current Blazor Server shape
+# Current BranchFlow Blazor shape
 
-The web project uses the classic server-side hosting model:
+BranchFlow uses .NET 10 Blazor Web App with Interactive Server support registered by AddRazorComponents/AddInteractiveServerComponents and MapRazorComponents/AddInteractiveServerRenderMode.
 
-```csharp
-builder.Services.AddRazorPages();
-builder.Services.AddServerSideBlazor();
+## Files to inspect
 
-app.UseStaticFiles();
-app.UseRouting();
-app.MapBlazorHub();
-app.MapFallbackToPage("/_Host");
-```
+- `TuanKietBranchFlow.Web/Program.cs`: hosting, DI and middleware.
+- `Components/App.razor`: document root, styles and blazor.web.js.
+- `Components/Routes.razor`: router and default layout.
+- `Components/_Imports.razor`: component imports.
+- `Components/Layout`: shared layout and navigation.
+- `Components/Pages`: routed pages; inspect per-page/global render modes before adding handlers.
 
-Keep these roles intact:
+Do not add `_Host.cshtml`, classic AddServerSideBlazor or a separate MapBlazorHub pipeline. BE_MARKET is only a reference for learning, not this app's hosting template.
 
-- `Pages/_Host.cshtml`: server host page and static asset links.
-- `App.razor`: router and route fallback.
-- `_Imports.razor`: shared Razor namespaces and component imports.
-- `Shared/HomePageMaster.razor`: layout deriving from `LayoutComponentBase`.
-- `Pages/*.razor`: routed pages.
+## API integration and deployment
 
-Do not introduce `AddRazorComponents`, interactive render modes, `Routes.razor`, or per-component render modes unless the user explicitly requests migration.
+Build API calls in the Web layer, reuse appropriate DTOs and preserve per-user state. Teach auth storage choices and server-side rendering lifecycle before copying old LocalStorage code. Do not use a singleton token/client state that could mix users.
 
-For Bootstrap-only tasks:
+Trace browser -> Web host and Web host -> API host separately. Configure API base URL per environment. Show loading, empty, invalid input, 401/403 and recoverable API errors. Verify F5, logout and reconnect in interactive flows.
 
-- Use `container`, grid, flex, spacing, sizing, display, border, color, and responsive utility classes.
-- Use Bootstrap Icons only when its stylesheet is already included.
-- Avoid custom CSS, JavaScript, and C# event handlers.
+For public hosting, check runtime support, HTTPS, WebSockets/session affinity requirements for the chosen host, and safe error display. Adding Interactive Server support alone does not make a static page interactive.
 
+For Bootstrap-only tasks, use grid/flex/utilities and semantic accessible HTML. Use Bootstrap Icons only if its stylesheet is present; do not add custom CSS, JavaScript or C# handlers under that constraint.

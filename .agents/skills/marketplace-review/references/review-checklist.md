@@ -24,6 +24,8 @@
 - Authentication and authorization middleware are ordered correctly.
 - User-controlled data is validated before persistence or URL generation.
 - Error responses do not expose stack traces or sensitive internals.
+- OWNER remains read-only; ADMIN branch scope is checked server-side. A valid JWT alone does not prove an account remains active in the database.
+- Employee date transitions preserve history and do not expose another branch's data through an unscoped query.
 
 ## API behavior
 
@@ -33,7 +35,7 @@
 
 ## Blazor
 
-- Hosting configuration matches classic Blazor Server.
+- Hosting configuration matches BranchFlow .NET 10 Blazor Web App with Interactive Server; no classic _Host.cshtml pipeline.
 - Routed pages, layouts, and shared components have distinct roles.
 - Bootstrap layout remains responsive.
 - Forms and interactive-looking controls have appropriate behavior or are clearly static.
@@ -41,6 +43,6 @@
 ## Verification
 
 - Build affected projects.
-- Identify runtime services not exercised by compilation, especially SQL Server and Redis.
+- Identify runtime services not exercised by compilation, especially SQL Server and HTTP API connectivity. Do not assume Redis is part of this project.
 - Note missing automated tests when behavior is non-trivial.
-
+- Before public release, check environment secrets, safe logs/errors, backup/restore and release verification. Do not turn a scoped code review into an unsolicited deployment.
