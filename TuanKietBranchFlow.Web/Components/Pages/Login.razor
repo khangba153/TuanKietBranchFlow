@@ -140,22 +140,10 @@
 
             // Lưu token vào LocalStorage của trình duyệt
             await LocalStorage.SetItemAsync("accessToken", response.AccessToken);
-
-            // Đọc lại token vừa lưu trong LocalStorage
-            string? savedAccessToken =
-                await LocalStorage.GetItemAsync<string>("accessToken");
-
-            // Không gọi endpoint bảo vệ nếu đọc token thất bại
-            if (string.IsNullOrWhiteSpace(savedAccessToken))
-            {
-                _errorMessage = "Không thể đọc trạng thái đăng nhập.";
-
-                return;
-            }
             
-            // Dùng token gọi endpoint được bảo vệ
+            // AuthorizedApiService sẽ tự đọc và gắn token
             CurrentUserDTO? currentUser =
-                await AuthApiService.GetCurrentUserAsync(savedAccessToken);
+                await AuthApiService.GetCurrentUserAsync();
 
             // Middleware hoặc API từ chối token
             if (currentUser == null)

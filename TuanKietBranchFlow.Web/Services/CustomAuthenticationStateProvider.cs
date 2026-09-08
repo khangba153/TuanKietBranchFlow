@@ -65,25 +65,31 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider
     // Khôi phục người dùng từ access token sau khi tải lại trang
     public async Task RestoreAuthenticationStateAsync()
     {
+        // Không khôi phục lại nếu người dùng đã đăng nhập trong circuit hiện tại
+        if (_currentUser.Identity?.IsAuthenticated == true)
+        {
+            return;
+        }
+
         // Đọc access token đang lưu trong trình duyệt
         string? accessToken =
             await _localStorage.GetItemAsync<string>("accessToken");
-
+        
         // Không có token thì giữ trạng thái chưa đăng nhập
         if (string.IsNullOrWhiteSpace(accessToken))
         {
             return;
         }
 
-        // Gửi token đến API để xác nhận và lấy thông tin người dùng
+        // Handler sẽ tự đọc token và gắn Authorization header
         CurrentUserDTO? currentUser =
-            await _authApiService.GetCurrentUserAsync(accessToken);
-
+            await _authApiService.GetCurrentUserAsync();
+        
         // Token hết hạn hoặc không hợp lệ thì xóa khỏi trình duyệt
         if (currentUser == null)
         {
             await _localStorage.RemoveItemAsync("accessToken");
-    
+
             return;
         }
 

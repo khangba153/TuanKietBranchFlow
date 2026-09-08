@@ -40,8 +40,10 @@ builder.Services.AddHttpClient(
     {
         client.BaseAddress = new Uri(apiBaseUrl);
     });
-// Đăng ký handler tự động gắn access token
-builder.Services.AddScoped<ApiAuthorizationHandler>();
+
+// Service gửi request có Bearer token trong Blazor circuit
+builder.Services.AddScoped<AuthorizedApiService>();
+
 // Đăng ký service gọi các API xác thực
 builder.Services.AddScoped<AuthApiService>();
 
