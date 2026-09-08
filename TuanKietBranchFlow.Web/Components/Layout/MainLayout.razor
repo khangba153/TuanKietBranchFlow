@@ -1,4 +1,8 @@
-﻿@inherits LayoutComponentBase
+﻿@using TuanKietBranchFlow.Web.Services
+@inject CustomAuthenticationStateProvider UserStateProvider
+@inject NavigationManager NavigationManager
+
+@inherits LayoutComponentBase
 
 <div class="page">
     <div class="sidebar">
@@ -7,7 +11,31 @@
 
     <main>
         <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+            <AuthorizeView>
+                <Authorized>
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="text-secondary">
+                            Xin chào,
+                            <strong>
+                                @context.User.Identity?.Name
+                            </strong>
+                        </span>
+
+                        <button type="button"
+                                class="btn btn-outline-danger btn-sm"
+                                @onclick="HandleLogoutAsync">
+                            Đăng xuất
+                        </button>
+                    </div>
+                </Authorized>
+
+                <NotAuthorized>
+                    <NavLink class="btn btn-outline-primary btn-sm"
+                            href="/login">
+                        Đăng nhập
+                    </NavLink>
+                </NotAuthorized>
+            </AuthorizeView>
         </div>
 
         <article class="content px-4">
@@ -21,3 +49,25 @@
     <a href="." class="reload">Reload</a>
     <span class="dismiss">🗙</span>
 </div>
+
+@code{
+    // Khôi phục trạng thái đăng nhập sau khi trình duyệt đã render
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Chỉ đọc LocalStorage một lần khi layout vừa được tạo
+        if (!firstRender){
+            return;
+        }
+
+        await UserStateProvider.RestoreAuthenticationStateAsync();
+    }
+
+    private async Task HandleLogoutAsync()
+    {
+        // Xóa token và đưa AuthenticatioState về anonymous
+        await UserStateProvider.LogoutAsync();
+
+        // Chuyển người dùng về trang đăng nhập
+        NavigationManager.NavigateTo("/login");
+    }
+}

@@ -1,0 +1,193 @@
+
+
+@page "/login"
+@layout AuthLayout
+
+@using TuanKietBranchFlow.Application.DTOs.Auth
+@using TuanKietBranchFlow.Web.Services
+@using Microsoft.JSInterop
+
+@inject AuthApiService AuthApiService
+@inject ILocalStorageService LocalStorage
+@inject CustomAuthenticationStateProvider UserStateProvider
+@inject NavigationManager NavigationManager
+
+
+<PageTitle>Đăng nhập</PageTitle>
+
+<div class="row justify-content-center">
+    <div class="col-12 col-md-7 col-lg-5">
+        <div class="card border-0 shadow">
+            <div class="card-body p-4 p-md-5">
+                <div class="text-center mb-4">
+                    <h1 class="h3 mb-2">
+                        BranchFlow
+                    </h1>
+
+                    <p class="text-secondary mb-0">
+                        Hệ thống quản lý hoạt động chi nhánh
+                    </p>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(_errorMessage))
+                {
+                    <div class="alert alert-danger"
+                        role="alert">
+                        @_errorMessage
+                    </div>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(_successMessage))
+                {
+                    <div class="alert alert-success"
+                        role="alert">
+                        @_successMessage
+                    </div>
+                }
+
+                <EditForm Model="_loginRequest"
+                        OnValidSubmit="HandleLoginAsync"
+                        FormName="login-form">
+
+                    @* đọc [Required], [StringLength] trong LoginRequestDTO *@
+                    <DataAnnotationsValidator />
+
+                    <div class="mb-3">
+                        <label for="username"
+                            class="form-label">
+                            Tên đăng nhập
+                        </label>
+
+                        <InputText id="username"
+                                class="form-control"
+                                placeholder="Nhập tên đăng nhập"
+                                autocomplete="username"
+                                @bind-Value="_loginRequest.Username" />
+
+                        <ValidationMessage For="@(() => _loginRequest.Username)" />
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="password"
+                            class="form-label">
+                            Mật khẩu
+                        </label>
+
+                        <InputText id="password"
+                                type="password"
+                                class="form-control"
+                                placeholder="Nhập mật khẩu"
+                                autocomplete="current-password"
+                                @bind-Value="_loginRequest.Password" />
+
+                        <ValidationMessage For="@(() => _loginRequest.Password)" />
+                    </div>
+
+                    <button type="submit"
+                            class="btn btn-primary w-100"
+                            disabled="@_isSubmitting">
+
+                        @if (_isSubmitting)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"
+                                aria-hidden="true">
+                            </span>
+
+                            <span>Đang đăng nhập...</span>
+                        }
+                        else
+                        {
+                            <span>Đăng nhập</span>
+                        }
+                    </button>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code{
+    // Chứa Username và Password người dùng nhập
+    private LoginRequestDTO _loginRequest = new LoginRequestDTO();
+
+    // Cho biết request đăng nhập đang được xử lý
+    private bool _isSubmitting;
+
+    // Chứa thông báo để giao diện hiện thị sau này
+    private string? _errorMessage;
+    private string? _successMessage;
+
+    // Gửi thông tin đăng nhập xuống AuthApiService
+    private async Task HandleLoginAsync()
+    {
+        // Đánh dấu bắt đầu gọi API và thông báo cũ
+        _isSubmitting = true;
+        _errorMessage = null;
+        _successMessage = null;
+
+        try{
+            // Gửi Username và Password đến API đăng nhập
+            LoginResponseDTO? response =
+                await AuthApiService.LoginAsync(_loginRequest);
+            
+            // Không có token
+            if (response == null || string.IsNullOrWhiteSpace(response.AccessToken))
+            {
+                _errorMessage = "Tên đăng nhập hoặc mật khẩu không đúng";
+
+                return;
+            }
+
+            // Lưu token vào LocalStorage của trình duyệt
+            await LocalStorage.SetItemAsync("accessToken", response.AccessToken);
+
+            // Đọc lại token vừa lưu trong LocalStorage
+            string? savedAccessToken =
+                await LocalStorage.GetItemAsync<string>("accessToken");
+
+            // Không gọi endpoint bảo vệ nếu đọc token thất bại
+            if (string.IsNullOrWhiteSpace(savedAccessToken))
+            {
+                _errorMessage = "Không thể đọc trạng thái đăng nhập.";
+
+                return;
+            }
+            
+            // Dùng token gọi endpoint được bảo vệ
+            CurrentUserDTO? currentUser =
+                await AuthApiService.GetCurrentUserAsync(savedAccessToken);
+
+            // Middleware hoặc API từ chối token
+            if (currentUser == null)
+            {
+                _errorMessage = "Không thể xác nhận người dùng đăng nhập.";
+
+                return;
+            }
+
+            // Cập nhật trạng thái đăng nhập dùng chung cho giao diện
+            UserStateProvider.MarkUserAsAuthenticated(currentUser);
+
+            // Chuyển hướng đến trang chủ trong cùng Blazor circuit
+            NavigationManager.NavigateTo("/");
+            
+            _successMessage = 
+                $"Đăng nhập thành công. Xin chào {currentUser.Username} - {currentUser.Role}.";
+        }
+        catch(HttpRequestException)
+        {
+            // Lỗi này xảy ra khi Web không kết nối được API
+            _errorMessage = "Không thể kết nối đến API. Vui lòng thử lại.";
+        }
+        catch(JSException)
+        {
+            // Xảy ra khi trình duyệt không lưu token
+            _errorMessage = "Không thể lưu trạng thái đăng nhập";
+        }
+        finally{
+            // Luôn mở lại nút và xóa mật khẩu sau request
+            _isSubmitting = false;
+            _loginRequest.Password = string.Empty;
+        }
+    }
+}
