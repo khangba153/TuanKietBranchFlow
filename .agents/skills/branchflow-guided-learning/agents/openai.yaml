@@ -1,4 +1,0 @@
-interface:
-  display_name: "BranchFlow Guided Learning"
-  short_description: "Học từng bước, kiểm tra hiểu bài và deploy BranchFlow"
-  default_prompt: "Use $branchflow-guided-learning to review my answers first, read the current checkpoint, and guide one next step toward a working BranchFlow portfolio."

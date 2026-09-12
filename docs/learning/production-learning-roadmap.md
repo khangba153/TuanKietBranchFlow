@@ -1,6 +1,6 @@
 # BranchFlow: lộ trình học, hoàn thiện và đưa lên production
 
-Cập nhật: 2026-09-05. Đây là kế hoạch đề xuất từ mục tiêu người học, không phải báo cáo đã triển khai. Nghiệp vụ chuẩn vẫn ở [PROJECT_CONTEXT](../../PROJECT_CONTEXT.md) và [business requirements](../context/business-requirements-v1.5.md).
+Cập nhật: 2026-09-05. Đây là kế hoạch đề xuất từ mục tiêu người học, không phải báo cáo đã triển khai. Nghiệp vụ chuẩn được mô tả trong [business requirements](../context/business-requirements-v1.5.md) và [phân tích database](../context/database-schema-analysis.md).
 
 ## 1. Hiểu đúng yêu cầu
 

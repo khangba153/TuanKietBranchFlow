@@ -1,5 +1,0 @@
-interface:
-  display_name: "BranchFlow Blazor Bootstrap"
-  short_description: "Build BranchFlow Interactive Server UI with Bootstrap"
-  brand_color: "#D9364B"
-  default_prompt: "Use $marketplace-blazor-bootstrap to build this Blazor UI with Bootstrap."

@@ -13,7 +13,7 @@ Roadmap này được đối chiếu từ:
 
 - nghiệp vụ trong `business-requirements-v1.5.md`;
 - 30 bảng của `BranchFlowDB`;
-- 71 ảnh trong `PrototypeUI`: ADMIN 32, EMPLOYEE 19 và OWNER 20;
+- 71 ảnh trong `docs/prototype-ui`: ADMIN 32, EMPLOYEE 19 và OWNER 20;
 - ba vai trò `OWNER`, `ADMIN`, `EMPLOYEE` và phạm vi chi nhánh.
 
 Đây là kế hoạch ban đầu, chưa phải hợp đồng API đã khóa. Khi triển khai từng

@@ -483,3 +483,11 @@ $RECYCLE.BIN/
 
 # Local temporary artifacts
 tmp/
+.playwright-cli/
+
+# Local AI assistant instructions and learning context
+.agents/
+.codex/
+AGENTS.md
+AGENTS-*.md
+PROJECT_CONTEXT.md
