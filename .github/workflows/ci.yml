@@ -1,0 +1,34 @@
+name: BranchFlow CI
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Restore and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Lấy source từ repository
+        uses: actions/checkout@v7
+
+      - name: Cài đặt .NET SDK
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: "10.0.300"
+
+      - name: Restore NuGet packages
+        run: dotnet restore TuanKietBranchFlow.slnx
+
+      - name: Build solution ở chế độ Release
+        run: dotnet build TuanKietBranchFlow.slnx --configuration Release --no-restore
