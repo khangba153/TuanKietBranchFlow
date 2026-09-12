@@ -1,0 +1,360 @@
+@page "/employees/{EmployeeId:int}"
+
+@using Microsoft.JSInterop
+@using TuanKietBranchFlow.Application.DTOs.Employees
+@using TuanKietBranchFlow.Web.Services
+
+@inject EmployeeApiService EmployeeApiService
+
+<PageTitle>
+    @(_employee?.FullName ?? "Hồ sơ nhân viên")
+</PageTitle>
+
+@if (_isLoading)
+{
+    <div class="text-center py-5">
+        <span class="spinner-border spinner-border-sm me-2" aria-hidden="true">
+        </span>
+
+        <span class="text-secondary">
+            Đang tải hồ sơ nhân viên...
+        </span>
+    </div>
+}
+else if (!string.IsNullOrWhiteSpace(_errorMessage))
+{
+    <div class="alert alert-danger" role="alert">
+        <p class="mb-3">
+            @_errorMessage
+        </p>
+
+        <button type="button" class="btn btn-outline-danger btn-sm" @onclick="LoadEmployeeAsync">
+            Thử lại
+        </button>
+    </div>
+}
+else if (_employee == null)
+{
+    <div class="alert alert-warning" role="alert">
+        Không tìm thấy hồ sơ nhân viên.
+    </div>
+}
+else
+{
+    <div class="container-fluid px-0">
+        <div class="d-flex flex-column flex-md-row
+            justify-content-between align-items-md-center
+            gap-3 mb-4">
+
+            <div>
+                <p class="text-success fw-semibold small mb-1">
+                    HỒ SƠ NHÂN SỰ
+                </p>
+
+                <h1 class="h3 mb-2">
+                    @_employee.FullName
+                </h1>
+
+                <p class="text-secondary mb-0">
+                    Thông tin cá nhân và lịch sử phân công chi nhánh.
+                </p>
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge
+                    @(_employee.IsActive
+                            ? "text-bg-success"
+                            : "text-bg-secondary")">
+
+                    @(_employee.IsActive
+                        ? "Đang làm việc"
+                        : "Đã nghỉ việc")
+                </span>
+
+                <a class="btn btn-outline-secondary btn-sm" href="@($"/employees?branchId={BranchId}")">
+                    Quay lại
+                </a>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-12 col-lg-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body text-center p-4">
+                        @if (!string.IsNullOrWhiteSpace(
+                            _employee.AvatarUrl))
+                        {
+                            <img src="@_employee.AvatarUrl" alt="@_employee.FullName" class="rounded-circle mb-3" style="width: 96px;
+                            height: 96px;
+                            object-fit: cover;" />
+                        }
+                        else
+                        {
+                            <div class="bg-success-subtle text-success
+                                rounded-circle d-inline-flex
+                                align-items-center
+                                justify-content-center
+                                fw-bold fs-3 mb-3" style="width: 96px; height: 96px;">
+                                NV
+                            </div>
+                        }
+
+                        <h2 class="h5 mb-1">
+                            @_employee.FullName
+                        </h2>
+
+                        <p class="text-secondary mb-2">
+                            @_employee.EmployeeCode
+                        </p>
+
+                        <p class="mb-0">
+                            @(_employee.Position ?? "Chưa cập nhật")
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-8">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white py-3">
+                        <h2 class="h5 mb-0">
+                            Thông tin nhân viên
+                        </h2>
+                    </div>
+
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-12 col-md-6">
+                                <label class="form-label">
+                                    Mã nhân viên
+                                </label>
+
+                                <input class="form-control" value="@_employee.EmployeeCode" readonly />
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <label class="form-label">
+                                    Họ và tên
+                                </label>
+
+                                <input class="form-control" value="@_employee.FullName" readonly />
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <label class="form-label">
+                                    Ngày sinh
+                                </label>
+
+                                <input class="form-control" value="@(_employee.DateOfBirth?
+                                    .ToString("dd/MM/yyyy")
+                                    ?? "Chưa cập nhật")" readonly />
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <label class="form-label">
+                                    Ngày vào làm
+                                </label>
+
+                                <input class="form-control" value="@(_employee.HireDate.ToString("dd/MM/yyyy"))" readonly />
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <label class="form-label">
+                                    Chức vụ
+                                </label>
+
+                                <input class="form-control" value="@(_employee.Position
+                                    ?? "Chưa cập nhật")" readonly />
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <label class="form-label">
+                                    Lương cơ bản
+                                </label>
+
+                                <div class="input-group">
+                                    <input class="form-control" value="@(_employee.BaseSalary.ToString("N0"))"readonly />
+                                    <span class="input-group-text">
+                                        đ
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <label class="form-label">
+                                    Số điện thoại
+                                </label>
+
+                                <input class="form-control" value="@(_employee.Phone
+                                    ?? "Chưa cập nhật")" readonly />
+                            </div>
+
+                            <div class="col-12 col-md-6"> 
+                                <label class="form-label">
+                                    Email
+                                </label>
+
+                                <input class="form-control" value="@(_employee.Email
+                                    ?? "Chưa cập nhật")" readonly />
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label">
+                                    Địa chỉ
+                                </label>
+
+                                <input class="form-control" value="@(_employee.Address
+                                    ?? "Chưa cập nhật")" readonly />
+                            </div>
+
+                            @if (!_employee.IsActive)
+                            {
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label">
+                                        Ngày bắt đầu nghỉ
+                                    </label>
+
+                                    <input class="form-control" value="@(_employee.LeaveDate?
+                                        .ToString("dd/MM/yyyy")
+                                        ?? "Chưa cập nhật")"readonly />
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white py-3">
+                        <h2 class="h5 mb-0">
+                            Lịch sử chi nhánh
+                        </h2>
+                    </div>
+
+                    @if (_employee.BranchHistory.Count == 0)
+                    {
+                        <div class="card-body">
+                            <div class="alert alert-info mb-0">
+                                Nhân viên chưa có lịch sử chi nhánh.
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Chi nhánh</th>
+                                        <th>Ngày bắt đầu</th>
+                                        <th>Ngày kết thúc</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    @foreach (
+                                        EmployeeBranchHistoryDTO history
+                                        in _employee.BranchHistory)
+                                    {
+                                        <tr>
+                                            <td>
+                                                @history.BranchName
+                                            </td>
+
+                                            <td>
+                                                @(history.ActiveFrom.ToString("dd/MM/yyyy"))
+                                            </td>
+
+                                            <td>
+                                                @(history.ActiveTo?
+                                                    .ToString("dd/MM/yyyy")
+                                                    ?? "Hiện tại")
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    // Nhận employeeId từ route: /employees/5
+    [Parameter]
+    public int EmployeeId { get; set; }
+
+    // Nhận branchId từ query: ?branchId=1
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "branchId")]
+    public int BranchId { get; set; }
+
+    // Chứa hồ sơ nhân viên nhận từ API
+    private EmployeeDetailDTO? _employee;
+
+    // Quản lý trạng thái tải và lỗi
+    private bool _isLoading = true;
+    private string? _errorMessage;
+
+    // LocalStorage chỉ sẵn sàng sau khi giao diện render lần đầu
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        await LoadEmployeeAsync();
+
+        // OnAfterRenderAsync không tự render lại sau khi tải xong
+        StateHasChanged();
+    }
+
+    // Gọi API lấy hồ sơ nhân viên
+    private async Task LoadEmployeeAsync()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+
+        try
+        {
+            // Không gọi API nếu tham số URL không hợp lệ
+            if (EmployeeId <= 0 || BranchId <= 0)
+            {
+                _errorMessage = "EmployeeId và BranchId phải lớn hơn 0.";
+
+                return;
+            }
+
+            EmployeeDetailDTO? employee =
+                await EmployeeApiService.GetEmployeeDetailAsync(
+                    EmployeeId, BranchId);
+
+            // Null nghĩa là API trả lỗi hoặc không tìm thấy dữ liệu
+            if (employee == null)
+            {
+                _errorMessage = "Không thể tải hồ sơ nhân viên.";
+
+                return;
+            }
+
+            _employee = employee;
+        }
+        catch (HttpRequestException)
+        {
+            _errorMessage = "Không thể kết nối đến API";
+        }
+        catch (JSException)
+        {
+            _errorMessage = "Không thể đọc token đăng nhập.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}

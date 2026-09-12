@@ -4,7 +4,7 @@ Cập nhật: 2026-09-07. Đây là ghi chú tiếp nối, không thay thế vi�
 
 ## Chủ đề hiện tại
 
-Đang nối giao diện Blazor vào vertical slice xác thực. Login, authentication state, khôi phục sau F5, logout và service gắn Bearer token trong Blazor circuit đã chạy ổn định; bước kế tiếp là dùng trạng thái role cho menu hoặc nối API nghiệp vụ đầu tiên.
+Vertical slice nhân viên đầu tiên đã chạy xuyên suốt trên local: đăng nhập, chọn chi nhánh, danh sách, chi tiết và tạo nhân viên. Đang chuẩn bị đóng Git checkpoint trước khi học CI nhỏ và deploy thử sớm.
 
 ## Mốc vừa hoàn thành
 
@@ -31,6 +31,12 @@ Cập nhật: 2026-09-07. Đây là ghi chú tiếp nối, không thay thế vi�
 - Đã thay handler bằng `AuthorizedApiService` chạy trong Blazor circuit, gỡ `ApiAuthorizationHandler` và client pipeline lỗi. Web build đạt 0 warning, 0 error.
 - Agent đã chạy browser test thật bằng Playwright trên bản build mới: login hợp lệ chuyển về trang chủ trong khoảng 292 ms, F5 vẫn hiện `admin01`, console không có lỗi và logout xóa sạch LocalStorage. Đây là test tự động hóa local cho flow UI, chưa phải test source được commit vào repository.
 - Người học đã restart Web chính ở cổng `5032` và báo test thủ công đúng dự đoán: login nhanh, restore sau F5 và logout đều hoạt động với cấu hình DI mới.
+- Trang danh sách nhân viên đã nhận `branchId`, tìm theo từ khóa và lọc đủ ba trạng thái. Người học báo đã test thủ công thành công sau khi giao diện dùng chuỗi cho giá trị `<select>` rồi chuyển thành `bool?` trước khi gọi API.
+- Trang hồ sơ nhân viên đã đi hết flow từ nút Hồ sơ ở danh sách đến `GET /api/employees/{employeeId}?branchId=...`. Agent đã kiểm tra trên trình duyệt local: hồ sơ nhân viên nghỉ hiển thị đầy đủ thông tin, ngày nghỉ và lịch sử chi nhánh; Web build đạt 0 warning, 0 error.
+- Người học báo đã test thủ công thêm hồ sơ nhân viên đang làm và ID không tồn tại, kết quả đúng dự đoán. Vertical slice đọc nhân viên đã hoàn thành ở mức local/manual, chưa có automated test lưu trong source.
+- API tạo nhân viên đã chặn `HireDate` trong tương lai tại `EmployeeService` và ánh xạ thành HTTP 400 tại `EmployeesController`; solution build 0 warning, 0 error. Người học báo đã test thủ công Swagger: ngày tương lai trả 400, ngày hợp lệ tạo thành công.
+- `EmployeeCreate.razor` đã dùng chuỗi `dd/MM/yyyy`, `DateOnly.TryParseExact` và kiểm tra ngày tương lai trước khi gọi API; Web build 0 warning, 0 error. Người học báo đã test thủ công đủ ngày hợp lệ, sai định dạng, ngày không tồn tại, ngày tương lai và sửa lại sau lỗi, kết quả đúng dự đoán.
+- Web đã có `EmployeeCreateApiResult`; `EmployeeApiService` đọc `ProblemDetails`, status code và dữ liệu thành công thay vì đổi mọi lỗi thành `null`. Web build 0 warning, 0 error. Người học báo đã test thủ công các lỗi 401/403/404/409 và trường hợp tạo thành công, kết quả đúng dự đoán.
 
 ## Kiến thức người học đã trình bày đạt
 
@@ -51,7 +57,7 @@ Cập nhật: 2026-09-07. Đây là ghi chú tiếp nối, không thay thế vi�
 
 ## Bước kế tiếp duy nhất
 
-Chốt bước UI kế tiếp giữa hai mục liên quan: dùng role trong `AuthorizeView` cho menu có trang thật, hoặc tạo Web API service đầu tiên dùng `AuthorizedApiService` để gọi endpoint nghiệp vụ. Không thêm liên kết đến page chưa tồn tại.
+Rà soát và commit Git checkpoint cho vertical slice nhân viên đang chạy. Sau checkpoint sạch, bắt đầu CI tối thiểu trên GitHub Actions: checkout, cài đúng .NET SDK, restore và build Release; chưa thêm CD/deploy tự động.
 
 ## Việc cần trước khi public production
 

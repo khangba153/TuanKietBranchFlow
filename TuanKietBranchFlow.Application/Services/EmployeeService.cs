@@ -253,6 +253,15 @@ public class EmployeeService : IEmployeeService
     {
         DateOnly currentDate = DateOnly.FromDateTime(DateTime.Today);
 
+        // MVP chưa hỗ trợ nhân viên bắt đầu làm trong tương lai
+        if (request.HireDate > currentDate)
+        {
+            return new EmployeeCreateResultDTO
+            {
+                IsHireDateInFuture = true
+            };
+        }
+
         // Bước 1: kiểm tra chi nhánh tồn tại và chưa bị xóa
         Branch? branch = await _branchRepository.GetNotDeletedByIdAsync(request.BranchId);
 

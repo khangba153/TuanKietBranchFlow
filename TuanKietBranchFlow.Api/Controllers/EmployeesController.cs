@@ -199,6 +199,15 @@ public class EmployeesController : ControllerBase
         EmployeeCreateResultDTO result =
             await _employeeService.CreateEmployeeAsync(currentAdminId, request);
 
+        // Ngày vào làm trong tương lai không hợp lệ với MVP hiện tại
+        if (result.IsHireDateInFuture)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Ngày vào làm không hợp lệ",
+                detail: "Ngày vào làm không được lớn hơn ngày hiện tại.");
+        }
+
         if (!result.IsBranchFound)
         {
             return Problem(

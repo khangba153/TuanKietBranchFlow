@@ -16,6 +16,9 @@ public class EmployeeCreateResultDTO
     public bool IsEmailDuplicated { get; set; }
     public bool IsEmployeeCodeDuplicated { get; set; }
 
+    // Cho biết ngày vào làm nằm trong tương lai
+    public bool IsHireDateInFuture { get; set; }
+
     // Chứa nhân viên vừa tạo khi tất cả điều kiện hợp lệ
     public EmployeeDetailDTO? Employee { get; set; }
 }

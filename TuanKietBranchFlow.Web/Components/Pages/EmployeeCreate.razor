@@ -1,0 +1,370 @@
+@page "/employees/create"
+
+@using System.Globalization
+@using TuanKietBranchFlow.Application.DTOs.Employees
+@using TuanKietBranchFlow.Web.Services
+@using TuanKietBranchFlow.Web.Models
+
+@inject EmployeeApiService EmployeeApiService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Thêm nhân viên</PageTitle>
+
+<div class="container-fluid px-0">
+    <div class="mb-4">
+        <p class="text-success fw-semibold small mb-1">
+            NHÂN SỰ
+        </p>
+
+        <h1 class="h3 mb-2">
+            Thêm nhân viên
+        </h1>
+
+        <p class="text-secondary mb-0">
+            Tạo tài khoản, hồ sơ và phân công chi nhánh cho nhân viên.
+        </p>
+    </div>
+
+    <div class="alert alert-info" role="status">
+        Nhân viên sẽ được phân công vào chi nhánh ADMIN đang chọn.
+    </div>
+    @if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            @_errorMessage
+        </div>
+    }
+    <EditForm Model="_createModel" OnValidSubmit="CreateEmployeeAsync" FormName="create-employee">
+
+        <DataAnnotationsValidator />
+
+        <ValidationSummary class="alert alert-danger" />
+
+        <div class="row g-4">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white py-3">
+                        <h2 class="h5 mb-0">
+                            Tài khoản đăng nhập
+                        </h2>
+                    </div>
+
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-12 col-md-6">
+                                <label for="employee-username" class="form-label">
+                                    Tên đăng nhập
+                                </label>
+
+                                <InputText id="employee-username" class="form-control" placeholder="Nhập tên đăng nhập"
+                                           @bind-Value="_createModel.Username" />
+
+                                <ValidationMessage For="@(() => _createModel.Username)" class="text-danger small" />
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <label for="employee-password" class="form-label">
+                                    Mật khẩu
+                                </label>
+
+                                <InputText id="employee-password" type="password" class="form-control"
+                                           placeholder="Nhập mật khẩu" autocomplete="new-password"
+                                           @bind-Value="_createModel.Password" />
+
+                                <ValidationMessage For="@(() => _createModel.Password)" class="text-danger small" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white py-3">
+                        <h2 class="h5 mb-0">
+                            Thông tin cá nhân
+                        </h2>
+                    </div>
+
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-12 col-md-6">
+                                <label for="employee-fullname" class="form-label">
+                                    Họ và tên
+                                </label>
+
+                                <InputText id="employee-fullname" class="form-control" placeholder="Nhập họ và tên"
+                                           @bind-Value="_createModel.FullName" />
+
+                                <ValidationMessage For="@(() => _createModel.FullName)" class="text-danger small" />
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <label for="employee-birthday" class="form-label">
+                                    Ngày sinh
+                                </label>
+
+                                <InputDate id="employee-birthday" TValue="DateOnly?" class="form-control"
+                                           @bind-Value="_createModel.DateOfBirth" />
+
+                                <ValidationMessage For="@(() => _createModel.DateOfBirth)" class="text-danger small" />
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <label for="employee-email" class="form-label">
+                                    Email
+                                </label>
+
+                                <InputText id="employee-email" type="email" class="form-control"
+                                           placeholder="example@branchflow.vn" @bind-Value="_createModel.Email" />
+
+                                <ValidationMessage For="@(() => _createModel.Email)" class="text-danger small" />
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <label for="employee-phone" class="form-label">
+                                    Số điện thoại
+                                </label>
+
+                                <InputText id="employee-phone" type="tel" class="form-control"
+                                           placeholder="Nhập số điện thoại" @bind-Value="_createModel.Phone" />
+
+                                <ValidationMessage For="@(() => _createModel.Phone)" class="text-danger small" />
+                            </div>
+
+                            <div class="col-12">
+                                <label for="employee-address" class="form-label">
+                                    Địa chỉ
+                                </label>
+
+                                <InputText id="employee-address" class="form-control" placeholder="Nhập địa chỉ"
+                                           @bind-Value="_createModel.Address" />
+
+                                <ValidationMessage For="@(() => _createModel.Address)" class="text-danger small" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white py-3">
+                        <h2 class="h5 mb-0">
+                            Thông tin công việc
+                        </h2>
+                    </div>
+
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-12 col-md-6">
+                                <label for="employee-code" class="form-label">
+                                    Mã nhân viên
+                                </label>
+
+                                <InputText id="employee-code" class="form-control" placeholder="Ví dụ: NV0025"
+                                           @bind-Value="_createModel.EmployeeCode" />
+
+                                <ValidationMessage For="@(() => _createModel.EmployeeCode)" class="text-danger small" />
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <label for="employee-hire-date" class="form-label">
+                                    Ngày vào làm
+                                </label>
+
+                                <InputText id="employee-hire-date" class="form-control"
+                                           placeholder="dd/MM/yyyy" maxlength="10"
+                                           autocomplete="off" @bind-Value="_hireDateText" />
+
+                                @if (!string.IsNullOrWhiteSpace(_hireDateError))
+                                {
+                                    <div class="text-danger small">
+                                        @_hireDateError
+                                    </div>
+                                }
+
+                                <div class="form-text">
+                                    Nhập theo định dạng ngày/tháng/năm, ví dụ: 12/09/2026.
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <label for="employee-position" class="form-label">
+                                    Chức vụ
+                                </label>
+
+                                <InputText id="employee-position" class="form-control"
+                                           placeholder="Ví dụ: Nhân viên pha chế" @bind-Value="_createModel.Position" />
+
+                                <ValidationMessage For="@(() => _createModel.Position)" class="text-danger small" />
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <label for="employee-salary" class="form-label">
+                                    Lương cơ bản
+                                </label>
+
+                                <div class="input-group">
+                                    <InputNumber id="employee-salary" TValue="decimal" class="form-control"
+                                                 @bind-Value="_createModel.BaseSalary" />
+
+                                    <span class="input-group-text">
+                                        đ
+                                    </span>
+                                </div>
+                                <ValidationMessage For="@(() => _createModel.BaseSalary)" class="text-danger small" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12">
+                <div class="d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-outline-secondary" disabled="@_isSaving" @onclick="Cancel">
+                        Hủy
+                    </button>
+
+                    <button type="submit" class="btn btn-success" disabled="@_isSaving">
+
+                        @if (_isSaving)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" aria-hidden="true">
+                            </span>
+
+                            <span>Đang tạo...</span>
+                        }
+                        else
+                        {
+                            <span>Tạo nhân viên</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    // Nhận branchId từ URL: /employees/create?branchId=1
+    [SupplyParameterFromQuery(Name = "branchId")]
+    public int BranchId { get; set; }
+
+    // Chứa dữ liệu người dùng nhập trên form
+    private EmployeeCreateDTO _createModel = new EmployeeCreateDTO();
+
+    // Quản lý trạng thái gửi request và thông báo lỗi
+    private bool _isSaving;
+    private string _errorMessage = string.Empty;
+
+    // Giữ ngày người dùng nhập theo định dạng dd/MM/yyyy
+    private string _hireDateText = string.Empty;
+    private string _hireDateError = string.Empty;
+
+    // Gán BranchId từ URL vào DTO trước khi EditForm thực hiện validation
+    protected override void OnParametersSet()
+    {
+        _createModel.BranchId = BranchId;
+    }
+
+    // Gọi API tạo nhân viên sau khi form hợp lệ
+    private async Task CreateEmployeeAsync()
+    {
+        // Tránh gửi nhiều request trong lúc đang tạo
+        if (_isSaving)
+        {
+            return;
+        }
+
+        // Trang phải biết nhân viên được tạo tại chi nhánh nào
+        if (BranchId <= 0)
+        {
+            _errorMessage = "Không xác định được chi nhánh nào đang chọn.";
+            return;
+        }
+
+        _hireDateError = string.Empty;
+
+        // Chuyển chuỗi dd/MM/yyyy thành DateOnly trước khi gọi API
+        bool isHireDateValid = DateOnly.TryParseExact(
+            _hireDateText.Trim(),
+            "dd/MM/yyyy",
+            CultureInfo.InvariantCulture,
+            DateTimeStyles.None,
+            out DateOnly hireDate);
+
+        if (!isHireDateValid)
+        {
+            _hireDateError = "Ngày vào làm phải đúng định dạng dd/MM/yyyy.";
+            return;
+        }
+
+        DateOnly currentDate = DateOnly.FromDateTime(DateTime.Today);
+
+        // Chặn sớm trên giao diện để tránh người dùng không phải chờ API
+        if (hireDate > currentDate)
+        {
+            _hireDateError = "Ngày vào làm không được lớn hơn ngày hiện tại.";
+            return;
+        }
+
+        _createModel.HireDate = hireDate;
+
+        _isSaving = true;
+        _errorMessage = string.Empty;
+
+        try
+        {
+            EmployeeCreateApiResult result =
+                await EmployeeApiService.CreateEmployeeAsync(_createModel);
+
+            if (!result.IsSuccess)
+            {
+                if (!string.IsNullOrWhiteSpace(result.ErrorMessage))
+                {
+                    _errorMessage = result.ErrorMessage;
+                }
+                else
+                {
+                    _errorMessage = $"Không thể tạo nhân viên. HTTP {result.StatusCode}";
+                }
+
+                return;
+            }
+
+            // Bảo vệ trường hợp API báo thành công nhưng không có body
+            if (result.Employee == null)
+            {
+                _errorMessage = "API không trả về thông tin nhân viên vừa tạo.";
+                return;
+            }
+
+            // Thành công thì chuyển sang trạng thái hồ sơ nhân viên vừa tạo
+            NavigationManager.NavigateTo(
+                $"/employees/{result.Employee.Id}?branchId={BranchId}");
+        }
+        catch (HttpRequestException)
+        {
+            _errorMessage = "Không thể kết nối đến API. Vui lòng thử lại.";
+        }
+        finally
+        {
+            // Luôn mở lại nút sau khi request kết thúc
+            _isSaving = false;
+        }
+    }
+
+    // Quay lại danh sách nhân viên của chi nhánh đang chọn
+    private void Cancel()
+    {
+        if (BranchId > 0)
+        {
+            NavigationManager.NavigateTo(
+                $"/employees?branchId={BranchId}");
+            return;
+        }
+
+        NavigationManager.NavigateTo("/branches");
+    }
+}
