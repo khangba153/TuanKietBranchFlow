@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   build:
-    name: Restore and build
+    name: Restore, build and test
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -32,3 +32,6 @@ jobs:
 
       - name: Build solution ở chế độ Release
         run: dotnet build TuanKietBranchFlow.slnx --configuration Release --no-restore
+
+      - name: Chạy automated tests
+        run: dotnet test TuanKietBranchFlow.slnx --configuration Release --no-build
