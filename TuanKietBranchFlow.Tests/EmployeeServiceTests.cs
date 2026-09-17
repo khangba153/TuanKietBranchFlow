@@ -82,4 +82,78 @@ public class EmployeeServiceTests
         userBranchRepositoryMock.VerifyNoOtherCalls();
         passwordHasherMock.VerifyNoOtherCalls();
     }
+
+    // ADMIN không được xem nhân viên ở chi nhánh không có phân công còn hiệu lực
+    [Fact]
+    public async Task GetEmployeesByBranchAsync_AdminWithoutAssignment_DeniesAccessBeforeReadingEmployees()
+    {
+        // Arrange: thay các dependency bằng mock, không kết nối database.
+        Mock<IEmployeeRepository> employeeRepositoryMock =
+            new Mock<IEmployeeRepository>();
+        Mock<IBranchRepository> branchRepositoryMock =
+            new Mock<IBranchRepository>();
+        Mock<IUserRepository> userRepositoryMock =
+            new Mock<IUserRepository>();
+        Mock<IRoleRepository> roleRepositoryMock =
+            new Mock<IRoleRepository>();
+        Mock<IUserBranchRepository> userBranchRepositoryMock =
+            new Mock<IUserBranchRepository>();
+        Mock<IPasswordHasher<AppUser>> passwordHasherMock =
+            new Mock<IPasswordHasher<AppUser>>();
+        Mock<IUnitOfWork> unitOfWorkMock =
+            new Mock<IUnitOfWork>();
+
+        EmployeeService employeeService = new EmployeeService(
+            employeeRepositoryMock.Object,
+            branchRepositoryMock.Object,
+            userRepositoryMock.Object,
+            roleRepositoryMock.Object,
+            userBranchRepositoryMock.Object,
+            passwordHasherMock.Object,
+            unitOfWorkMock.Object);
+
+        int currentAdminId = 1;
+        int branchId = 2;
+
+        Branch branch = new Branch
+        {
+            Id = branchId,
+            Code = "BRANCH_TEST",
+            Name = "Chi nhánh kiểm thử",
+            Address = "Địa chỉ kiểm thử",
+            IsActive = true,
+            Deleted = false
+        };
+
+        // Chi nhánh tồn tại, nhưng ADMIN không được phân công tại đó.
+        branchRepositoryMock
+            .Setup(repository => repository.GetNotDeletedByIdAsync(branchId))
+            .ReturnsAsync(branch);
+
+        branchRepositoryMock
+            .Setup(repository => repository.HasActiveAssignmentAsync(
+                currentAdminId,
+                branchId,
+                It.IsAny<DateOnly>()))
+            .ReturnsAsync(false);
+
+        // Act: gọi method thật của Service
+        EmployeeListResultDTO result =
+            await employeeService.GetEmployeesByBranchAsync(
+                currentAdminId, "ADMIN", branchId, "", null);
+
+        // Assert: từ chối quyền và không trả dữ liệu nhân viên
+        Assert.True(result.IsBranchFound);
+        Assert.False(result.HasAccess);
+        Assert.Empty(result.Employees);
+
+        // Không có quyền thì Service không được truy vấn danh sách
+        employeeRepositoryMock.Verify(
+            repository => repository.GetByBranchAsync(
+                branchId,
+                It.IsAny<string>(),
+                It.IsAny<bool?>(),
+                It.IsAny<DateOnly>()),
+            Times.Never);
+    }
 }
