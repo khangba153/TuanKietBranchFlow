@@ -10,6 +10,7 @@ using TuanKietBranchFlow.Application.Services;
 using TuanKietBranchFlow.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Identity;
 using TuanKietBranchFlow.Infrastructure.Models;
+using System.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,7 +32,7 @@ if (jwtExpireMinutes <= 0)
 }
 
 // Lấy connection string từ cấu hình và dừng ứng dụng nếu chưa cấu hình
-string connectionString = 
+string connectionString =
     builder.Configuration.GetConnectionString("BranchFlowDatabase")
     ?? throw new InvalidOperationException(
         "Chưa cấu hình connection string BranchFlowDatabase.");
@@ -57,6 +58,9 @@ builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
 // Đăng ký repository để thêm và quản lý phân công chi nhánh
 builder.Services.AddScoped<IUserBranchRepository, UserBranchRepository>();
 
+// Đăng ký respository để đọc menu gọi món
+builder.Services.AddScoped<IOrderMenuRepository, OrderMenuRepository>();
+
 // Đăng ký công cụ tạo và kiểm tra PasswordHash
 builder.Services.AddScoped<IPasswordHasher<AppUser>, PasswordHasher<AppUser>>();
 
@@ -75,6 +79,9 @@ builder.Services.AddScoped<IRoleService, RoleService>();
 // Đăng ký service xử lý nghiệp vụ nhân viên
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 
+// Đăng ký service xử lý nghiệp vụ gọi món
+builder.Services.AddScoped<IOrderMenuService, OrderMenuService>();
+
 // Đăng ký UnitOfWork để các service có 1 điểm lưu dữ liệu thống nhất
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
@@ -85,6 +92,30 @@ builder.Services.AddScoped<JwtTokenService>(servicePorvider =>
 });
 // Đăng ký controller, model binding và chuyển đổi dữ liệu JSON
 builder.Services.AddControllers();
+
+// Đăng ký health check cơ bản, chưa kiểm tra kết nối database
+builder.Services.AddHealthChecks();
+
+// Đăng ký response lỗi chuẩn, không đưa chi tiết exception ra client
+builder.Services.AddProblemDetails(options =>
+{
+    options.CustomizeProblemDetails = context =>
+    {
+        // Mã dùng để đổi chiếu request lỗi với log phía server
+        string traceId = Activity.Current?.Id
+            ?? context.HttpContext.TraceIdentifier;
+
+        context.ProblemDetails.Extensions["traceId"] = traceId;
+
+        // Chỉ dùng thông báo chung cho lỗi nội bộ, không đổi nghiệp vụ
+        if (context.ProblemDetails.Status
+            == StatusCodes.Status500InternalServerError)
+        {
+            context.ProblemDetails.Title = "Lỗi hệ thống";
+            context.ProblemDetails.Detail = "Đã xảy ra lỗi trong quá trình xử lý. Vui lòng thử lại sau.";
+        }
+    };
+});
 
 // Đăng ký cơ chế xác thực bằng JWT Bearer
 builder.Services
@@ -158,6 +189,12 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
+// Bắt exception ngoài dự kiến trong môi trường không phải Development
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler();
+}
+
 if (app.Environment.IsDevelopment())
 {
     // Tạo endpoint chứa tài liệu Swagger dạng JSON.
@@ -182,5 +219,8 @@ app.UseAuthorization();
 
 // Ánh xạ các route được khai báo bằng attribute trong controller.
 app.MapControllers();
+
+// Cho phép kiểm tra API có phản hồi mà không cần đăng nhập
+app.MapHealthChecks("/health").AllowAnonymous();
 
 app.Run();
