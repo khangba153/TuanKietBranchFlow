@@ -1,5 +1,7 @@
 # BranchFlow API endpoint roadmap v0.1
 
+> Bản điều chỉnh thứ tự và phạm vi hiện hành: [API roadmap v0.3](api-endpoint-roadmap-v0.3.md). File v0.1 được giữ để đối chiếu lịch sử, không dùng số lượng 81 route làm điều kiện hoàn thành.
+
 > Cập nhật định hướng 2026-09-05: giữ file này làm danh mục endpoint dự kiến,
 > không coi các giai đoạn dưới đây là thứ tự bắt buộc hoặc trạng thái đã hoàn thành.
 > Thứ tự học, nối frontend, CI và deploy theo

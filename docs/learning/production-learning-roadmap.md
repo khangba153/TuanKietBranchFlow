@@ -99,13 +99,14 @@ Qua mốc khi một vertical slice có thể phát hành lại, tìm lỗi, ph�
 
 Làm từng nhóm BE + FE + test + cập nhật bản public; không quay về cách viết tất cả API rồi mới ghép UI:
 
-1. Hoàn thiện UI thao tác nhân viên đã có API: tạo, sửa, chuyển chi nhánh, nghỉ/hoạt động lại; quyền OWNER chỉ đọc, ADMIN ghi đúng phạm vi.
-2. Menu và luồng tạo/xem order: xác định giá từ backend, dữ liệu lịch sử và lưu nhiều entity thống nhất; không tự thêm trừ nguyên liệu theo order vì nằm ngoài MVP.
-3. Kho/kiểm kho theo nghiệp vụ đã chốt; kiểm tra cập nhật đồng thời để tránh sai số tồn.
-4. Payroll sau khi chốt công thức lương; không tự đoán ngày công/cách tính. Quyền truy cập BaseSalary và lịch sử phải được kiểm tra.
-5. Dashboard dùng dữ liệu thật; audit được thêm cùng các nghiệp vụ ghi cần lưu lịch sử, không để cuối cùng mới cố khôi phục hoạt động đã bỏ lỡ.
+1. Nhập menu hiện hữu của quán bằng script dữ liệu ban đầu một lần: một menu và giá chung, availability theo branch. Kiểm tra dữ liệu DB trước khi viết seed để không nhân đôi dữ liệu public đã nhập thủ công.
+2. Gọi món EMPLOYEE: đọc menu được bán theo chi nhánh, chọn món/giỏ ở Web, tạo và xem order; API tự đọc lại giá, lưu snapshot và transaction. Không tự trừ nguyên liệu theo order vì ngoài MVP.
+3. Menu ADMIN đủ năm tab Sản phẩm, Danh mục, Size, Topping và Ghi chú nhanh để vận hành thay đổi menu sau seed; OWNER chỉ đọc nếu có màn Menu. Chốt quyền sửa danh mục dùng chung trước endpoint ghi đầu tiên.
+4. Đơn hàng ADMIN/OWNER: ADMIN xem và xử lý báo sai, điều chỉnh, hủy theo phạm vi; OWNER dùng chung route GET để xem và không được ghi.
+5. Hồ sơ cá nhân EMPLOYEE read-only có thể làm trước kho vì GET /api/users/me đã có phần lớn dữ liệu; sau đó kho/kiểm kho với test tồn và cập nhật đồng thời.
+6. Hoàn thiện UI nhân viên và tài khoản theo API hiện có/quyền đã chốt; payroll sau khi chốt công thức, rồi dashboard/report bằng dữ liệu thật. Audit phải được thêm cùng các nghiệp vụ ghi, không đợi đến cuối.
 
-Danh mục [API v0.1](../context/api-endpoint-roadmap-v0.1.md) chỉ giúp rà soát scope. Từng module cần tiêu chí riêng. Nếu thời gian không đủ, cùng người học chốt phạm vi phiên bản portfolio; không lặng lẽ cắt yêu cầu đồ án.
+[API roadmap v0.3](../context/api-endpoint-roadmap-v0.3.md) ghi thứ tự và điều kiện qua mốc; [v0.1](../context/api-endpoint-roadmap-v0.1.md) và [v0.2](../context/api-endpoint-roadmap-v0.2.md) là lịch sử. Từng module cần tiêu chí riêng. Nếu thời gian không đủ, cùng người học chốt phạm vi phiên bản portfolio; không lặng lẽ cắt yêu cầu đồ án.
 
 ### M5 — Chốt portfolio và khả năng giải thích khi phỏng vấn
 

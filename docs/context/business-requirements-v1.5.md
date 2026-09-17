@@ -21,6 +21,8 @@ Tài liệu này là bản rút trích để định tuyến task. Khi cần chi
 
 ### ADMIN
 
+- Trong phạm vi dự án hiện tại chỉ dùng một tài khoản ADMIN duy nhất từ đầu đến cuối; phân cấp hoặc nhiều ADMIN là yêu cầu có thể bổ sung sau.
+- ADMIN duy nhất được quản lý danh mục và giá menu dùng chung. Điều này không bỏ kiểm tra phân công khi thao tác trạng thái bán hoặc dữ liệu riêng của từng chi nhánh.
 - CRUD và điều chỉnh dữ liệu trong các chi nhánh được phân công.
 - Quản lý menu, trạng thái bán, kho, nhân viên, payroll và order cần xem lại.
 - Có quyền soft delete/restore master data; hành động quan trọng phải audit.
@@ -51,6 +53,7 @@ API phải kiểm tra role và branch scope. Giao diện ẩn nút chỉ hỗ tr
 - Trạng thái bán product/topping là riêng theo từng branch và do admin điều chỉnh thủ công.
 - Product có ít nhất hai `ProductSize` hoạt động; giá nằm tại quan hệ product-size.
 - Topping thuộc `ToppingGroup`; note thuộc `NoteGroup` và tối đa một `NoteOption` mỗi group trên một order item.
+- Topping thường có đơn giá 5.000 đồng cho một phần; employee chọn quantity 1, 2 hoặc 3 tương ứng tổng 5K, 10K hoặc 15K. `UP SIZE 1300ML` được xử lý như một topping đặc biệt giá 10K và chỉ chọn tối đa một lần.
 - Không có discount, promotion, ghi chú tự do hoặc mô tả product trong MVP.
 
 ## Order
