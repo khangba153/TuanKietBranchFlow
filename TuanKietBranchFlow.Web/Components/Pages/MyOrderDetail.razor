@@ -1,0 +1,472 @@
+@page "/my-orders/{OrderId:int}"
+
+@using System.Text.Json
+@using TuanKietBranchFlow.Application.DTOs.Orders
+@using TuanKietBranchFlow.Web.Models
+@using TuanKietBranchFlow.Web.Services
+
+@inject OrderApiService OrderApiService
+
+<PageTitle>Chi tiết đơn</PageTitle>
+@if (_isLoading)
+{
+    <section class="text-center py-5" aria-live="polite">
+        <div class="spinner-border text-success" role="status">
+            <span class="visually-hidden">
+                Đang tải chi tiết đơn
+            </span>
+        </div>
+
+        <p class="text-secondary mt-3 mb-0">
+            Đang tải chi tiết đơn...
+        </p>
+    </section>
+}
+else if (!string.IsNullOrWhiteSpace(_errorMessage))
+{
+    <section class="alert alert-danger" role="alert">
+        <p class="mb-3">
+            @_errorMessage
+        </p>
+
+        <button type="button" class="btn btn-outline-danger" @onclick="LoadOrderAsync">
+            Thử lại
+        </button>
+    </section>
+}
+else if (_order is null)
+{
+    <section class="alert alert-warning" role="alert">
+        Không có dữ liệu chi tiết đơn.
+    </section>
+}
+else
+{
+    <div class="container-fluid px-0">
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-8 col-xl-6">
+                <header class="mb-4">
+                    <a href="/my-orders" class="btn btn-outline-secondary mb-3" aria-label="Quay lại danh sách đơn">
+                        ←
+                    </a>
+
+                    <p class="text-success fw-semibold small mb-1">
+                        CHI TIẾT ĐƠN
+                    </p>
+
+                    <div class="d-flex justify-content-between
+                        align-items-start gap-3">
+                        <div>
+                            <h1 class="h3 mb-2">
+                                @_order.Code
+                            </h1>
+
+                            <p class="text-secondary mb-0">
+                                @_order.BranchName
+                            </p>
+                        </div>
+
+                        <span class="badge @(GetStatusClass(_order.Status))">
+                            @GetStatusText(_order.Status)
+                        </span>
+                    </div>
+                </header>
+
+                <section class="card border-0 shadow-sm mb-4" aria-labelledby="order-information-title">
+                    <div class="card-body">
+                        <h2 id="order-information-title" class="h5 mb-3">
+                            Thông tin đơn
+                        </h2>
+
+                        <dl class="row mb-0">
+                            <dt class="col-5 text-secondary fw-normal">
+                                Ngày nghiệp vụ
+                            </dt>
+                            <dd class="col-7 text-end">
+                                @_order.BusinessDate.ToString("dd/MM/yyyy")
+                            </dd>
+
+                            <dt class="col-5 text-secondary fw-normal">
+                                Thời gian tạo
+                            </dt>
+                            <dd class="col-7 text-end">
+                                @_order.CreatedAt.ToString("dd/MM/yyyy - HH:mm")
+                            </dd>
+
+                            <dt class="col-5 text-secondary fw-normal">
+                                Chi nhánh
+                            </dt>
+                            <dd class="col-7 text-end mb-0">
+                                @_order.BranchCode - @_order.BranchName
+                            </dd>
+                        </dl>
+                    </div>
+                </section>
+
+                <section aria-labelledby="order-items-title">
+                    <h2 id="order-items-title" class="h5 mb-3">
+                        Các món đã đặt
+                    </h2>
+
+                    @if (_order.Items.Count == 0)
+                    {
+                        <div class="alert alert-warning" role="alert">
+                            Đơn hàng không có thông tin món.
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (MyOrderDetailItemDTO item in _order.Items)
+                        {
+                            <article class="card border-0 shadow-sm mb-3">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between
+                                        align-items-start gap-3 mb-3">
+                                        <div>
+                                            <h3 class="h6 mb-1">
+                                                @item.ProductName
+                                            </h3>
+
+                                            <p class="text-secondary small mb-0">
+                                                Size @item.SizeName · Số lượng @item.Quantity
+                                            </p>
+                                        </div>
+
+                                        <strong class="text-success">
+                                            @item.SubtotalAmount.ToString("N0") đ
+                                        </strong>
+                                    </div>
+
+                                    <div class="border-top pt-3">
+                                        <div class="d-flex justify-content-between
+                                            small mb-2">
+                                            <span class="text-secondary">
+                                                Giá size
+                                            </span>
+
+                                            <span>
+                                                @item.UnitPrice.ToString("N0") đ
+                                            </span>
+                                        </div>
+
+                                        @if (item.Toppings.Count > 0)
+                                        {
+                                            <p class="fw-semibold small mb-2 mt-3">
+                                                Topping
+                                            </p>
+
+                                            @foreach (MyOrderDetailToppingDTO topping
+                                                in item.Toppings)
+                                            {
+                                                <div class="d-flex justify-content-between
+                                                    small mb-2">
+                                                    <span class="text-secondary">
+                                                        @topping.Name × @topping.Quantity
+                                                    </span>
+
+                                                    <span>
+                                                        @((topping.UnitPrice
+                                                            * topping.Quantity).ToString("N0")) đ
+                                                    </span>
+                                                </div>
+                                            }
+                                        }
+
+                                        @if (item.Notes.Count > 0)
+                                        {
+                                            <p class="fw-semibold small mb-2 mt-3">
+                                                Ghi chú
+                                            </p>
+
+                                            <div class="d-flex flex-wrap gap-2">
+                                                @foreach (MyOrderDetailNoteDTO note
+                                                    in item.Notes)
+                                                {
+                                                    <span class="badge text-bg-light">
+                                                        @note.Name
+                                                    </span>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </article>
+                        }
+                    }
+                </section>
+
+                <section class="card border-success mb-4" aria-label="Tổng tiền đơn hàng">
+                    <div class="card-body d-flex justify-content-between
+                        align-items-center gap-3">
+                        <span class="fw-semibold">
+                            Tổng tiền
+                        </span>
+
+                        <strong class="h4 text-success mb-0">
+                            @_order.TotalAmount.ToString("N0") đ
+                        </strong>
+                    </div>
+                </section>
+
+                @if (string.Equals(
+                    _order.Status,
+                    "NEEDS_REVIEW",
+                    StringComparison.OrdinalIgnoreCase))
+                {
+                    @if (!string.IsNullOrWhiteSpace(_reportSuccessMessage))
+                    {
+                        <div class="alert alert-success" role="alert">
+                            @_reportSuccessMessage
+                        </div>
+                    }
+
+                    <section class="alert alert-warning mb-4" aria-labelledby="reported-order-title">
+                        <h2 id="reported-order-title" class="h5">
+                            Đơn đang chờ xem lại
+                        </h2>
+
+                        <p class="mb-2">
+                            @_order.ReportReason
+                        </p>
+
+                        @if (_order.ReportedAt.HasValue)
+                        {
+                            <small class="text-secondary">
+                                Đã báo lúc
+                                @_order.ReportedAt.Value.ToString("dd/MM/yyyy - HH:mm")
+                            </small>
+                        }
+                    </section>
+                }
+                else if (string.Equals(
+                    _order.Status,
+                    "COMPLETED",
+                    StringComparison.OrdinalIgnoreCase))
+                {
+                    <section class="card border-0 shadow-sm mb-4" aria-labelledby="report-order-title">
+                        <div class="card-body">
+                            <h2 id="report-order-title" class="h5 mb-2">
+                                Báo sai đơn hàng
+                            </h2>
+
+                            <p class="text-secondary small mb-3">
+                                Hãy mô tả thông tin chưa chính xác để quản lý kiểm tra.
+                            </p>
+
+                            @if (!string.IsNullOrWhiteSpace(_reportErrorMessage))
+                            {
+                                <div class="alert alert-danger" role="alert">
+                                    @_reportErrorMessage
+                                </div>
+                            }
+
+                            <label for="report-reason" class="form-label">
+                                Lý do báo sai
+                            </label>
+
+                            <textarea id="report-reason" class="form-control" rows="4" maxlength="500"
+                                      placeholder="Ví dụ: Sai size hoặc thiếu topping..." @bind="_reportReason" @bind:event="oninput"
+                                      disabled="@_isReporting">
+                            </textarea>
+
+                            <div class="d-flex justify-content-between
+                                align-items-center gap-3 mt-2">
+                                <small class="text-secondary">
+                                    @_reportReason.Length/500 ký tự
+                                </small>
+                            </div>
+
+                            <div class="d-grid d-sm-flex justify-content-sm-end mt-3">
+                                <button type="button" class="btn btn-outline-danger" disabled="@(_isReporting
+                                            || string.IsNullOrWhiteSpace(_reportReason))" @onclick="SubmitReportAsync">
+                                    @if (_isReporting)
+                                    {
+                                        <span class="spinner-border spinner-border-sm me-2" aria-hidden="true">
+                                        </span>
+
+                                        <span>Đang gửi...</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Gửi báo sai</span>
+                                    }
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+                }
+            </div>
+        </div>
+    </div>
+}
+@code {
+    // ID của đơn được lấy từ URL
+    [Parameter]
+    public int OrderId { get; set; }
+
+    // Dữ liệu chi tiết đơn hàng từ API
+    private MyOrderDetailDTO? _order;
+
+    // Trạng thái tải dữ liệu
+    private bool _isLoading = true;
+    private string? _errorMessage;
+
+    // Trạng thái form báo sai đơn
+    private string _reportReason = string.Empty;
+    private bool _isReporting;
+    private string? _reportErrorMessage;
+    private string? _reportSuccessMessage;
+
+    // LocalStorage chỉ đọc được sau khi trang render lần đầu
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        await LoadOrderAsync();
+
+        // OnAfterRenderAsync không tự render lại sau await
+        StateHasChanged();
+    }
+
+    // Gọi API để tải đơn thuộc employee hiện tại
+    private async Task LoadOrderAsync()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+
+        try
+        {
+            OrderDetailApiResult result =
+                await OrderApiService.GetMyOrderDetailAsync(OrderId);
+
+            if (!result.IsSuccess || result.Order is null)
+            {
+                _errorMessage =
+                    result.ErrorMessage ?? "Không thể tải chi tiết đơn.";
+
+                return;
+            }
+
+            _order = result.Order;
+        }
+        catch (HttpRequestException)
+        {
+            _errorMessage = "Không thể kết nối đến API.";
+        }
+        catch (JSException)
+        {
+            _errorMessage = "Không thể đọc token đăng nhập.";
+        }
+        catch (JsonException)
+        {
+            _errorMessage = "Dữ liệu API trả về không hợp lệ.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    // Chuyển mã trạng thái thành nội dung tiếng Việt
+    private static string GetStatusText(string status)
+    {
+        return status switch
+        {
+            "COMPLETED" => "Hoàn tất",
+            "NEEDS_REVIEW" => "Chờ xem lại",
+            "ADJUSTED" => "Đã điều chỉnh",
+            "CANCELLED" => "Đã hủy",
+            _ => status
+        };
+    }
+
+    // Chọn màu Bootstrap tương ứng với trạng thái
+    private static string GetStatusClass(string status)
+    {
+        return status switch
+        {
+            "COMPLETED" => "text-bg-success",
+            "NEEDS_REVIEW" => "text-bg-warning",
+            "ADJUSTED" => "text-bg-info",
+            "CANCELLED" => "text-bg-danger",
+            _ => "text-bg-secondary"
+        };
+    }
+
+    // Gửi lý do báo sai đơn và cập nhật trạng thái đơn trên giao diện
+    private async Task SubmitReportAsync()
+    {
+        if (_order is null || _isReporting)
+        {
+            return;
+        }
+
+        string normalizedReason = _reportReason.Trim();
+
+        if (string.IsNullOrWhiteSpace(normalizedReason))
+        {
+            _reportErrorMessage = "Vui lòng nhập lý do báo sai.";
+            return;
+        }
+
+        if (normalizedReason.Length > 500)
+        {
+            _reportErrorMessage = "Lý do báo sai không được vượt quá 500 ký tự.";
+            return;
+        }
+
+        _isReporting = true;
+        _reportErrorMessage = null;
+        _reportSuccessMessage = null;
+
+        try
+        {
+            ReportOrderRequestDTO request =
+                new ReportOrderRequestDTO
+                {
+                    Reason = normalizedReason
+                };
+
+            OrderReportApiResult result =
+                await OrderApiService.ReportOrderAsync(
+                    OrderId,
+                    request);
+
+            if (!result.IsSuccess || result.Order is null)
+            {
+                _reportErrorMessage =
+                    result.ErrorMessage
+                    ?? "Không thể gửi báo sai đơn hàng.";
+
+                return;
+            }
+
+            // Dùng dữ liệu Backend trả về thay vì tự suy đoán
+            _order.Status = result.Order.Status;
+            _order.ReportReason = result.Order.ReportReason;
+            _order.ReportedAt = result.Order.ReportedAt;
+
+            _reportReason = string.Empty;
+            _reportSuccessMessage = "Đã gửi đơn cho quản lý xem lại.";
+        }
+        catch (HttpRequestException)
+        {
+            _reportErrorMessage = "Không thể kết nối đến API.";
+        }
+        catch (JSException)
+        {
+            _reportErrorMessage = "Không thể đọc token đăng nhập.";
+        }
+        catch (JsonException)
+        {
+            _reportErrorMessage = "Dữ liệu API trả về không hợp lệ.";
+        }
+        finally
+        {
+            _isReporting = false;
+        }
+    }
+}

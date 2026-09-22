@@ -44,6 +44,15 @@ builder.Services.AddHttpClient(
 // Service gửi request có Bearer token trong Blazor circuit
 builder.Services.AddScoped<AuthorizedApiService>();
 
+// Đăng ký service lấy hồ sơ người dùng hiện tại
+builder.Services.AddScoped<UserApiService>();
+
+// Đăng ký service gọi API menu của nhân viên
+builder.Services.AddScoped<OrderMenuApiService>();
+
+// Đăng ký service gửi yêu cầu tạo đơn hàng
+builder.Services.AddScoped<OrderApiService>();
+
 // Đăng ký service gọi các API chi nhánh
 builder.Services.AddScoped<BranchApiService>();
 

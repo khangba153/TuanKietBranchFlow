@@ -1,0 +1,254 @@
+@page "/my-orders"
+
+@using System.Text.Json
+@using TuanKietBranchFlow.Application.DTOs.Orders
+@using TuanKietBranchFlow.Web.Services
+
+@inject OrderApiService OrderApiService
+
+<PageTitle>Đơn của tôi</PageTitle>
+
+<div class="container-fluid px-0">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8 col-xl-6">
+            <header class="mb-4">
+                <a href="/order-menu" class="btn btn-outline-secondary mb-3" aria-label="Quay lại trang gọi món">
+                    ←
+                </a>
+
+                <p class="text-success fw-semibold small mb-1">
+                    LỊCH SỬ
+                </p>
+
+                <h1 class="h3 mb-2">
+                    Đơn của tôi
+                </h1>
+
+                <p class="text-secondary mb-0">
+                    Chỉ hiển thị các đơn do bạn tạo.
+                </p>
+            </header>
+
+            <section class="card border-0 shadow-sm mb-4" aria-label="Bộ lọc đơn hàng">
+                <div class="card-body">
+                    <div class="row g-2">
+                        <div class="col-12 col-sm">
+                            <label for="order-keyword" class="visually-hidden">
+                                Tìm mã đơn
+                            </label>
+
+                            <input id="order-keyword" type="search" class="form-control" placeholder="Tìm mã đơn"
+                                   @bind="_keyword" @bind:event="oninput" disabled="@_isLoading" />
+                        </div>
+
+                        <div class="col-6 col-sm-auto">
+                            <button type="button" class="btn btn-success w-100" @onclick="SearchOrdersAsync"
+                                    disabled="@_isLoading">
+                                Tìm
+                            </button>
+                        </div>
+
+                        <div class="col-6 col-sm-auto">
+                            <button type="button" class="btn @(_todayOnly
+                                        ? "btn-success"
+                                        : "btn-outline-success") w-100" @onclick="ToggleTodayFilterAsync"
+                                    disabled="@_isLoading" aria-pressed="@_todayOnly">
+                                Hôm nay
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            @if (_isLoading)
+            {
+                <section class="text-center py-5" aria-live="polite">
+                    <div class="spinner-border text-success" role="status">
+                        <span class="visually-hidden">
+                            Đang tải danh sách đơn
+                        </span>
+                    </div>
+
+                    <p class="text-secondary mt-3 mb-0">
+                        Đang tải danh sách đơn...
+                    </p>
+                </section>
+            }
+            else if (!string.IsNullOrWhiteSpace(_errorMessage))
+            {
+                <section class="alert alert-danger" role="alert">
+                    <p class="mb-3">
+                        @_errorMessage
+                    </p>
+
+                    <button type="button" class="btn btn-outline-danger" @onclick="LoadOrdersAsync">
+                        Thử lại
+                    </button>
+                </section>
+            }
+            else if (_orders.Count == 0)
+            {
+                <section class="text-center py-5" aria-live="polite">
+                    <p class="text-secondary mb-0">
+                        Không tìm thấy đơn hàng phù hợp.
+                    </p>
+                </section>
+            }
+            else
+            {
+                <section aria-label="Danh sách đơn của tôi">
+                    @foreach (MyOrderListItemDTO order in _orders)
+                    {
+                        <article class="border-bottom py-3">
+                            <div class="d-flex justify-content-between
+                                align-items-start gap-3">
+                                <div>
+                                    <h2 class="h6 mb-1">
+                                        @order.Code
+                                    </h2>
+
+                                    <p class="text-secondary small mb-2">
+                                        @order.CreatedAt.ToString("dd/MM/yyyy - HH:mm")
+                                    </p>
+
+                                    <span class="badge @(GetStatusClass(order.Status))">
+                                        @GetStatusText(order.Status)
+                                    </span>
+                                </div>
+
+                                <div class="text-end">
+                                    <strong class="d-block text-success">
+                                        @order.TotalAmount.ToString("N0") đ
+                                    </strong>
+
+                                    <span class="text-secondary small">
+                                        @order.TotalQuantity món
+                                    </span>
+                                </div>
+                            </div>
+
+                            <a href="@($"/my-orders/{order.Id}")"
+                            class="btn btn-link text-success
+                                text-decoration-none px-0 mt-2">
+                                Xem chi tiết →
+                            </a
+                        </article>
+                    }
+                </section>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    // Danh sách đơn nhận từ API
+    private List<MyOrderListItemDTO> _orders =
+        new List<MyOrderListItemDTO>();
+
+    // Điều kiện lọc trên giao diện
+    private string _keyword = string.Empty;
+    private bool _todayOnly;
+
+    // Trạng thái tải dữ liệu
+    private bool _isLoading = true;
+    private string? _errorMessage;
+
+    // LocalStorage chỉ đọc được sau khi trang render lần đầu
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        await LoadOrdersAsync();
+
+        // OnAfterRenderAsync không tự render lại sau await
+        StateHasChanged();
+    }
+
+    // Gọi API theo từ khóa và bộ lọc ngày hiện tại
+    private async Task LoadOrdersAsync()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+
+        try
+        {
+            DateOnly? businessDate = null;
+
+            if (_todayOnly)
+            {
+                businessDate = DateOnly.FromDateTime(DateTime.Today);
+            }
+
+            List<MyOrderListItemDTO>? orders =
+                await OrderApiService.GetMyOrdersAsync(
+                    _keyword,
+                    businessDate);
+
+            if (orders is null)
+            {
+                _errorMessage = "Không thể tải danh sách đơn.";
+                return;
+            }
+
+            _orders = orders;
+        }
+        catch (HttpRequestException)
+        {
+            _errorMessage = "Không thể kết nối đến API.";
+        }
+        catch (JSException)
+        {
+            _errorMessage = "Không thể đọc token đăng nhập.";
+        }
+        catch (JsonException)
+        {
+            _errorMessage = "Dữ liệu API trả về không hợp lệ.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    // Tải danh sách theo mã đơn đang nhập
+    private async Task SearchOrdersAsync()
+    {
+        await LoadOrdersAsync();
+    }
+
+    // Bật hoặc tắt điều kiện chỉ xem đơn hôm nay
+    private async Task ToggleTodayFilterAsync()
+    {
+        _todayOnly = !_todayOnly;
+
+        await LoadOrdersAsync();
+    }
+
+    // Chuyển mã trạng thái thành nội dung Tiếng Việt
+    private static string GetStatusText(string status)
+    {
+        return status switch
+        {
+            "COMPLETED" => "Hoàn tất",
+            "NEEDS_REVIEW" => "Chờ xem lại",
+            "ADJUSTED" => "Đã điều chỉnh",
+            "CANCELLED" => "Đã hủy",
+            _ => status
+        };
+    }
+
+    // Chọn màu Bootstrap tương ứng với trạng thái
+    private static string GetStatusClass(string status)
+    {
+        return status switch
+        {
+            "COMPLETED" => "text-bg-success",
+            "NEEDS_REVIEW" => "text-bg-warning",
+            "ADJUSTED" => "text-bg-info",
+            "CANCELLED" => "text-bg-danger",
+            _ => "text-bg-secondary"
+        };
+    }
+}

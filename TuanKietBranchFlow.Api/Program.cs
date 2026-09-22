@@ -61,6 +61,9 @@ builder.Services.AddScoped<IUserBranchRepository, UserBranchRepository>();
 // Đăng ký respository để đọc menu gọi món
 builder.Services.AddScoped<IOrderMenuRepository, OrderMenuRepository>();
 
+// Đăng ký repository để kiểm tra dữ liệu và lưu đơn hàng
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+
 // Đăng ký công cụ tạo và kiểm tra PasswordHash
 builder.Services.AddScoped<IPasswordHasher<AppUser>, PasswordHasher<AppUser>>();
 
@@ -81,6 +84,9 @@ builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 
 // Đăng ký service xử lý nghiệp vụ gọi món
 builder.Services.AddScoped<IOrderMenuService, OrderMenuService>();
+
+// Đăng ký service xử lý nghiệp vụ tạo đơn hàng
+builder.Services.AddScoped<IOrderService, OrderService>();
 
 // Đăng ký UnitOfWork để các service có 1 điểm lưu dữ liệu thống nhất
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();

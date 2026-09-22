@@ -1,0 +1,1176 @@
+@page "/order-menu"
+
+@using TuanKietBranchFlow.Application.DTOs.OrderMenus
+@using TuanKietBranchFlow.Application.DTOs.Users
+@using TuanKietBranchFlow.Web.Services
+@using System.Globalization
+@using System.Text
+@using TuanKietBranchFlow.Web.Models
+@using TuanKietBranchFlow.Application.DTOs.Orders
+
+
+@inject UserApiService UserApiService
+@inject OrderMenuApiService OrderMenuApiService
+@inject OrderApiService OrderApiService
+
+<PageTitle>Gọi món</PageTitle>
+
+@if (_createOrder is not null)
+{
+    <div class="alert alert-success alert-dismissible" role="status">
+        <strong>Tạo đơn thành công.</strong>
+
+        <span class="d-block mt-1">
+            Mã đơn: @_createOrder.Code
+        </span>
+
+        <span class="d-block">
+            Tổng tiền Backend xác nhận:
+            @_createOrder.TotalAmount.ToString("N0") đ
+        </span>
+
+        <button type="button"
+                class="btn-close"
+                aria-label="Đóng thông báo"
+                @onclick="() => _createOrder = null">
+        </button>
+    </div>
+}
+
+@if (_isLoading)
+{
+    <div class="text-center py-5" role="status">
+        <span class="spinner-border text-success me-2" aria-hidden="true">
+        </span>
+
+        <span class="text-secondary">
+            Đang tải menu...
+        </span>
+    </div>
+}
+else if (!string.IsNullOrWhiteSpace(_errorMessage))
+{
+    <div class="alert alert-danger" role="alert">
+        <p class="mb-3">
+            @_errorMessage
+        </p>
+
+        <button type="button" class="btn btn-outline-danger btn-sm" @onclick="LoadOrderMenuAsync">
+            Thử lại
+        </button>
+    </div>
+}
+else if (_menu is null || _menu.Categories.Count == 0)
+{
+    <div class="alert alert-info" role="status">
+        Chi nhánh hiện chưa có món đang bán.
+    </div>
+}
+else
+{
+    <div class="container-fluid px-0">
+        @* Tiêu đề và nút xem giỏ hàng *@
+        <div class="d-flex flex-column flex-md-row
+            justify-content-between align-items-md-center
+            gap-3 mb-4">
+            <div>
+                <p class="text-success fw-semibold small mb-1">
+                    GỌI MÓN
+                </p>
+
+                <h1 class="h3 mb-2">
+                    Menu
+                </h1>
+
+                <p class="text-secondary mb-0">
+                    @_menu.Branch.Name
+                    <span class="small">
+                        (@_menu.Branch.Code)
+                    </span>
+                </p>
+            </div>
+
+            <button type="button" class="btn btn-outline-success" @onclick="OpenCart">
+                Giỏ hàng
+
+                <span class="badge text-bg-success ms-1">
+                    @GetCartTotalQuantity()
+                </span>
+            </button>
+        </div>
+
+        @* Khu vực tìm món *@
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body">
+                <label for="product-keyword" class="form-label">
+                    Tìm món
+                </label>
+
+                <input id="product-keyword" type="search" class="form-control" value="@_keyword"
+                       @oninput="HandleKeywordInput" placeholder="Nhập tên món cần tìm" />
+            </div>
+        </div>
+
+        @* Danh mục lấy từ menu của API *@
+        <nav class="mb-4" aria-label="Danh mục món">
+            <div class="d-flex flex-wrap gap-2">
+                <button type="button"
+                        class="btn @(_selectedCategoryId is null
+                            ? "btn-success"
+                            : "btn-outline-success")"
+                        @onclick="() => SelectCategory(null)">
+                    Tất cả
+                </button>
+
+                @foreach (OrderMenuCategoryDTO category
+                        in _menu.Categories)
+                {
+                    <button type="button"
+                            class="btn @(_selectedCategoryId == category.Id
+                                ? "btn-success"
+                                : "btn-outline-success")"
+                            @onclick="() => SelectCategory(category.Id)">
+                        @category.Name
+                    </button>
+                }
+            </div>
+        </nav>
+
+        @* Hiển thị toàn bộ sản phẩm trong các danh mục *@
+        <section aria-labelledby="product-list-title">
+            <div class="d-flex justify-content-between
+                align-items-center mb-3">
+                <h2 id="product-list-title" class="h5 mb-0">
+                    Tất cả món
+                </h2>
+
+                <span class="text-secondary small">
+                    @_visibleProducts.Count món
+                </span>
+            </div>
+
+            @if (_visibleProducts.Count == 0)
+            {
+                <div class="alert alert-info mb-0" role="status">
+                    Không tìm thấy món phù hợp.
+                </div>
+            }
+            else
+            {
+                <div class="row g-3">
+                    @foreach (OrderMenuProductDTO product
+                              in _visibleProducts)
+                    {
+                        <div class="col-12 col-sm-6 col-xl-4">
+                            <article class="card border-0 shadow-sm h-100">
+                                @if (!string.IsNullOrWhiteSpace(
+                                    product.ImageUrl))
+                                {
+                                    <div class="ratio ratio-4x3">
+                                        <img src="@product.ImageUrl" class="w-100 h-100 object-fit-cover" alt="Ảnh @product.Name" />
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="ratio ratio-4x3 bg-light">
+                                        <div class="d-flex
+                                            justify-content-center
+                                            align-items-center
+                                            text-secondary">
+                                            Chưa có ảnh
+                                        </div>
+                                    </div>
+                                }
+
+                                <div class="card-body d-flex flex-column">
+                                    <h3 class="h6 card-title">
+                                        @product.Name
+                                    </h3>
+
+                                    <p class="text-success
+                                        fw-semibold mb-3">
+                                        @product.MinPrice.ToString("N0") đ
+                                    </p>
+
+                                    <button type="button" class="btn btn-success mt-auto"
+                                            @onclick="() => OpenProductOptions(product)">
+                                        Chọn món
+                                    </button>
+                                </div>
+                            </article>
+                        </div>
+                    }
+
+                </div>
+            }
+        </section>
+
+        @if (_isCartOpen)
+        {
+            <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="cart-title">
+
+                <div class="modal-dialog modal-dialog-centered
+                    modal-dialog-scrollable">
+                    <div class="modal-content border-0 shadow">
+                        <div class="modal-header bg-success text-white">
+                            <div>
+                                <p class="small mb-1">
+                                    Đơn đang tạo
+                                </p>
+
+                                <h2 id="cart-title" class="h5 mb-0">
+                                    Giỏ hàng
+                                </h2>
+                            </div>
+
+                            <button type="button" class="btn-close btn-close-white" aria-label="Đóng giỏ hàng" disabled="@_isSubmittingOrder"
+                                    @onclick="CloseCart">
+                            </button>
+                        </div>
+
+                        
+                        <div class="modal-body">
+                            @if (!string.IsNullOrWhiteSpace(_orderSubmitErrorMessage))
+                            {
+                                <div class="alert alert-danger" role="alert">
+                                    @_orderSubmitErrorMessage
+                                </div>
+                            }
+                            
+                            @if (_cartItems.Count == 0)
+                            {
+                                <div class="alert alert-info mb-0" role="status">
+                                    Giỏ hàng chưa có món.
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="vstack gap-3">
+                                    @foreach (OrderCartItemModel cartItem in _cartItems)
+                                    {
+                                        <article class="border rounded p-3">
+                                            <div class="d-flex justify-content-between
+                                                align-items-start gap-3 mb-2">
+                                                <div>
+                                                    <h3 class="h6 mb-1">
+                                                        @cartItem.ProductName
+                                                    </h3>
+
+                                                    <p class="text-secondary small mb-0">
+                                                        Size @cartItem.SizeName ·
+                                                        Số lượng @cartItem.Quantity
+                                                    </p>
+                                                </div>
+
+                                                <div class="text-end">
+                                                    <strong class="text-success text-nowrap d-block mb-2">
+                                                        @cartItem.DisplaySubtotal.ToString("N0") đ
+                                                    </strong>
+
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-outline-danger"
+                                                            aria-label="Xóa @cartItem.ProductName khỏi giỏ"
+                                                            disabled="@_isSubmittingOrder"
+                                                            @onclick="() => RemoveCartItem(cartItem)">
+                                                        Xóa
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <p class="small mb-2">
+                                                Giá size:
+                                                @cartItem.DisplayProductSizePrice.ToString("N0") đ
+                                            </p>
+
+                                            @if (cartItem.Toppings.Count > 0)
+                                            {
+                                                <div class="mb-2">
+                                                    <span class="small fw-semibold">
+                                                        Topping:
+                                                    </span>
+
+                                                    <ul class="small text-secondary mb-0 ps-4">
+                                                        @foreach (OrderCartToppingModel topping
+                                                                in cartItem.Toppings)
+                                                        {
+                                                            <li>
+                                                                @topping.Quantity × @topping.Name
+                                                                (@topping.DisplayUnitPrice.ToString("N0") đ/phần)
+                                                            </li>
+                                                        }
+                                                    </ul>
+                                                </div>
+                                            }
+
+                                            @if (cartItem.Notes.Count > 0)
+                                            {
+                                                <div>
+                                                    <span class="small fw-semibold">
+                                                        Ghi chú:
+                                                    </span>
+
+                                                    <span class="small text-secondary">
+                                                        @string.Join(
+                                                            ", ",
+                                                            cartItem.Notes.Select(note => note.Name))
+                                                    </span>
+                                                </div>
+                                            }
+                                        </article>
+                                    }
+                                </div>
+                            }
+                        </div>
+                        <div class="modal-footer d-block">
+                            <div class="d-flex justify-content-between
+                                align-items-center gap-3">
+                                <div>
+                                    <span class="text-secondary small d-block">
+                                        Tổng cộng
+                                    </span>
+
+                                    <strong class="text-success fs-5">
+                                        @CalculateCartDisplayTotal().ToString("N0") đ
+                                    </strong>
+                                </div>
+                            </div>
+
+                            <div class="d-grid d-sm-flex
+                                justify-content-sm-end gap-2 mt-3">
+                                <button type="button"
+                                        class="btn btn-outline-secondary"
+                                        disabled="@_isSubmittingOrder"
+                                        @onclick="CloseCart">
+                                    Tiếp tục chọn món
+                                </button>
+
+                                <button type="button"
+                                        class="btn btn-success"
+                                        disabled="@(_cartItems.Count == 0 || _isSubmittingOrder)"
+                                        @onclick="SubmitOrderAsync">
+                                    @if (_isSubmittingOrder)
+                                    {
+                                        <span class="spinner-border spinner-border-sm me-2"
+                                            aria-hidden="true">
+                                        </span>
+
+                                        <span>Đang tạo đơn...</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Xác nhận tạo đơn</span>
+                                    }
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-backdrop fade show"></div>
+        }
+
+        @if (_selectedProduct is OrderMenuProductDTO selectedProduct)
+        {
+            @* Giao diện tĩnh của cửa sổ tùy chọn món *@
+            <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true"
+                 aria-labelledby="product-option-title">
+
+                <div class="modal-dialog modal-dialog-centered
+                    modal-dialog-scrollable">
+                    <div class="modal-content border-0 shadow">
+                        <div class="modal-header bg-success text-white">
+                            <div>
+                                <p class="small mb-1">
+                                    TÙY CHỌN MÓN
+                                </p>
+
+                                <h2 id="product-option-title" class="h5 mb-0">
+                                    @selectedProduct.Name
+                                </h2>
+                            </div>
+
+                            <button type="button" class="btn-close btn-close-white" aria-label="Đóng"
+                                    @onclick="CloseProductOptions">
+                            </button>
+                        </div>
+
+                        <div class="modal-body">
+                            <section aria-labelledby="size-title">
+                                <div class="d-flex justify-content-between
+                                    align-items-center mb-3">
+                                    <h3 id="size-title" class="h6 mb-0">
+                                        01. Chọn size
+                                    </h3>
+
+                                    <span class="text-danger small">
+                                        Bắt buộc
+                                    </span>
+                                </div>
+
+                                @if (_selectedProductSize is null)
+                                {
+                                    <p class="text-danger small">
+                                        Vui lòng chọn một size để tiếp tục.
+                                    </p>
+                                }
+
+                                <div class="row g-2">
+                                    @foreach (OrderMenuProductSizeDTO productSize in selectedProduct.ProductSizes)
+                                    {
+                                        bool isSelected = _selectedProductSize?.Id == productSize.Id;
+
+                                        <div class="col-12 col-sm-6">
+                                            <button type="button" class="btn @(isSelected ? "btn-success" : "btn-outline-success")
+                                                text-start w-100 p-3" @onclick="() => SelectProductSize(productSize)">
+
+                                                <span class="d-block fw-semibold">
+                                                    @productSize.SizeName
+                                                </span>
+
+                                                <span class="small">
+                                                    @productSize.Price.ToString("N0") đ
+                                                </span>
+                                            </button>
+                                        </div>
+                                    }
+                                </div>
+                            </section>
+                            <section class="border-top pt-4 mt-4" aria-labelledby="topping-title">
+
+                                <div class="d-flex justify-content-between
+                                    align-items-center mb-3">
+                                    <h3 id="topping-title" class="h6 mb-0">
+                                        02. Topping
+                                    </h3>
+
+                                    <span class="text-secondary small">
+                                        Không bắt buộc
+                                    </span>
+                                </div>
+
+                                @if (_menu.ToppingGroups.Count == 0)
+                                {
+                                    <p class="text-secondary small mb-0">
+                                        Chi nhánh hiện chưa có topping đang bán.
+                                    </p>
+                                }
+                                else
+                                {
+                                    @foreach (OrderMenuToppingGroupDTO toppingGroup
+                                            in _menu.ToppingGroups)
+                                    {
+                                        <div class="mb-3">
+                                            <h4 class="h6 fw-semibold mb-2">
+                                                @toppingGroup.Name
+                                            </h4>
+
+                                            <div class="border rounded">
+                                                @for (int toppingIndex = 0;
+                                                    toppingIndex < toppingGroup.Toppings.Count;
+                                                    toppingIndex++)
+                                                {
+                                                    OrderMenuToppingDTO topping =
+                                                        toppingGroup.Toppings[toppingIndex];
+
+                                                    int quantity =
+                                                        GetToppingQuantity(topping.Id);
+
+                                                    string borderClass =
+                                                        toppingIndex > 0
+                                                            ? "border-top"
+                                                            : string.Empty;
+
+                                                    <div class="d-flex flex-column flex-sm-row
+                                                        justify-content-between
+                                                        align-items-sm-center gap-3
+                                                        @borderClass p-3">
+
+                                                        <div>
+                                                            <h5 class="h6 mb-1">
+                                                                @topping.Name
+                                                            </h5>
+
+                                                            <span class="text-secondary small">
+                                                                @topping.UnitPrice.ToString("N0") đ / phần
+                                                                · Tối đa @topping.MaxQuantity
+                                                            </span>
+                                                        </div>
+
+                                                        <div class="d-flex align-items-center gap-2">
+                                                            <button type="button" class="btn btn-outline-secondary"
+                                                                    aria-label="Giảm @topping.Name" disabled="@(quantity <= 0)"
+                                                                    @onclick="() => DecreaseToppingQuantity(topping)">
+                                                                −
+                                                            </button>
+
+                                                            <span class="fw-semibold text-center" style="min-width: 2rem;">
+                                                                @quantity
+                                                            </span>
+
+                                                            <button type="button" class="btn btn-outline-success"
+                                                                    aria-label="Tăng @topping.Name"
+                                                                    disabled="@(quantity >= topping.MaxQuantity)"
+                                                                    @onclick="() => IncreaseToppingQuantity(topping)">
+                                                                +
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                            </section>
+                            <section class="border-top pt-4 mt-4" aria-labelledby="quick-note-title">
+
+                                <div class="d-flex justify-content-between
+                                    align-items-center mb-3">
+                                    <h3 id="quick-note-title" class="h6 mb-0">
+                                        03. Ghi chú nhanh
+                                    </h3>
+
+                                    <span class="text-secondary small">
+                                        Không bắt buộc
+                                    </span>
+                                </div>
+
+                                @if (_menu.NoteGroups.Count == 0)
+                                {
+                                    <p class="text-secondary small mb-0">
+                                        Hiện chưa có ghi chú nhanh.
+                                    </p>
+                                }
+                                else
+                                {
+                                    @foreach (OrderMenuNoteGroupDTO noteGroup
+                                            in _menu.NoteGroups)
+                                    {
+                                        <div class="mb-3">
+                                            <div class="d-flex justify-content-between
+                                                align-items-center gap-2 mb-2">
+
+                                                <h4 class="small fw-semibold mb-0">
+                                                    @noteGroup.Name
+                                                </h4>
+
+                                                <span class="text-secondary small">
+                                                    Chọn tối đa @noteGroup.MaxSelections
+                                                </span>
+                                            </div>
+
+                                            <div class="d-flex flex-wrap gap-2">
+                                                @foreach (OrderMenuNoteOptionDTO option
+                                                        in noteGroup.Options)
+                                                {
+                                                    bool isSelected =
+                                                        IsNoteOptionSelected(
+                                                            noteGroup.Id,
+                                                            option.Id);
+
+                                                    <button type="button" class="btn @(isSelected
+                                                                ? "btn-success"
+                                                                : "btn-outline-secondary")" aria-pressed="@isSelected"
+                                                            @onclick="() => ToggleNoteOption(
+                                                                noteGroup,
+                                                                option)">
+
+@option.Name
+</button>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                            </section>
+
+                            <section class="border-top pt-4 mt-4" aria-labelledby="product-quantity-title">
+
+                                <div class="d-flex justify-content-between
+                                    align-items-center gap-3">
+                                    <div>
+                                        <h3 id="product-quantity-title" class="h6 mb-1">
+                                            04. Số lượng
+                                        </h3>
+
+                                        <span class="text-secondary small">
+                                            Số lượng món muốn thêm
+                                        </span>
+                                    </div>
+
+                                    <div class="d-flex align-items-center gap-2">
+                                        <button type="button" class="btn btn-outline-secondary" aria-label="Giảm số lượng món"
+                                                disabled="@(_productQuantity <= 1)" @onclick="DecreaseProductQuantity">
+                                            −
+                                        </button>
+
+                                        <span class="fw-semibold text-center" style="min-width: 2rem;">
+                                            @_productQuantity
+                                        </span>
+
+                                        <button type="button" class="btn btn-outline-success" aria-label="Tăng số lượng món"
+                                                @onclick="IncreaseProductQuantity">
+                                            +
+                                        </button>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-success w-100" disabled="@(_selectedProductSize is null)"
+                                    @onclick="AddSelectedProductToCart">
+
+                                @if (_selectedProductSize is null)
+                                {
+                                    <span>Chọn size để tiếp tục</span>
+                                }
+                                else
+                                {
+                                    <span>
+                                        Thêm vào giỏ ·
+                                        @CalculateSelectedProductTotal().ToString("N0") đ
+                                    </span>
+                                }
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-backdrop fade show"></div>
+        }
+    </div>
+}
+@code {
+    private bool _isLoading = true;
+    private string? _errorMessage;
+    private OrderMenuResponseDTO? _menu;
+    private int? _selectedCategoryId;
+    private string _keyword = string.Empty;
+
+    private List<OrderMenuProductDTO> _visibleProducts =
+            new List<OrderMenuProductDTO>();
+
+    // Món đang được employee mở để chọn size và topping
+    private OrderMenuProductDTO? _selectedProduct;
+
+    // Size của món đang được employee chọn
+    private OrderMenuProductSizeDTO? _selectedProductSize;
+
+    // Lưu số lượng topping đã chọn theo Topping.Id
+    private Dictionary<int, int> _selectedToppingQuantities =
+            new Dictionary<int, int>();
+
+    // Lưu một NoteOption được chọn trong mỗi NoteGroup
+    private Dictionary<int, int> _selectedNoteOptionIds =
+        new Dictionary<int, int>();
+
+    // Số lượng của món đang được cấu hình, tối thiểu là 1
+    private int _productQuantity = 1;
+
+    // Giữ các món đã chọn trong thời gian employee thao tác trên trang
+    private List<OrderCartItemModel> _cartItems =
+        new List<OrderCartItemModel>();
+
+    // Cho biết employee đang mở hay đóng phần chi tiết giỏ hàng
+    private bool _isCartOpen;
+
+    // Xóa đúng dòng cấu hình được chọn khỏi giỏ hàng
+    private void RemoveCartItem(OrderCartItemModel cartItem)
+    {
+        _cartItems.Remove(cartItem);
+    }
+
+    // Trạng thái gửi đơn lên API
+    private bool _isSubmittingOrder;
+    private string? _orderSubmitErrorMessage;
+    private CreateOrderResponseDTO? _createOrder;
+
+    // Chỉ đọc LocalStorage và tải dữ liệu lần render đầu tiên
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        await LoadOrderMenuAsync();
+
+        // OnAfterRenderAsync không tự render lại khi await hoàn thành
+        StateHasChanged();
+    }
+
+    // Lấy chi nhánh hiện tại rồi tải menu tương ứng
+    private async Task LoadOrderMenuAsync()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+        _menu = null;
+        _selectedCategoryId = null;
+        _keyword = string.Empty;
+        _visibleProducts.Clear();
+
+        try
+        {
+            UserProfileDTO? profile =
+                await UserApiService.GetCurrentProfileAsync();
+
+            if (profile is null)
+            {
+                _errorMessage = "Không thể tải thông tin tài khoản.";
+                return;
+            }
+
+            if (!profile.CurrentBranchId.HasValue)
+            {
+                _errorMessage = "Tài khoản chưa được phân công tại chi nhánh.";
+                return;
+            }
+
+            _menu = await OrderMenuApiService.GetOrderMenuAsync(
+                profile.CurrentBranchId.Value);
+
+            if (_menu is null)
+            {
+                _errorMessage = "Không thể tải menu. Vui lòng thử lại.";
+                return;
+            }
+
+            ApplyProductFilter();
+        }
+        catch (HttpRequestException)
+        {
+            _errorMessage = "Không thể kết nối đến API.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    // Ghi nhận danh mục được chọn rồi lọc lại sản phẩm
+    private void SelectCategory(int? categoryId)
+    {
+        _selectedCategoryId = categoryId;
+
+        ApplyProductFilter();
+    }
+
+    // Ghi nhận món được chọn để chuẩn bị hiển thị modal tùy chọn
+    private void OpenProductOptions(OrderMenuProductDTO product)
+    {
+        _selectedProduct = product;
+        _selectedProductSize = null;
+        _selectedToppingQuantities.Clear();
+        _selectedNoteOptionIds.Clear();
+        _productQuantity = 1;
+    }
+
+    // Ghi nhận ProductSize cụ thể mà employee đã chọn
+    private void SelectProductSize(OrderMenuProductSizeDTO productSize)
+    {
+        _selectedProductSize = productSize;
+    }
+
+    // Lấy số lượng hiện tại của topping, chưa chọn thì trả về 0
+    private int GetToppingQuantity(int toppingId)
+    {
+        if (_selectedToppingQuantities.TryGetValue(toppingId, out int quantity))
+        {
+            return quantity;
+        }
+
+        return 0;
+    }
+
+    // Tăng số lượng nhưng không vượt quá giới hạn API trả về
+    private void IncreaseToppingQuantity(OrderMenuToppingDTO topping)
+    {
+        int currentQuantity = GetToppingQuantity(topping.Id);
+
+        if (currentQuantity >= topping.MaxQuantity)
+        {
+            return;
+        }
+
+        _selectedToppingQuantities[topping.Id] = currentQuantity + 1;
+    }
+
+    // Giảm số lượng và xóa khỏi danh sách khi trở về 0
+    private void DecreaseToppingQuantity(OrderMenuToppingDTO topping)
+    {
+        int currentQuantity = GetToppingQuantity(topping.Id);
+
+        if (currentQuantity <= 0)
+        {
+            return;
+        }
+
+        if (currentQuantity == 1)
+        {
+            _selectedToppingQuantities.Remove(topping.Id);
+            return;
+        }
+
+        _selectedToppingQuantities[topping.Id] = currentQuantity - 1;
+    }
+
+    // Kiểm tra option có phải lựa chọn hiện tại của nhóm không
+    private bool IsNoteOptionSelected(int noteGroupId, int noteOptionId)
+    {
+        if (_selectedNoteOptionIds.TryGetValue(noteGroupId, out int selectedOptionId))
+        {
+            return selectedOptionId == noteOptionId;
+        }
+
+        return false;
+    }
+
+    // Chọn một option hoặc bỏ chọn nếu người dùng bấm lại
+    private void ToggleNoteOption(
+        OrderMenuNoteGroupDTO noteGroup,
+        OrderMenuNoteOptionDTO option)
+    {
+        bool isSelected = IsNoteOptionSelected(noteGroup.Id, option.Id);
+
+        if (isSelected)
+        {
+            _selectedNoteOptionIds.Remove(noteGroup.Id);
+            return;
+        }
+
+        _selectedNoteOptionIds[noteGroup.Id] = option.Id;
+    }
+
+    // Tăng số lượng món thêm vào giỏ
+    private void IncreaseProductQuantity()
+    {
+        _productQuantity++;
+    }
+
+    // Giảm số lượng nhưng không cho phép thấp hơn 1
+    private void DecreaseProductQuantity()
+    {
+        if (_productQuantity <= 1)
+        {
+            return;
+        }
+
+        _productQuantity--;
+    }
+
+    // Tạm tính toàn bộ cấu hình món đang chọn
+    private decimal CalculateSelectedProductTotal()
+    {
+        if (_selectedProductSize is null || _menu is null)
+        {
+            return 0m;
+        }
+
+        decimal configuredProductUnitPrice = _selectedProductSize.Price;
+
+        foreach (OrderMenuToppingGroupDTO toppingGroup in _menu.ToppingGroups)
+        {
+            foreach (OrderMenuToppingDTO topping in toppingGroup.Toppings)
+            {
+                int toppingQuantity = GetToppingQuantity(topping.Id);
+
+                configuredProductUnitPrice += topping.UnitPrice * toppingQuantity;
+            }
+        }
+
+        return configuredProductUnitPrice * _productQuantity;
+    }
+
+    // Sao chép cấu hình món hiện tại thành một dòng trong giỏ hàng
+    private void AddSelectedProductToCart()
+    {
+        if (_selectedProduct is null ||
+            _selectedProductSize is null ||
+            _menu is null)
+        {
+            return;
+        }
+
+        OrderCartItemModel cartItem = new OrderCartItemModel
+        {
+            ProductSizeId = _selectedProductSize.Id,
+            ProductName = _selectedProduct.Name,
+            SizeName = _selectedProductSize.SizeName,
+            Quantity = _productQuantity,
+            DisplayProductSizePrice = _selectedProductSize.Price,
+            DisplaySubtotal = CalculateSelectedProductTotal()
+        };
+
+        // Chỉ sao chép những topping có số lượng lớn hơn 0
+        foreach (OrderMenuToppingGroupDTO toppingGroup in _menu.ToppingGroups)
+        {
+            foreach (OrderMenuToppingDTO topping in toppingGroup.Toppings)
+            {
+                int toppingQuantity = GetToppingQuantity(topping.Id);
+
+                if (toppingQuantity <= 0)
+                {
+                    continue;
+                }
+
+                cartItem.Toppings.Add(new OrderCartToppingModel
+                {
+                    ToppingId = topping.Id,
+                    Name = topping.Name,
+                    Quantity = toppingQuantity,
+                    DisplayUnitPrice = topping.UnitPrice
+                });
+            }
+        }
+
+        // Tìm tên của từng NoteOption đã chọn để hiển thị trong giỏ
+        foreach (OrderMenuNoteGroupDTO noteGroup in _menu.NoteGroups)
+        {
+            if (!_selectedNoteOptionIds.TryGetValue(
+                noteGroup.Id, out int selectedOptionId))
+            {
+                continue;
+            }
+
+            foreach (OrderMenuNoteOptionDTO option in noteGroup.Options)
+            {
+                if (option.Id != selectedOptionId)
+                {
+                    continue;
+                }
+
+                cartItem.Notes.Add(new OrderCartNoteModel
+                {
+                    NoteOptionId = option.Id,
+                    Name = option.Name
+                });
+
+                break;
+            }
+        }
+
+        _cartItems.Add(cartItem);
+        CloseProductOptions();
+    }
+
+    // Tính tổng số lượng của tất cả các dòng trong giỏ hàng
+    private int GetCartTotalQuantity()
+    {
+        int totalQuantity = 0;
+
+        foreach (OrderCartItemModel cartItem in _cartItems)
+        {
+            totalQuantity += cartItem.Quantity;
+        }
+
+        return totalQuantity;
+    }
+
+    // Tính tổng tiền hiển thị của tất cả dòng trong giỏ
+    private decimal CalculateCartDisplayTotal()
+    {
+        decimal totalAmount = 0m;
+
+        foreach (OrderCartItemModel cartItem in _cartItems)
+        {
+            totalAmount += cartItem.DisplaySubtotal;
+        }
+
+        return totalAmount;
+    }
+
+    // Mở phần chi tiết giỏ hàng
+    private void OpenCart()
+    {
+        _isCartOpen = true;
+    }
+
+    // Đóng phần chi tiết giỏ hàng
+    private void CloseCart()
+    {
+        _isCartOpen = false;
+    }
+
+    // Đóng modal và xóa món đang được chọn
+    private void CloseProductOptions()
+    {
+        _selectedProduct = null;
+        _selectedProductSize = null;
+        _selectedToppingQuantities.Clear();
+        _selectedNoteOptionIds.Clear();
+        _productQuantity = 1;
+    }
+
+    // Nhận từ khóa mới và lọc lại danh sách món
+    private void HandleKeywordInput(ChangeEventArgs eventArgs)
+    {
+        _keyword = eventArgs.Value?.ToString() ?? string.Empty;
+
+        ApplyProductFilter();
+    }
+
+    // Tạo danh sách sản phẩm cần hiển thị
+    private void ApplyProductFilter()
+    {
+        _visibleProducts.Clear();
+
+        if (_menu is null)
+        {
+            return;
+        }
+
+        string normalizedKeyword =
+                    RemoveVietnameseDiacritics(_keyword.Trim());
+
+        foreach (OrderMenuCategoryDTO category in _menu.Categories)
+        {
+            // null là chọn Tất cả; có Id thì chỉ lấy đúng danh mục
+            if (_selectedCategoryId.HasValue
+                && category.Id != _selectedCategoryId.Value)
+            {
+                continue;
+            }
+
+            foreach (OrderMenuProductDTO product in category.Products)
+            {
+                string normalizedProductName =
+                    RemoveVietnameseDiacritics(product.Name);
+
+                // So sánh hai chuỗi đã được loại bỏ dấu
+                if (!string.IsNullOrWhiteSpace(normalizedKeyword)
+                    && !normalizedProductName.Contains(
+                        normalizedKeyword,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                _visibleProducts.Add(product);
+            }
+        }
+    }
+
+    // Chuẩn hóa tiếng Việt để hỗ trợ tìm kiếm không dấu
+    private static string RemoveVietnameseDiacritics(string value)
+    {
+        string normalizedValue =
+            value.Normalize(NormalizationForm.FormD);
+
+        StringBuilder result = new StringBuilder();
+
+        foreach (char character in normalizedValue)
+        {
+            UnicodeCategory category =
+                CharUnicodeInfo.GetUnicodeCategory(character);
+
+            if (category != UnicodeCategory.NonSpacingMark)
+            {
+                result.Append(character);
+            }
+        }
+
+        return result
+            .ToString()
+            .Normalize(NormalizationForm.FormC)
+            .Replace('đ', 'd')
+            .Replace('Đ', 'D');
+    }
+
+    // Chuyển dữ liệu giỏ hàng thành request gửi đến API
+    private CreateOrderRequestDTO? BuildCreateOrderRequest()
+    {
+        if (_menu is null || _cartItems.Count == 0)
+        {
+            return null;
+        }
+
+        CreateOrderRequestDTO request = new CreateOrderRequestDTO
+        {
+            BranchId = _menu.Branch.Id
+        };
+
+        foreach (OrderCartItemModel cartItem in _cartItems)
+        {
+            CreateOrderItemRequestDTO requestItem =
+                new CreateOrderItemRequestDTO
+                {
+                    ProductSizeId = cartItem.ProductSizeId,
+                    Quantity = cartItem.Quantity
+                };
+
+            // Chuyển ID và số lượng topping vào request
+            foreach (OrderCartToppingModel cartTopping in cartItem.Toppings)
+            {
+                requestItem.Toppings.Add(
+                    new CreateOrderItemToppingRequestDTO
+                    {
+                        ToppingId = cartTopping.ToppingId,
+                        Quantity = cartTopping.Quantity
+                    });
+            }
+
+            // Mỗi ghi chú chỉ cần gửi NoteOptionId
+            foreach (OrderCartNoteModel cartNote in cartItem.Notes)
+            {
+                requestItem.NoteOptionIds.Add(cartNote.NoteOptionId);
+            }
+
+            request.Items.Add(requestItem);
+        }
+
+        return request;
+    }
+
+    // Gửi toàn bộ giỏ hàng đến API để tạo đơn
+    private async Task SubmitOrderAsync()
+    {
+        if (_isSubmittingOrder)
+        {
+            return;
+        }
+
+        CreateOrderRequestDTO? request = BuildCreateOrderRequest();
+
+        if (request is null)
+        {
+            _orderSubmitErrorMessage = "Giỏ hàng chưa có món để tạo đơn.";
+
+            return;
+        }
+
+        _isSubmittingOrder = true;
+        _orderSubmitErrorMessage = null;
+        _createOrder = null;
+
+        try
+        {
+            OrderCreateApiResult result =
+                await OrderApiService.CreateOrderAsync(request);
+
+            if (!result.IsSuccess || result.Order is null)
+            {
+                _orderSubmitErrorMessage =
+                    string.IsNullOrWhiteSpace(result.ErrorMessage)
+                        ? "Không thể tạo đơn hàng."
+                        : result.ErrorMessage;
+
+                return;
+            }
+
+            // Chỉ xóa giỏ sau khi Backend xác nhận đã tạo đơn
+            _createOrder = result.Order;
+            _cartItems.Clear();
+            _isCartOpen = false;
+        }
+        catch (HttpRequestException)
+        {
+            _orderSubmitErrorMessage = "Không thể kết nối API.";
+        }
+        finally
+        {
+            _isSubmittingOrder = false;
+        }
+    }
+
+}
