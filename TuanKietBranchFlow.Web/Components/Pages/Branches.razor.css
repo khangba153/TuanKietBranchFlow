@@ -1,0 +1,218 @@
+.branches-page {
+    padding-bottom: 2rem;
+}
+
+/* Tiêu đề gọn để danh sách chi nhánh xuất hiện ngay trong màn hình đầu. */
+.branches-hero {
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--bf-border);
+}
+
+.branches-hero-copy {
+    max-width: 42rem;
+}
+
+.branches-hero h1 {
+    margin-bottom: 0.3rem;
+    font-size: clamp(1.75rem, 2.5vw, 2.25rem);
+    font-weight: var(--bf-heading-weight);
+    letter-spacing: -0.015em;
+}
+
+.branches-hero-copy > p:last-child {
+    margin-bottom: 0;
+    color: var(--bf-muted);
+}
+
+.branches-list-heading {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.branches-list-heading h2 {
+    margin-bottom: 0;
+    font-size: 1.2rem;
+    font-weight: var(--bf-heading-weight);
+}
+
+.branches-list-heading > span {
+    color: var(--bf-muted);
+    font-size: 0.8rem;
+}
+
+.branches-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.branches-card {
+    display: flex;
+    min-width: 0;
+    overflow: hidden;
+    flex-direction: column;
+    background-color: var(--bf-surface);
+    border: 1px solid var(--bf-border);
+    border-radius: var(--bf-radius-md);
+    box-shadow: var(--bf-shadow-sm);
+    transition:
+        border-color 150ms ease,
+        box-shadow 150ms ease,
+        transform 150ms ease;
+}
+
+.branches-card:hover {
+    border-color: rgba(15, 118, 110, 0.3);
+    box-shadow: var(--bf-shadow-md);
+    transform: translateY(-0.15rem);
+}
+
+.branches-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.9rem 1.1rem;
+    background-color: var(--bf-background);
+    border-bottom: 1px solid var(--bf-border);
+}
+
+.branches-code {
+    color: var(--bf-primary-dark);
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+}
+
+.branches-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--bf-muted);
+    font-size: 0.68rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.branches-status > span {
+    display: inline-block;
+    width: 0.45rem;
+    height: 0.45rem;
+    background-color: var(--bf-muted);
+    border-radius: 50%;
+}
+
+.branches-status.is-active {
+    color: var(--bf-success);
+}
+
+.branches-status.is-active > span {
+    background-color: var(--bf-success);
+    box-shadow: 0 0 0 0.2rem rgba(24, 116, 95, 0.12);
+}
+
+.branches-card-body {
+    flex: 1 1 auto;
+    padding: 1.2rem;
+}
+
+.branches-card-body h3 {
+    overflow-wrap: break-word;
+    margin-bottom: 0.65rem;
+    font-size: 1.05rem;
+    font-weight: var(--bf-heading-weight);
+}
+
+.branches-card-body p {
+    overflow-wrap: anywhere;
+    margin-bottom: 0;
+    color: var(--bf-muted);
+    font-size: 0.8rem;
+    line-height: 1.55;
+}
+
+.branches-card-footer {
+    padding: 0 1.2rem 1.2rem;
+}
+
+.branches-card-link {
+    display: flex;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.65rem 0.85rem;
+    color: var(--bf-primary);
+    font-size: 0.82rem;
+    font-weight: 750;
+    text-decoration: none;
+    border: 1px solid var(--bf-border);
+    border-radius: var(--bf-radius-sm);
+}
+
+.branches-card-link:hover,
+.branches-card-link:focus {
+    color: #ffffff;
+    background-color: var(--bf-primary);
+    border-color: var(--bf-primary);
+}
+
+/* Loading, lỗi và danh sách rỗng dùng chung khung để giao diện không nhảy mạnh. */
+.branches-state,
+.branches-empty {
+    display: flex;
+    min-height: 22rem;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 0.65rem;
+    padding: 2rem;
+    text-align: center;
+}
+
+.branches-state p,
+.branches-empty p {
+    max-width: 30rem;
+    margin-bottom: 0.5rem;
+    color: var(--bf-muted);
+}
+
+@media (max-width: 1199.98px) {
+    .branches-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 767.98px) {
+    .branches-page {
+        padding-bottom: 5rem;
+    }
+
+    .branches-hero h1 {
+        font-size: 1.75rem;
+    }
+
+    .branches-hero-copy > p:last-child {
+        font-size: 0.82rem;
+    }
+
+    .branches-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 420px) {
+    .branches-list-heading > span {
+        display: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .branches-card {
+        transition: none;
+    }
+}

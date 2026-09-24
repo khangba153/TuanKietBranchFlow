@@ -1,0 +1,368 @@
+.employee-detail-page {
+    padding-bottom: 2rem;
+}
+
+/* Họ tên có toàn bộ chiều ngang; chỉ ngắt theo từ khi màn hình hẹp. */
+.employee-detail-hero {
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--bf-border);
+}
+
+.employee-detail-hero-copy {
+    min-width: 0;
+}
+
+.employee-detail-back-link {
+    display: inline-flex;
+    min-height: 2.5rem;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.7rem;
+    color: var(--bf-primary);
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.employee-detail-back-link:hover,
+.employee-detail-back-link:focus {
+    color: var(--bf-primary-dark);
+    text-decoration: underline;
+}
+
+.employee-detail-hero h1 {
+    overflow-wrap: break-word;
+    margin-bottom: 0.65rem;
+    font-size: clamp(1.75rem, 2.5vw, 2.25rem);
+    font-weight: var(--bf-heading-weight);
+    letter-spacing: -0.015em;
+}
+
+.employee-detail-status {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 0.9rem;
+    color: var(--bf-success);
+    background-color: var(--bf-primary-soft);
+    border: 1px solid var(--bf-border);
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 750;
+    white-space: nowrap;
+}
+
+.employee-detail-status > span {
+    width: 0.5rem;
+    height: 0.5rem;
+    background-color: #a8f0cf;
+    border-radius: 50%;
+}
+
+.employee-detail-status.is-inactive > span {
+    background-color: var(--bf-danger);
+}
+
+.employee-detail-status.is-inactive {
+    color: var(--bf-danger);
+    background-color: #fdecec;
+}
+
+/* Cột tóm tắt và các nhóm thông tin giữ nguyên thứ tự khi xuống mobile. */
+.employee-detail-content {
+    display: grid;
+    grid-template-columns: minmax(16rem, 0.75fr) minmax(0, 1.75fr);
+    align-items: start;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.employee-detail-profile,
+.employee-detail-section,
+.employee-detail-history {
+    min-width: 0;
+    padding: 1.5rem;
+}
+
+.employee-detail-profile {
+    text-align: center;
+}
+
+.employee-detail-avatar {
+    width: 6rem;
+    height: 6rem;
+    object-fit: cover;
+    border: 0.25rem solid #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 0 1px var(--bf-border);
+}
+
+.employee-detail-avatar-fallback {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--bf-primary-dark);
+    background-color: var(--bf-primary-soft);
+    font-size: 1.4rem;
+    font-weight: 800;
+}
+
+.employee-detail-code {
+    margin-top: 0.8rem;
+    margin-bottom: 0.45rem;
+    color: var(--bf-primary);
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+}
+
+.employee-detail-position {
+    margin-bottom: 0;
+    color: var(--bf-muted);
+    font-size: 0.85rem;
+}
+
+.employee-detail-profile-separator {
+    height: 1px;
+    margin: 1.5rem 0;
+    background-color: var(--bf-border);
+}
+
+.employee-detail-profile-facts {
+    display: grid;
+    gap: 1rem;
+    margin-bottom: 0;
+    text-align: left;
+}
+
+.employee-detail-profile-facts dt {
+    margin-bottom: 0.2rem;
+    color: var(--bf-muted);
+    font-size: 0.72rem;
+    font-weight: 650;
+}
+
+.employee-detail-profile-facts dd {
+    margin-bottom: 0;
+    font-size: 0.88rem;
+    font-weight: 700;
+}
+
+.employee-detail-main {
+    display: grid;
+    gap: 1rem;
+    min-width: 0;
+}
+
+.employee-detail-section-heading {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 1.35rem;
+}
+
+.employee-detail-section-heading h2 {
+    margin-bottom: 0;
+    font-size: 1.15rem;
+    font-weight: var(--bf-heading-weight);
+}
+
+.employee-detail-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem 1.5rem;
+    margin-bottom: 0;
+}
+
+.employee-detail-fields > div {
+    min-width: 0;
+}
+
+.employee-detail-fields dt {
+    margin-bottom: 0.35rem;
+    color: var(--bf-muted);
+    font-size: 0.75rem;
+    font-weight: 650;
+}
+
+.employee-detail-fields dd {
+    overflow-wrap: break-word;
+    margin-bottom: 0;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.employee-detail-field-wide {
+    grid-column: 1 / -1;
+}
+
+/* Mỗi lần phân công là một mục độc lập, đọc được cả trên màn hình hẹp. */
+.employee-detail-history {
+    margin-top: 1rem;
+}
+
+.employee-detail-history .employee-detail-section-heading {
+    flex-wrap: wrap;
+}
+
+.employee-detail-history-count {
+    margin-left: auto;
+    color: var(--bf-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.employee-detail-timeline {
+    margin: 0;
+    padding: 0 0 0 0.4rem;
+    list-style: none;
+}
+
+.employee-detail-timeline-item {
+    position: relative;
+    display: flex;
+    gap: 1rem;
+    padding-bottom: 1.2rem;
+}
+
+.employee-detail-timeline-item:not(:last-child)::before {
+    position: absolute;
+    top: 0.9rem;
+    bottom: 0;
+    left: 0.36rem;
+    width: 2px;
+    background-color: var(--bf-border);
+    content: "";
+}
+
+.employee-detail-timeline-item:last-child {
+    padding-bottom: 0;
+}
+
+.employee-detail-timeline-dot {
+    position: relative;
+    z-index: 1;
+    width: 0.85rem;
+    height: 0.85rem;
+    flex: 0 0 auto;
+    margin-top: 0.35rem;
+    background-color: var(--bf-primary);
+    border: 0.18rem solid var(--bf-primary-soft);
+    border-radius: 50%;
+}
+
+.employee-detail-timeline-body {
+    min-width: 0;
+    flex: 1 1 auto;
+    padding: 0.85rem 1rem;
+    background-color: var(--bf-background);
+    border: 1px solid var(--bf-border);
+    border-radius: var(--bf-radius-sm);
+}
+
+.employee-detail-timeline-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.employee-detail-timeline-heading h3 {
+    overflow-wrap: break-word;
+    margin-bottom: 0.4rem;
+    font-size: 0.95rem;
+    font-weight: 800;
+}
+
+.employee-detail-current {
+    flex: 0 0 auto;
+    padding: 0.25rem 0.5rem;
+    color: var(--bf-primary);
+    background-color: var(--bf-primary-soft);
+    border-radius: 999px;
+    font-size: 0.65rem;
+    font-weight: 750;
+}
+
+.employee-detail-timeline-body p {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0;
+    color: var(--bf-muted);
+    font-size: 0.78rem;
+}
+
+.employee-detail-history-empty {
+    padding: 2rem;
+    color: var(--bf-muted);
+    text-align: center;
+    background-color: var(--bf-background);
+    border-radius: var(--bf-radius-sm);
+}
+
+.employee-detail-state {
+    display: flex;
+    min-height: 22rem;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 0.65rem;
+    padding: 2rem;
+    text-align: center;
+}
+
+.employee-detail-state p {
+    max-width: 32rem;
+    margin-bottom: 0.5rem;
+    color: var(--bf-muted);
+}
+
+.employee-detail-state-icon {
+    width: 3.5rem;
+    height: 3.5rem;
+    font-size: 1.35rem;
+}
+
+.employee-detail-state-error .employee-detail-state-icon {
+    color: var(--bf-danger);
+    background-color: #fdecec;
+}
+
+@media (max-width: 991.98px) {
+    .employee-detail-content {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 575.98px) {
+    .employee-detail-page {
+        padding-bottom: 5rem;
+    }
+
+    .employee-detail-hero {
+        padding-bottom: 1rem;
+    }
+
+    .employee-detail-hero h1 {
+        font-size: 1.65rem;
+    }
+
+    .employee-detail-profile,
+    .employee-detail-section,
+    .employee-detail-history {
+        padding: 1.2rem;
+    }
+
+    .employee-detail-fields {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 1rem;
+    }
+
+    .employee-detail-history-count {
+        width: 100%;
+        margin-left: 3.55rem;
+    }
+}

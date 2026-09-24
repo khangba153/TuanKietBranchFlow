@@ -8,204 +8,187 @@
 @inject OrderApiService OrderApiService
 
 <PageTitle>Chi tiết đơn</PageTitle>
-@if (_isLoading)
-{
-    <section class="text-center py-5" aria-live="polite">
-        <div class="spinner-border text-success" role="status">
-            <span class="visually-hidden">
-                Đang tải chi tiết đơn
-            </span>
-        </div>
+<div class="my-order-detail-page bf-page">
+    @if (_isLoading)
+    {
+        <section class="my-order-detail-state bf-surface" aria-live="polite">
+            <div class="spinner-border text-success" role="status">
+                <span class="visually-hidden">Đang tải chi tiết đơn</span>
+            </div>
 
-        <p class="text-secondary mt-3 mb-0">
-            Đang tải chi tiết đơn...
-        </p>
-    </section>
-}
-else if (!string.IsNullOrWhiteSpace(_errorMessage))
-{
-    <section class="alert alert-danger" role="alert">
-        <p class="mb-3">
-            @_errorMessage
-        </p>
+            <h1 class="h5 mb-0">Đang tải chi tiết đơn</h1>
+            <p>Vui lòng chờ trong giây lát.</p>
+        </section>
+    }
+    else if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <section class="my-order-detail-state my-order-detail-state-error bf-surface" role="alert">
+            <h1 class="h5 mb-0">Không thể tải đơn hàng</h1>
+            <p>@_errorMessage</p>
 
-        <button type="button" class="btn btn-outline-danger" @onclick="LoadOrderAsync">
-            Thử lại
-        </button>
-    </section>
-}
-else if (_order is null)
-{
-    <section class="alert alert-warning" role="alert">
-        Không có dữ liệu chi tiết đơn.
-    </section>
-}
-else
-{
-    <div class="container-fluid px-0">
-        <div class="row justify-content-center">
-            <div class="col-12 col-lg-8 col-xl-6">
-                <header class="mb-4">
-                    <a href="/my-orders" class="btn btn-outline-secondary mb-3" aria-label="Quay lại danh sách đơn">
-                        ←
-                    </a>
+            <div class="d-flex flex-wrap justify-content-center gap-2">
+                <a href="/my-orders" class="btn btn-outline-secondary">
+                    Quay lại danh sách
+                </a>
 
-                    <p class="text-success fw-semibold small mb-1">
-                        CHI TIẾT ĐƠN
-                    </p>
+                <button type="button" class="btn btn-danger" @onclick="LoadOrderAsync">
+                    Thử lại
+                </button>
+            </div>
+        </section>
+    }
+    else if (_order is null)
+    {
+        <section class="my-order-detail-state bf-surface" role="status">
+            <h1 class="h5 mb-0">Không có dữ liệu chi tiết</h1>
+            <p>Đơn hàng này chưa có dữ liệu để hiển thị.</p>
 
-                    <div class="d-flex justify-content-between
-                        align-items-start gap-3">
-                        <div>
-                            <h1 class="h3 mb-2">
-                                @_order.Code
-                            </h1>
+            <a href="/my-orders" class="btn btn-primary">
+                Quay lại danh sách
+            </a>
+        </section>
+    }
+    else
+    {
+        <header class="my-order-detail-hero">
+            <div class="my-order-detail-hero-main">
+                <a href="/my-orders" class="my-order-detail-back-button" aria-label="Quay lại danh sách đơn">
+                    <span aria-hidden="true">←</span>
+                </a>
 
-                            <p class="text-secondary mb-0">
-                                @_order.BranchName
-                            </p>
-                        </div>
+                <div class="my-order-detail-hero-copy">
+                    <p class="my-order-detail-eyebrow">Chi tiết đơn</p>
+                    <h1>@_order.Code</h1>
+                    <p>@_order.BranchName</p>
+                </div>
+            </div>
 
-                        <span class="badge @(GetStatusClass(_order.Status))">
-                            @GetStatusText(_order.Status)
-                        </span>
+            <div class="my-order-detail-hero-summary">
+                <span class="my-order-detail-status badge @(GetStatusClass(_order.Status))">
+                    @GetStatusText(_order.Status)
+                </span>
+
+            </div>
+        </header>
+
+        <div class="my-order-detail-content">
+            <section class="my-order-detail-information bf-surface" aria-labelledby="order-information-title">
+                <div class="my-order-detail-section-heading">
+                    <div>
+                        <h2 id="order-information-title">Thông tin đơn</h2>
                     </div>
-                </header>
+                </div>
 
-                <section class="card border-0 shadow-sm mb-4" aria-labelledby="order-information-title">
-                    <div class="card-body">
-                        <h2 id="order-information-title" class="h5 mb-3">
-                            Thông tin đơn
-                        </h2>
-
-                        <dl class="row mb-0">
-                            <dt class="col-5 text-secondary fw-normal">
-                                Ngày nghiệp vụ
-                            </dt>
-                            <dd class="col-7 text-end">
+                <dl class="my-order-detail-description-list">
+                    <div>
+                        <dt>Ngày nghiệp vụ</dt>
+                        <dd>
+                            <time datetime="@_order.BusinessDate.ToString("yyyy-MM-dd")">
                                 @_order.BusinessDate.ToString("dd/MM/yyyy")
-                            </dd>
-
-                            <dt class="col-5 text-secondary fw-normal">
-                                Thời gian tạo
-                            </dt>
-                            <dd class="col-7 text-end">
-                                @_order.CreatedAt.ToString("dd/MM/yyyy - HH:mm")
-                            </dd>
-
-                            <dt class="col-5 text-secondary fw-normal">
-                                Chi nhánh
-                            </dt>
-                            <dd class="col-7 text-end mb-0">
-                                @_order.BranchCode - @_order.BranchName
-                            </dd>
-                        </dl>
+                            </time>
+                        </dd>
                     </div>
-                </section>
 
-                <section aria-labelledby="order-items-title">
-                    <h2 id="order-items-title" class="h5 mb-3">
-                        Các món đã đặt
-                    </h2>
+                    <div>
+                        <dt>Thời gian tạo</dt>
+                        <dd>
+                            <time datetime="@_order.CreatedAt.ToString("O")">
+                                @_order.CreatedAt.ToString("dd/MM/yyyy - HH:mm")
+                            </time>
+                        </dd>
+                    </div>
 
-                    @if (_order.Items.Count == 0)
-                    {
-                        <div class="alert alert-warning" role="alert">
-                            Đơn hàng không có thông tin món.
-                        </div>
-                    }
-                    else
-                    {
+                    <div>
+                        <dt>Chi nhánh</dt>
+                        <dd>@_order.BranchCode - @_order.BranchName</dd>
+                    </div>
+                </dl>
+            </section>
+
+            <section class="my-order-detail-items" aria-labelledby="order-items-title">
+                <div class="my-order-detail-items-heading">
+                    <div>
+                        <h2 id="order-items-title">Các món đã đặt</h2>
+                    </div>
+
+                    <span>@_order.Items.Count dòng món</span>
+                </div>
+
+                @if (_order.Items.Count == 0)
+                {
+                    <div class="my-order-detail-empty bf-surface" role="status">
+                        <p class="mb-0">Đơn hàng không có thông tin món.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="my-order-detail-item-list">
                         @foreach (MyOrderDetailItemDTO item in _order.Items)
                         {
-                            <article class="card border-0 shadow-sm mb-3">
-                                <div class="card-body">
-                                    <div class="d-flex justify-content-between
-                                        align-items-start gap-3 mb-3">
-                                        <div>
-                                            <h3 class="h6 mb-1">
-                                                @item.ProductName
-                                            </h3>
+                            <article class="my-order-detail-item-card">
+                                <header class="my-order-detail-item-header">
+                                    <div>
+                                        <h3>@item.ProductName</h3>
 
-                                            <p class="text-secondary small mb-0">
-                                                Size @item.SizeName · Số lượng @item.Quantity
-                                            </p>
+                                        <div class="my-order-detail-item-meta">
+                                            <span>Size @item.SizeName</span>
+                                            <span>Số lượng @item.Quantity</span>
                                         </div>
-
-                                        <strong class="text-success">
-                                            @item.SubtotalAmount.ToString("N0") đ
-                                        </strong>
                                     </div>
 
-                                    <div class="border-top pt-3">
-                                        <div class="d-flex justify-content-between
-                                            small mb-2">
-                                            <span class="text-secondary">
-                                                Giá size
-                                            </span>
+                                    <strong>@item.SubtotalAmount.ToString("N0") đ</strong>
+                                </header>
 
-                                            <span>
-                                                @item.UnitPrice.ToString("N0") đ
-                                            </span>
-                                        </div>
+                                <div class="my-order-detail-item-body">
+                                    <div class="my-order-detail-price-row">
+                                        <span>Giá size</span>
+                                        <strong>@item.UnitPrice.ToString("N0") đ</strong>
+                                    </div>
 
-                                        @if (item.Toppings.Count > 0)
-                                        {
-                                            <p class="fw-semibold small mb-2 mt-3">
-                                                Topping
-                                            </p>
+                                    @if (item.Toppings.Count > 0)
+                                    {
+                                        <section class="my-order-detail-option-group" aria-label="Topping đã chọn">
+                                            <h4>Topping</h4>
 
-                                            @foreach (MyOrderDetailToppingDTO topping
-                                                in item.Toppings)
+                                            @foreach (MyOrderDetailToppingDTO topping in item.Toppings)
                                             {
-                                                <div class="d-flex justify-content-between
-                                                    small mb-2">
-                                                    <span class="text-secondary">
-                                                        @topping.Name × @topping.Quantity
-                                                    </span>
-
-                                                    <span>
-                                                        @((topping.UnitPrice
-                                                            * topping.Quantity).ToString("N0")) đ
-                                                    </span>
+                                                <div class="my-order-detail-price-row">
+                                                    <span>@topping.Name × @topping.Quantity</span>
+                                                    <strong>
+                                                        @((topping.UnitPrice * topping.Quantity).ToString("N0")) đ
+                                                    </strong>
                                                 </div>
                                             }
-                                        }
+                                        </section>
+                                    }
 
-                                        @if (item.Notes.Count > 0)
-                                        {
-                                            <p class="fw-semibold small mb-2 mt-3">
-                                                Ghi chú
-                                            </p>
+                                    @if (item.Notes.Count > 0)
+                                    {
+                                        <section class="my-order-detail-option-group" aria-label="Ghi chú đã chọn">
+                                            <h4>Ghi chú</h4>
 
-                                            <div class="d-flex flex-wrap gap-2">
-                                                @foreach (MyOrderDetailNoteDTO note
-                                                    in item.Notes)
+                                            <div class="my-order-detail-note-list">
+                                                @foreach (MyOrderDetailNoteDTO note in item.Notes)
                                                 {
-                                                    <span class="badge text-bg-light">
-                                                        @note.Name
-                                                    </span>
+                                                    <span>@note.Name</span>
                                                 }
                                             </div>
-                                        }
-                                    </div>
+                                        </section>
+                                    }
                                 </div>
                             </article>
                         }
-                    }
-                </section>
-
-                <section class="card border-success mb-4" aria-label="Tổng tiền đơn hàng">
-                    <div class="card-body d-flex justify-content-between
-                        align-items-center gap-3">
-                        <span class="fw-semibold">
-                            Tổng tiền
-                        </span>
-
-                        <strong class="h4 text-success mb-0">
-                            @_order.TotalAmount.ToString("N0") đ
-                        </strong>
                     </div>
+                }
+            </section>
+
+            <aside class="my-order-detail-action">
+                <section class="my-order-detail-total bf-surface" aria-label="Tổng tiền đơn hàng">
+                    <div>
+                        <span>Tổng cộng</span>
+                    </div>
+
+                    <strong>@_order.TotalAmount.ToString("N0") đ</strong>
                 </section>
 
                 @if (string.Equals(
@@ -215,27 +198,27 @@ else
                 {
                     @if (!string.IsNullOrWhiteSpace(_reportSuccessMessage))
                     {
-                        <div class="alert alert-success" role="alert">
+                        <div class="alert alert-success" role="status">
                             @_reportSuccessMessage
                         </div>
                     }
 
-                    <section class="alert alert-warning mb-4" aria-labelledby="reported-order-title">
-                        <h2 id="reported-order-title" class="h5">
-                            Đơn đang chờ xem lại
-                        </h2>
+                    <section class="my-order-detail-review-card" aria-labelledby="reported-order-title">
+                        <div>
+                            <p class="my-order-detail-section-eyebrow">Đã tiếp nhận</p>
+                            <h2 id="reported-order-title">Đơn đang chờ xem lại</h2>
+                            <p class="my-order-detail-review-reason">@_order.ReportReason</p>
 
-                        <p class="mb-2">
-                            @_order.ReportReason
-                        </p>
-
-                        @if (_order.ReportedAt.HasValue)
-                        {
-                            <small class="text-secondary">
-                                Đã báo lúc
-                                @_order.ReportedAt.Value.ToString("dd/MM/yyyy - HH:mm")
-                            </small>
-                        }
+                            @if (_order.ReportedAt.HasValue)
+                            {
+                                <small>
+                                    Đã báo lúc
+                                    <time datetime="@_order.ReportedAt.Value.ToString("O")">
+                                        @_order.ReportedAt.Value.ToString("dd/MM/yyyy - HH:mm")
+                                    </time>
+                                </small>
+                            }
+                        </div>
                     </section>
                 }
                 else if (string.Equals(
@@ -243,62 +226,62 @@ else
                     "COMPLETED",
                     StringComparison.OrdinalIgnoreCase))
                 {
-                    <section class="card border-0 shadow-sm mb-4" aria-labelledby="report-order-title">
-                        <div class="card-body">
-                            <h2 id="report-order-title" class="h5 mb-2">
-                                Báo sai đơn hàng
-                            </h2>
-
-                            <p class="text-secondary small mb-3">
-                                Hãy mô tả thông tin chưa chính xác để quản lý kiểm tra.
-                            </p>
-
-                            @if (!string.IsNullOrWhiteSpace(_reportErrorMessage))
-                            {
-                                <div class="alert alert-danger" role="alert">
-                                    @_reportErrorMessage
-                                </div>
-                            }
-
-                            <label for="report-reason" class="form-label">
-                                Lý do báo sai
-                            </label>
-
-                            <textarea id="report-reason" class="form-control" rows="4" maxlength="500"
-                                      placeholder="Ví dụ: Sai size hoặc thiếu topping..." @bind="_reportReason" @bind:event="oninput"
-                                      disabled="@_isReporting">
-                            </textarea>
-
-                            <div class="d-flex justify-content-between
-                                align-items-center gap-3 mt-2">
-                                <small class="text-secondary">
-                                    @_reportReason.Length/500 ký tự
-                                </small>
-                            </div>
-
-                            <div class="d-grid d-sm-flex justify-content-sm-end mt-3">
-                                <button type="button" class="btn btn-outline-danger" disabled="@(_isReporting
-                                            || string.IsNullOrWhiteSpace(_reportReason))" @onclick="SubmitReportAsync">
-                                    @if (_isReporting)
-                                    {
-                                        <span class="spinner-border spinner-border-sm me-2" aria-hidden="true">
-                                        </span>
-
-                                        <span>Đang gửi...</span>
-                                    }
-                                    else
-                                    {
-                                        <span>Gửi báo sai</span>
-                                    }
-                                </button>
+                    <section class="my-order-detail-report-card bf-surface" aria-labelledby="report-order-title">
+                        <div class="my-order-detail-section-heading">
+                            <div>
+                                <h2 id="report-order-title">Báo sai đơn hàng</h2>
                             </div>
                         </div>
+
+                        <p class="my-order-detail-report-description">
+                            Hãy mô tả thông tin chưa chính xác để quản lý kiểm tra.
+                        </p>
+
+                        @if (!string.IsNullOrWhiteSpace(_reportErrorMessage))
+                        {
+                            <div class="alert alert-danger" role="alert">
+                                @_reportErrorMessage
+                            </div>
+                        }
+
+                        <label for="report-reason" class="form-label fw-semibold">
+                            Lý do báo sai
+                        </label>
+
+                        <textarea id="report-reason"
+                                  class="form-control my-order-detail-report-input"
+                                  rows="4"
+                                  maxlength="500"
+                                  placeholder="Ví dụ: Sai size hoặc thiếu topping..."
+                                  @bind="_reportReason"
+                                  @bind:event="oninput"
+                                  disabled="@_isReporting">
+                        </textarea>
+
+                        <small class="my-order-detail-character-count">
+                            @_reportReason.Length/500 ký tự
+                        </small>
+
+                        <button type="button"
+                                class="btn btn-outline-danger my-order-detail-report-button"
+                                disabled="@(_isReporting || string.IsNullOrWhiteSpace(_reportReason))"
+                                @onclick="SubmitReportAsync">
+                            @if (_isReporting)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+                                <span>Đang gửi...</span>
+                            }
+                            else
+                            {
+                                <span>Gửi báo sai</span>
+                            }
+                        </button>
                     </section>
                 }
-            </div>
+            </aside>
         </div>
-    </div>
-}
+    }
+</div>
 @code {
     // ID của đơn được lấy từ URL
     [Parameter]

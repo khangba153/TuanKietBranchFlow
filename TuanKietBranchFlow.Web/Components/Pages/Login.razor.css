@@ -1,0 +1,215 @@
+.login-page {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.login-shell {
+    display: grid;
+    grid-template-columns: minmax(0, 1.06fr) minmax(0, 0.94fr);
+    width: min(100%, 1060px);
+    min-height: 620px;
+    overflow: hidden;
+    border: 1px solid var(--bf-border);
+    border-radius: 1.5rem;
+    background: var(--bf-surface);
+    box-shadow: var(--bf-shadow-md);
+}
+
+.login-intro {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(2rem, 4vw, 3.5rem);
+    overflow: hidden;
+    color: #fff;
+    background: linear-gradient(145deg, #103f3a 0%, #0f766e 72%, #138477 100%);
+}
+
+.login-intro::after {
+    position: absolute;
+    right: -8rem;
+    bottom: -10rem;
+    width: 24rem;
+    height: 24rem;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 50%;
+    box-shadow: 0 0 0 4rem rgba(255, 255, 255, 0.035),
+        0 0 0 8rem rgba(255, 255, 255, 0.025);
+    content: "";
+    pointer-events: none;
+}
+
+.login-brand {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 0;
+    font-size: clamp(1.75rem, 3vw, 2.5rem);
+    font-weight: 750;
+    letter-spacing: -0.03em;
+}
+
+.login-brand-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.5rem;
+    height: 3.5rem;
+    flex: none;
+    border-radius: 0.75rem;
+    color: var(--bf-primary-dark);
+    background: #f4dfb8;
+    font-size: 1.85rem;
+    font-weight: 800;
+}
+
+.login-form-eyebrow {
+    display: inline-block;
+    margin-bottom: 1rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.login-form-panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(2rem, 5vw, 4.25rem);
+}
+
+.login-form-content {
+    width: min(100%, 360px);
+}
+
+.login-form-eyebrow {
+    margin-bottom: 0.6rem;
+    color: var(--bf-primary);
+}
+
+.login-form-content h2 {
+    margin: 0 0 0.5rem;
+    font-size: clamp(1.85rem, 2.5vw, 2.2rem);
+    font-weight: 750;
+    letter-spacing: -0.04em;
+}
+
+.login-form-description {
+    margin-bottom: 2rem;
+    color: var(--bf-muted);
+    line-height: 1.6;
+}
+
+.login-alert {
+    border-radius: var(--bf-radius-sm);
+    font-size: 0.9rem;
+}
+
+.login-field {
+    margin-bottom: 1.25rem;
+}
+
+.login-field .form-label {
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 650;
+}
+
+.login-field ::deep .form-control {
+    min-height: 3rem;
+    padding: 0.75rem 0.9rem;
+    border-color: var(--bf-border);
+    border-radius: var(--bf-radius-sm);
+}
+
+.login-field ::deep .form-control:focus {
+    border-color: var(--bf-primary);
+    box-shadow: 0 0 0 0.2rem rgba(15, 118, 110, 0.13);
+}
+
+.login-field ::deep .validation-message {
+    display: block;
+    margin-top: 0.35rem;
+    color: var(--bf-danger);
+    font-size: 0.82rem;
+}
+
+.login-submit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    min-height: 3.1rem;
+    margin-top: 1.75rem;
+    font-size: 0.95rem;
+}
+
+.login-submit-arrow {
+    font-size: 1.2rem;
+    line-height: 1;
+}
+
+.login-help {
+    margin: 1.75rem 0 0;
+    color: var(--bf-muted);
+    font-size: 0.82rem;
+    line-height: 1.6;
+    text-align: center;
+}
+
+@media (max-width: 767.98px) {
+    .login-shell {
+        grid-template-columns: 1fr;
+        min-height: 0;
+    }
+
+    .login-intro {
+        padding: 1.5rem;
+    }
+
+    .login-brand {
+        font-size: 1.5rem;
+    }
+
+    .login-form-panel {
+        padding: 2rem 1.5rem 2.25rem;
+    }
+
+    .login-form-content {
+        width: 100%;
+    }
+
+    .login-form-description {
+        margin-bottom: 1.5rem;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .login-shell {
+        border-radius: 1rem;
+    }
+
+    .login-intro {
+        padding: 1.25rem;
+    }
+
+    .login-brand {
+        font-size: 1.35rem;
+    }
+
+    .login-brand-mark {
+        width: 2.5rem;
+        height: 2.5rem;
+        font-size: 1.35rem;
+    }
+
+    .login-form-panel {
+        padding: 1.75rem 1.25rem 2rem;
+    }
+}

@@ -4,22 +4,28 @@
 
 @inherits LayoutComponentBase
 
-<div class="page">
-    <div class="sidebar">
+<div class="bf-shell">
+    <aside class="bf-sidebar">
         <NavMenu />
-    </div>
+    </aside>
 
-    <main>
-        <div class="top-row px-4">
+    <div class="bf-main-column">
+        <header class="bf-topbar">
+            <div class="bf-topbar-brand">
+                <span class="bf-brand-mark">BF</span>
+
+                <div>
+                    <strong>BranchFlow</strong>
+                </div>
+            </div>
+
             <AuthorizeView>
                 <Authorized>
-                    <div class="d-flex align-items-center gap-3">
-                        <span class="text-secondary">
-                            Xin chào,
-                            <strong>
-                                @context.User.Identity?.Name
-                            </strong>
-                        </span>
+                    <div class="bf-user-area">
+                        <div class="bf-user-information">
+                            <span class="bf-user-label">Xin chào</span>
+                            <strong>@context.User.Identity?.Name</strong>
+                        </div>
 
                         <button type="button"
                                 class="btn btn-outline-danger btn-sm"
@@ -31,31 +37,37 @@
 
                 <NotAuthorized>
                     <NavLink class="btn btn-outline-primary btn-sm"
-                            href="/login">
+                             href="/login">
                         Đăng nhập
                     </NavLink>
                 </NotAuthorized>
             </AuthorizeView>
-        </div>
+        </header>
 
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
+        <main class="content bf-content">
+            <div class="bf-content-container">
+                @Body
+            </div>
+        </main>
+    </div>
 </div>
 
 <div id="blazor-error-ui" data-nosnippet>
-    An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
-    <span class="dismiss">🗙</span>
+    <span>Đã xảy ra lỗi ngoài dự kiến.</span>
+    <a href="." class="reload">Tải lại</a>
+    <button type="button"
+            class="dismiss"
+            aria-label="Đóng thông báo lỗi">
+        ×
+    </button>
 </div>
 
-@code{
-    // Khôi phục trạng thái đăng nhập sau khi trình duyệt đã render
+@code {
+    // Khôi phục trạng thái đăng nhập sau khi trình duyệt đã render.
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        // Chỉ đọc LocalStorage một lần khi layout vừa được tạo
-        if (!firstRender){
+        if (!firstRender)
+        {
             return;
         }
 
@@ -64,10 +76,9 @@
 
     private async Task HandleLogoutAsync()
     {
-        // Xóa token và đưa AuthenticatioState về anonymous
+        // Xóa token và đưa AuthenticationState về anonymous.
         await UserStateProvider.LogoutAsync();
 
-        // Chuyển người dùng về trang đăng nhập
         NavigationManager.NavigateTo("/login");
     }
 }

@@ -15,204 +15,173 @@
 
 <PageTitle>Gọi món</PageTitle>
 
-@if (_createOrder is not null)
-{
-    <div class="alert alert-success alert-dismissible" role="status">
-        <strong>Tạo đơn thành công.</strong>
+<section class="bf-page order-menu-page">
+    @if (_createOrder is not null)
+    {
+        <div class="order-menu-success" role="status">
+            <span class="order-menu-success-icon" aria-hidden="true">✓</span>
 
-        <span class="d-block mt-1">
-            Mã đơn: @_createOrder.Code
-        </span>
-
-        <span class="d-block">
-            Tổng tiền Backend xác nhận:
-            @_createOrder.TotalAmount.ToString("N0") đ
-        </span>
-
-        <button type="button"
-                class="btn-close"
-                aria-label="Đóng thông báo"
-                @onclick="() => _createOrder = null">
-        </button>
-    </div>
-}
-
-@if (_isLoading)
-{
-    <div class="text-center py-5" role="status">
-        <span class="spinner-border text-success me-2" aria-hidden="true">
-        </span>
-
-        <span class="text-secondary">
-            Đang tải menu...
-        </span>
-    </div>
-}
-else if (!string.IsNullOrWhiteSpace(_errorMessage))
-{
-    <div class="alert alert-danger" role="alert">
-        <p class="mb-3">
-            @_errorMessage
-        </p>
-
-        <button type="button" class="btn btn-outline-danger btn-sm" @onclick="LoadOrderMenuAsync">
-            Thử lại
-        </button>
-    </div>
-}
-else if (_menu is null || _menu.Categories.Count == 0)
-{
-    <div class="alert alert-info" role="status">
-        Chi nhánh hiện chưa có món đang bán.
-    </div>
-}
-else
-{
-    <div class="container-fluid px-0">
-        @* Tiêu đề và nút xem giỏ hàng *@
-        <div class="d-flex flex-column flex-md-row
-            justify-content-between align-items-md-center
-            gap-3 mb-4">
             <div>
-                <p class="text-success fw-semibold small mb-1">
-                    GỌI MÓN
-                </p>
-
-                <h1 class="h3 mb-2">
-                    Menu
-                </h1>
-
-                <p class="text-secondary mb-0">
-                    @_menu.Branch.Name
-                    <span class="small">
-                        (@_menu.Branch.Code)
-                    </span>
-                </p>
+                <strong>Tạo đơn thành công</strong>
+                <span>
+                    Mã @_createOrder.Code ·
+                    @_createOrder.TotalAmount.ToString("N0") đ
+                </span>
             </div>
 
-            <button type="button" class="btn btn-outline-success" @onclick="OpenCart">
-                Giỏ hàng
+            <a class="btn btn-sm btn-light" href="/my-orders">
+                Xem đơn
+            </a>
 
-                <span class="badge text-bg-success ms-1">
-                    @GetCartTotalQuantity()
-                </span>
+            <button type="button" class="btn-close btn-close-white" aria-label="Đóng thông báo"
+                    @onclick="() => _createOrder = null">
             </button>
         </div>
+    }
 
-        @* Khu vực tìm món *@
-        <div class="card border-0 shadow-sm mb-4">
-            <div class="card-body">
-                <label for="product-keyword" class="form-label">
-                    Tìm món
-                </label>
-
-                <input id="product-keyword" type="search" class="form-control" value="@_keyword"
-                       @oninput="HandleKeywordInput" placeholder="Nhập tên món cần tìm" />
-            </div>
+    @if (_isLoading)
+    {
+        <div class="order-menu-state bf-surface-card" role="status" aria-live="polite">
+            <span class="spinner-border text-success" aria-hidden="true"></span>
+            <strong>Đang chuẩn bị menu</strong>
+            <span class="bf-muted">Vui lòng chờ trong giây lát.</span>
         </div>
+    }
+    else if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <div class="order-menu-state order-menu-state-error bf-surface-card" role="alert">
+            <span class="order-menu-state-icon" aria-hidden="true">!</span>
+            <strong>Không thể tải menu</strong>
+            <span class="bf-muted">@_errorMessage</span>
 
-        @* Danh mục lấy từ menu của API *@
-        <nav class="mb-4" aria-label="Danh mục món">
-            <div class="d-flex flex-wrap gap-2">
+            <button type="button" class="btn btn-primary" @onclick="LoadOrderMenuAsync">
+                Thử lại
+            </button>
+        </div>
+    }
+    else if (_menu is null || _menu.Categories.Count == 0)
+    {
+        <div class="order-menu-state bf-surface-card" role="status">
+            <span class="order-menu-state-icon" aria-hidden="true">☕</span>
+            <strong>Menu đang được cập nhật</strong>
+            <span class="bf-muted">Chi nhánh hiện chưa có món đang bán.</span>
+        </div>
+    }
+    else
+    {
+        <header class="order-menu-hero">
+            <div class="order-menu-hero-content">
+                <h1>Gọi món cho khách</h1>
+
+                <p class="order-menu-branch">
+                    @_menu.Branch.Name
+                    <span class="order-menu-branch-code">@_menu.Branch.Code</span>
+                </p>
+            </div>
+
+            <button type="button" class="order-menu-cart-button" aria-label="Mở giỏ hàng, có @GetCartTotalQuantity() món"
+                    @onclick="OpenCart">
+                <span class="order-menu-cart-icon" aria-hidden="true">🛒</span>
+                <span class="order-menu-cart-label">Giỏ hàng</span>
+                <span class="order-menu-cart-count">@GetCartTotalQuantity()</span>
+            </button>
+        </header>
+
+        <section class="order-menu-toolbar bf-surface-card" aria-label="Tìm kiếm và lọc món">
+            <div class="order-menu-search">
+                <label for="product-keyword" class="visually-hidden">Tìm món</label>
+
+                <input id="product-keyword" type="search" class="form-control order-menu-search-input" value="@_keyword"
+                       @oninput="HandleKeywordInput" placeholder="Tìm món theo tên" />
+            </div>
+
+            <nav class="order-menu-categories" aria-label="Danh mục món">
                 <button type="button"
-                        class="btn @(_selectedCategoryId is null
-                            ? "btn-success"
-                            : "btn-outline-success")"
-                        @onclick="() => SelectCategory(null)">
+                        class="order-menu-category-button @(_selectedCategoryId is null ? "active" : string.Empty)"
+                        aria-pressed="@(_selectedCategoryId is null)" @onclick="() => SelectCategory(null)">
                     Tất cả
                 </button>
 
-                @foreach (OrderMenuCategoryDTO category
-                        in _menu.Categories)
+                @foreach (OrderMenuCategoryDTO category in _menu.Categories)
                 {
-                    <button type="button"
-                            class="btn @(_selectedCategoryId == category.Id
-                                ? "btn-success"
-                                : "btn-outline-success")"
-                            @onclick="() => SelectCategory(category.Id)">
+                    bool isSelected = _selectedCategoryId == category.Id;
+
+                    <button type="button" class="order-menu-category-button @(isSelected ? "active" : string.Empty)"
+                            aria-pressed="@isSelected" @onclick="() => SelectCategory(category.Id)">
                         @category.Name
                     </button>
                 }
-            </div>
-        </nav>
+            </nav>
+        </section>
 
-        @* Hiển thị toàn bộ sản phẩm trong các danh mục *@
-        <section aria-labelledby="product-list-title">
-            <div class="d-flex justify-content-between
-                align-items-center mb-3">
-                <h2 id="product-list-title" class="h5 mb-0">
-                    Tất cả món
-                </h2>
+        <section class="order-menu-products" aria-labelledby="product-list-title">
+            <div class="order-menu-section-header">
+                <div>
+                    <h2 id="product-list-title">Danh sách món</h2>
+                </div>
 
-                <span class="text-secondary small">
-                    @_visibleProducts.Count món
-                </span>
+                <span class="order-menu-product-count">@_visibleProducts.Count món</span>
             </div>
 
             @if (_visibleProducts.Count == 0)
             {
-                <div class="alert alert-info mb-0" role="status">
-                    Không tìm thấy món phù hợp.
+                <div class="bf-empty-state" role="status">
+                    <span class="order-menu-empty-icon" aria-hidden="true">⌕</span>
+                    <strong>Không tìm thấy món phù hợp</strong>
+                    <span>Hãy thử từ khóa hoặc danh mục khác.</span>
                 </div>
             }
             else
             {
-                <div class="row g-3">
-                    @foreach (OrderMenuProductDTO product
-                              in _visibleProducts)
+                <div class="order-menu-product-grid">
+                    @foreach (OrderMenuProductDTO product in _visibleProducts)
                     {
-                        <div class="col-12 col-sm-6 col-xl-4">
-                            <article class="card border-0 shadow-sm h-100">
-                                @if (!string.IsNullOrWhiteSpace(
-                                    product.ImageUrl))
+                        <article class="order-menu-product-card">
+                            <div class="order-menu-product-image">
+                                @if (!string.IsNullOrWhiteSpace(product.ImageUrl))
                                 {
-                                    <div class="ratio ratio-4x3">
-                                        <img src="@product.ImageUrl" class="w-100 h-100 object-fit-cover" alt="Ảnh @product.Name" />
-                                    </div>
+                                    <img src="@product.ImageUrl" alt="Ảnh @product.Name" />
                                 }
                                 else
                                 {
-                                    <div class="ratio ratio-4x3 bg-light">
-                                        <div class="d-flex
-                                            justify-content-center
-                                            align-items-center
-                                            text-secondary">
-                                            Chưa có ảnh
-                                        </div>
+                                    <div class="order-menu-image-placeholder">
+                                        <span aria-hidden="true">☕</span>
+                                        <small>Chưa có ảnh</small>
                                     </div>
                                 }
 
-                                <div class="card-body d-flex flex-column">
-                                    <h3 class="h6 card-title">
-                                        @product.Name
-                                    </h3>
+                                <span class="order-menu-price-badge">
+                                    @product.MinPrice.ToString("N0") đ
+                                </span>
+                            </div>
 
-                                    <p class="text-success
-                                        fw-semibold mb-3">
-                                        @product.MinPrice.ToString("N0") đ
-                                    </p>
-
-                                    <button type="button" class="btn btn-success mt-auto"
-                                            @onclick="() => OpenProductOptions(product)">
-                                        Chọn món
-                                    </button>
+                            <div class="order-menu-product-body">
+                                <div>
+                                    <h3>@product.Name</h3>
+                                    <p>Chọn size và tùy chọn cho khách</p>
                                 </div>
-                            </article>
-                        </div>
-                    }
 
+                                <button type="button" class="btn btn-primary order-menu-select-button"
+                                        @onclick="() => OpenProductOptions(product)">
+                                    <span>Chọn món</span>
+                                    <span aria-hidden="true">＋</span>
+                                </button>
+                            </div>
+                        </article>
+                    }
                 </div>
             }
         </section>
 
         @if (_isCartOpen)
         {
-            <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="cart-title">
+            <div class="modal fade show d-block order-menu-modal" tabindex="-1" role="dialog" aria-modal="true"
+                 aria-labelledby="cart-title">
 
-                <div class="modal-dialog modal-dialog-centered
+                <div class="modal-dialog modal-lg modal-dialog-centered
                     modal-dialog-scrollable">
-                    <div class="modal-content border-0 shadow">
-                        <div class="modal-header bg-success text-white">
+                    <div class="modal-content border-0 shadow order-menu-modal-content">
+                        <div class="modal-header order-menu-modal-header">
                             <div>
                                 <p class="small mb-1">
                                     Đơn đang tạo
@@ -223,13 +192,13 @@ else
                                 </h2>
                             </div>
 
-                            <button type="button" class="btn-close btn-close-white" aria-label="Đóng giỏ hàng" disabled="@_isSubmittingOrder"
-                                    @onclick="CloseCart">
+                            <button type="button" class="btn-close btn-close-white" aria-label="Đóng giỏ hàng"
+                                    disabled="@_isSubmittingOrder" @onclick="CloseCart">
                             </button>
                         </div>
 
                         
-                        <div class="modal-body">
+                        <div class="modal-body order-menu-modal-body">
                             @if (!string.IsNullOrWhiteSpace(_orderSubmitErrorMessage))
                             {
                                 <div class="alert alert-danger" role="alert">
@@ -239,8 +208,10 @@ else
                             
                             @if (_cartItems.Count == 0)
                             {
-                                <div class="alert alert-info mb-0" role="status">
-                                    Giỏ hàng chưa có món.
+                                <div class="order-menu-cart-empty" role="status">
+                                    <span aria-hidden="true">🛒</span>
+                                    <strong>Giỏ hàng chưa có món</strong>
+                                    <small>Chọn một món trong menu để bắt đầu.</small>
                                 </div>
                             }
                             else
@@ -248,7 +219,7 @@ else
                                 <div class="vstack gap-3">
                                     @foreach (OrderCartItemModel cartItem in _cartItems)
                                     {
-                                        <article class="border rounded p-3">
+                                        <article class="order-menu-cart-item">
                                             <div class="d-flex justify-content-between
                                                 align-items-start gap-3 mb-2">
                                                 <div>
@@ -267,10 +238,8 @@ else
                                                         @cartItem.DisplaySubtotal.ToString("N0") đ
                                                     </strong>
 
-                                                    <button type="button"
-                                                            class="btn btn-sm btn-outline-danger"
-                                                            aria-label="Xóa @cartItem.ProductName khỏi giỏ"
-                                                            disabled="@_isSubmittingOrder"
+                                                    <button type="button" class="btn btn-sm btn-outline-danger"
+                                                            aria-label="Xóa @cartItem.ProductName khỏi giỏ" disabled="@_isSubmittingOrder"
                                                             @onclick="() => RemoveCartItem(cartItem)">
                                                         Xóa
                                                     </button>
@@ -321,7 +290,7 @@ else
                                 </div>
                             }
                         </div>
-                        <div class="modal-footer d-block">
+                        <div class="modal-footer d-block order-menu-modal-footer">
                             <div class="d-flex justify-content-between
                                 align-items-center gap-3">
                                 <div>
@@ -337,21 +306,16 @@ else
 
                             <div class="d-grid d-sm-flex
                                 justify-content-sm-end gap-2 mt-3">
-                                <button type="button"
-                                        class="btn btn-outline-secondary"
-                                        disabled="@_isSubmittingOrder"
+                                <button type="button" class="btn btn-outline-secondary" disabled="@_isSubmittingOrder"
                                         @onclick="CloseCart">
                                     Tiếp tục chọn món
                                 </button>
 
-                                <button type="button"
-                                        class="btn btn-success"
-                                        disabled="@(_cartItems.Count == 0 || _isSubmittingOrder)"
-                                        @onclick="SubmitOrderAsync">
+                                <button type="button" class="btn btn-primary"
+                                        disabled="@(_cartItems.Count == 0 || _isSubmittingOrder)" @onclick="SubmitOrderAsync">
                                     @if (_isSubmittingOrder)
                                     {
-                                        <span class="spinner-border spinner-border-sm me-2"
-                                            aria-hidden="true">
+                                        <span class="spinner-border spinner-border-sm me-2" aria-hidden="true">
                                         </span>
 
                                         <span>Đang tạo đơn...</span>
@@ -373,21 +337,39 @@ else
         @if (_selectedProduct is OrderMenuProductDTO selectedProduct)
         {
             @* Giao diện tĩnh của cửa sổ tùy chọn món *@
-            <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true"
+            <div class="modal fade show d-block order-menu-modal" tabindex="-1" role="dialog" aria-modal="true"
                  aria-labelledby="product-option-title">
 
-                <div class="modal-dialog modal-dialog-centered
+                <div class="modal-dialog modal-lg modal-dialog-centered
                     modal-dialog-scrollable">
-                    <div class="modal-content border-0 shadow">
-                        <div class="modal-header bg-success text-white">
-                            <div>
-                                <p class="small mb-1">
-                                    TÙY CHỌN MÓN
-                                </p>
+                    <div class="modal-content border-0 shadow order-menu-modal-content">
+                        <div class="modal-header order-menu-modal-header">
+                            <div class="order-menu-option-summary">
+                                <div class="order-menu-option-image">
+                                    @if (!string.IsNullOrWhiteSpace(selectedProduct.ImageUrl))
+                                    {
+                                        <img src="@selectedProduct.ImageUrl"
+                                             alt="Ảnh @selectedProduct.Name" />
+                                    }
+                                    else
+                                    {
+                                        <span aria-hidden="true">☕</span>
+                                    }
+                                </div>
 
-                                <h2 id="product-option-title" class="h5 mb-0">
-                                    @selectedProduct.Name
-                                </h2>
+                                <div>
+                                    <p class="small mb-1">
+                                        @GetProductCategoryName(selectedProduct.Id)
+                                    </p>
+
+                                    <h2 id="product-option-title" class="h5 mb-1">
+                                        Tùy chọn @selectedProduct.Name
+                                    </h2>
+
+                                    <span class="order-menu-option-description">
+                                        Chọn size trước khi thêm món vào đơn.
+                                    </span>
+                                </div>
                             </div>
 
                             <button type="button" class="btn-close btn-close-white" aria-label="Đóng"
@@ -395,13 +377,16 @@ else
                             </button>
                         </div>
 
-                        <div class="modal-body">
+                        <div class="modal-body order-menu-modal-body">
                             <section aria-labelledby="size-title">
                                 <div class="d-flex justify-content-between
                                     align-items-center mb-3">
-                                    <h3 id="size-title" class="h6 mb-0">
-                                        01. Chọn size
-                                    </h3>
+                                    <div class="order-menu-step-heading">
+                                        <span class="order-menu-step-number">01</span>
+                                        <h3 id="size-title" class="h6 mb-0">
+                                            Chọn size
+                                        </h3>
+                                    </div>
 
                                     <span class="text-danger small">
                                         Bắt buộc
@@ -422,7 +407,8 @@ else
 
                                         <div class="col-12 col-sm-6">
                                             <button type="button" class="btn @(isSelected ? "btn-success" : "btn-outline-success")
-                                                text-start w-100 p-3" @onclick="() => SelectProductSize(productSize)">
+                                                text-start w-100 p-3 order-menu-size-button"
+                                                    @onclick="() => SelectProductSize(productSize)">
 
                                                 <span class="d-block fw-semibold">
                                                     @productSize.SizeName
@@ -440,9 +426,12 @@ else
 
                                 <div class="d-flex justify-content-between
                                     align-items-center mb-3">
-                                    <h3 id="topping-title" class="h6 mb-0">
-                                        02. Topping
-                                    </h3>
+                                    <div class="order-menu-step-heading">
+                                        <span class="order-menu-step-number">02</span>
+                                        <h3 id="topping-title" class="h6 mb-0">
+                                            Topping
+                                        </h3>
+                                    </div>
 
                                     <span class="text-secondary small">
                                         Không bắt buộc
@@ -481,7 +470,7 @@ else
                                                             ? "border-top"
                                                             : string.Empty;
 
-                                                    <div class="d-flex flex-column flex-sm-row
+                                                    <div class="d-flex flex-column flex-sm-row order-menu-topping-row
                                                         justify-content-between
                                                         align-items-sm-center gap-3
                                                         @borderClass p-3">
@@ -526,9 +515,12 @@ else
 
                                 <div class="d-flex justify-content-between
                                     align-items-center mb-3">
-                                    <h3 id="quick-note-title" class="h6 mb-0">
-                                        03. Ghi chú nhanh
-                                    </h3>
+                                    <div class="order-menu-step-heading">
+                                        <span class="order-menu-step-number">03</span>
+                                        <h3 id="quick-note-title" class="h6 mb-0">
+                                            Ghi chú nhanh
+                                        </h3>
+                                    </div>
 
                                     <span class="text-secondary small">
                                         Không bắt buộc
@@ -589,9 +581,12 @@ else
                                 <div class="d-flex justify-content-between
                                     align-items-center gap-3">
                                     <div>
-                                        <h3 id="product-quantity-title" class="h6 mb-1">
-                                            04. Số lượng
-                                        </h3>
+                                        <div class="order-menu-step-heading mb-1">
+                                            <span class="order-menu-step-number">04</span>
+                                            <h3 id="product-quantity-title" class="h6 mb-0">
+                                                Số lượng món
+                                            </h3>
+                                        </div>
 
                                         <span class="text-secondary small">
                                             Số lượng món muốn thêm
@@ -617,20 +612,21 @@ else
                             </section>
                         </div>
 
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-success w-100" disabled="@(_selectedProductSize is null)"
-                                    @onclick="AddSelectedProductToCart">
+                        <div class="modal-footer order-menu-modal-footer">
+                            <button type="button" class="btn btn-primary w-100 order-menu-add-button"
+                                    disabled="@(_selectedProductSize is null)" @onclick="AddSelectedProductToCart">
 
-                                @if (_selectedProductSize is null)
+                                <span>
+                                    @(_selectedProductSize is null
+                                        ? "Chọn size để tiếp tục"
+                                        : "Thêm vào đơn")
+                                </span>
+
+                                @if (_selectedProductSize is not null)
                                 {
-                                    <span>Chọn size để tiếp tục</span>
-                                }
-                                else
-                                {
-                                    <span>
-                                        Thêm vào giỏ ·
+                                    <strong>
                                         @CalculateSelectedProductTotal().ToString("N0") đ
-                                    </span>
+                                    </strong>
                                 }
                             </button>
                         </div>
@@ -639,8 +635,8 @@ else
             </div>
             <div class="modal-backdrop fade show"></div>
         }
-    </div>
-}
+    }
+</section>
 @code {
     private bool _isLoading = true;
     private string? _errorMessage;
@@ -746,6 +742,28 @@ else
         {
             _isLoading = false;
         }
+    }
+
+    // Tìm tên danh mục của món để hiển thị trong phần cấu hình.
+    private string GetProductCategoryName(int productId)
+    {
+        if (_menu is null)
+        {
+            return "Món đang chọn";
+        }
+
+        foreach (OrderMenuCategoryDTO category in _menu.Categories)
+        {
+            foreach (OrderMenuProductDTO product in category.Products)
+            {
+                if (product.Id == productId)
+                {
+                    return category.Name;
+                }
+            }
+        }
+
+        return "Món đang chọn";
     }
 
     // Ghi nhận danh mục được chọn rồi lọc lại sản phẩm

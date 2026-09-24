@@ -1,0 +1,321 @@
+.my-orders-page {
+    padding-bottom: 2rem;
+}
+
+/* Đầu trang gọn để ưu tiên bộ lọc và danh sách đơn. */
+.my-orders-hero {
+    display: flex;
+    align-items: center;
+    padding: 0.35rem 0 1rem;
+    border-bottom: 1px solid var(--bf-border);
+}
+
+.my-orders-hero-main {
+    display: flex;
+    min-width: 0;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.my-orders-back-button {
+    display: inline-flex;
+    width: 2.75rem;
+    height: 2.75rem;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    color: var(--bf-primary-dark);
+    font-size: 1.25rem;
+    text-decoration: none;
+    background-color: var(--bf-primary-soft);
+    border: 1px solid var(--bf-border);
+    border-radius: 50%;
+}
+
+.my-orders-back-button:hover,
+.my-orders-back-button:focus {
+    color: #ffffff;
+    background-color: var(--bf-primary);
+}
+
+.my-orders-hero h1 {
+    margin-bottom: 0;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: var(--bf-heading-weight);
+    letter-spacing: -0.025em;
+}
+
+/* Bộ lọc nằm trong luồng trang, không đè lên tiêu đề. */
+.my-orders-filter {
+    margin: 1.25rem 0 2rem;
+    padding: 1.25rem;
+}
+
+.my-orders-filter-heading,
+.my-orders-results-header {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.my-orders-filter-heading {
+    margin-bottom: 1rem;
+}
+
+.my-orders-filter h2,
+.my-orders-results-header h2 {
+    margin-bottom: 0;
+    font-size: 1.2rem;
+    font-weight: var(--bf-heading-weight);
+}
+
+.my-orders-active-filter {
+    padding: 0.35rem 0.65rem;
+    color: var(--bf-primary-dark);
+    font-size: 0.72rem;
+    font-weight: 700;
+    background-color: var(--bf-primary-soft);
+    border-radius: 999px;
+}
+
+.my-orders-filter-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 0.75rem;
+}
+
+.my-orders-search {
+    position: relative;
+    min-width: 0;
+}
+
+.my-orders-search-input {
+    min-height: 3rem;
+    padding-left: 1rem;
+    background-color: var(--bf-background);
+    border-color: transparent;
+    border-radius: 999px;
+}
+
+.my-orders-search-input:focus {
+    background-color: #ffffff;
+}
+
+.my-orders-filter-button {
+    min-width: 7rem;
+    min-height: 3rem;
+    padding-right: 1.15rem;
+    padding-left: 1.15rem;
+}
+
+/* Các trạng thái dùng cùng chiều cao để trang không nhảy bố cục mạnh. */
+.my-orders-state {
+    display: flex;
+    min-height: 20rem;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 0.65rem;
+    padding: 2rem;
+    text-align: center;
+}
+
+.my-orders-state p {
+    max-width: 30rem;
+    margin-bottom: 0.5rem;
+    color: var(--bf-muted);
+}
+
+.my-orders-state-icon {
+    display: inline-flex;
+    width: 3.5rem;
+    height: 3.5rem;
+    align-items: center;
+    justify-content: center;
+    color: var(--bf-primary);
+    font-size: 1.4rem;
+    font-weight: var(--bf-heading-weight);
+    background-color: var(--bf-primary-soft);
+    border-radius: 50%;
+}
+
+.my-orders-state-error .my-orders-state-icon {
+    color: var(--bf-danger);
+    background-color: #fdecec;
+}
+
+.my-orders-results-header {
+    margin-bottom: 1rem;
+}
+
+.my-orders-results-header > span {
+    color: var(--bf-muted);
+    font-size: 0.85rem;
+}
+
+.my-orders-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.my-orders-card {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    padding: 1.2rem;
+    background-color: var(--bf-surface);
+    border: 1px solid var(--bf-border);
+    border-radius: var(--bf-radius-md);
+    box-shadow: var(--bf-shadow-sm);
+    transition:
+        border-color 150ms ease,
+        box-shadow 150ms ease,
+        transform 150ms ease;
+}
+
+.my-orders-card:hover {
+    border-color: rgba(15, 118, 110, 0.3);
+    box-shadow: var(--bf-shadow-md);
+    transform: translateY(-0.15rem);
+}
+
+.my-orders-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.my-orders-card-label,
+.my-orders-card-metrics span {
+    display: block;
+    color: var(--bf-muted);
+    font-size: 0.72rem;
+}
+
+.my-orders-card h3 {
+    overflow-wrap: anywhere;
+    margin: 0.2rem 0 0;
+    font-size: 1rem;
+    font-weight: 800;
+}
+
+.my-orders-created-at {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.9rem;
+    color: var(--bf-muted);
+    font-size: 0.78rem;
+}
+
+.my-orders-card-metrics {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: var(--bf-background);
+    border-radius: var(--bf-radius-sm);
+}
+
+.my-orders-card-metrics strong {
+    display: block;
+    margin-top: 0.2rem;
+    font-size: 0.92rem;
+}
+
+.my-orders-card-metrics .my-orders-total {
+    color: var(--bf-primary);
+    font-size: 1.05rem;
+}
+
+.my-orders-detail-link {
+    display: flex;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    padding: 0.65rem 0.85rem;
+    color: var(--bf-primary);
+    font-size: 0.85rem;
+    font-weight: var(--bf-heading-weight);
+    text-decoration: none;
+    border: 1px solid var(--bf-border);
+    border-radius: var(--bf-radius-sm);
+}
+
+.my-orders-detail-link:hover,
+.my-orders-detail-link:focus {
+    color: #ffffff;
+    background-color: var(--bf-primary);
+    border-color: var(--bf-primary);
+}
+
+@media (max-width: 767.98px) {
+    .my-orders-page {
+        padding-bottom: calc(6rem + env(safe-area-inset-bottom));
+    }
+
+    .my-orders-hero {
+        padding: 0 0 0.85rem;
+    }
+
+    .my-orders-hero-main {
+        gap: 0.75rem;
+    }
+
+    .my-orders-back-button {
+        width: 2.5rem;
+        height: 2.5rem;
+    }
+
+    .my-orders-hero h1 {
+        font-size: 1.75rem;
+    }
+
+    .my-orders-filter {
+        margin: 1rem 0 1.5rem;
+        padding: 1rem;
+    }
+
+    .my-orders-filter-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .my-orders-search {
+        grid-column: 1 / -1;
+    }
+
+    .my-orders-filter-button {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .my-orders-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .my-orders-card {
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 420px) {
+    .my-orders-hero {
+        gap: 0.75rem;
+    }
+
+    .my-orders-active-filter {
+        display: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .my-orders-card {
+        transition: none;
+    }
+}

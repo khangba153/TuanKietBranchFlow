@@ -1,0 +1,372 @@
+.employees-page {
+    padding-bottom: 2rem;
+}
+
+/* Tiêu đề và hành động gọn, không đẩy bộ lọc ra khỏi màn hình đầu. */
+.employees-hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--bf-border);
+}
+
+.employees-hero-copy {
+    min-width: 0;
+    max-width: 45rem;
+}
+
+.employees-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.45rem;
+    color: var(--bf-primary);
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.employees-back-link:hover,
+.employees-back-link:focus {
+    color: var(--bf-primary-dark);
+}
+
+.employees-hero h1 {
+    margin-bottom: 0.25rem;
+    font-size: clamp(1.75rem, 2.5vw, 2.25rem);
+    font-weight: var(--bf-heading-weight);
+    letter-spacing: -0.015em;
+}
+
+.employees-hero-copy > p:last-child {
+    margin-bottom: 0;
+    color: var(--bf-muted);
+}
+
+.employees-create-button {
+    flex: 0 0 auto;
+}
+
+/* Bộ lọc có bề mặt riêng để dễ thao tác bằng cảm ứng trên mobile. */
+.employees-filter {
+    margin-top: 1.25rem;
+    margin-bottom: 1.5rem;
+    padding: 1.25rem;
+}
+
+.employees-filter-heading,
+.employees-list-heading {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.employees-filter-heading h2,
+.employees-list-heading h2 {
+    margin-bottom: 0;
+    font-size: 1.2rem;
+    font-weight: var(--bf-heading-weight);
+}
+
+.employees-clear-button {
+    padding-right: 0;
+    padding-left: 0;
+    color: var(--bf-danger);
+    text-decoration: none;
+}
+
+.employees-search-field {
+    position: relative;
+}
+
+.employees-search-field .form-control {
+    min-height: 2.75rem;
+    padding-left: 0.85rem;
+}
+
+.employees-filter .form-select,
+.employees-search-button {
+    min-height: 2.75rem;
+}
+
+.employees-list-heading > span {
+    color: var(--bf-muted);
+    font-size: 0.8rem;
+}
+
+.employees-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.employee-card {
+    display: flex;
+    min-width: 0;
+    overflow: hidden;
+    flex-direction: column;
+    background-color: var(--bf-surface);
+    border: 1px solid var(--bf-border);
+    border-radius: var(--bf-radius-md);
+    box-shadow: var(--bf-shadow-sm);
+    transition:
+        border-color 150ms ease,
+        box-shadow 150ms ease,
+        transform 150ms ease;
+}
+
+.employee-card:hover {
+    border-color: rgba(15, 118, 110, 0.3);
+    box-shadow: var(--bf-shadow-md);
+    transform: translateY(-0.15rem);
+}
+
+.employee-card-header {
+    position: relative;
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 1.15rem;
+    border-bottom: 1px solid var(--bf-border);
+}
+
+.employee-avatar {
+    width: 3.25rem;
+    height: 3.25rem;
+    flex: 0 0 auto;
+    object-fit: cover;
+    background-color: var(--bf-primary-soft);
+    border: 0.2rem solid #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 0 0 1px var(--bf-border);
+}
+
+.employee-avatar-fallback {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--bf-primary-dark);
+    font-size: 0.82rem;
+    font-weight: 800;
+}
+
+.employee-identity {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.employee-code {
+    display: block;
+    overflow: hidden;
+    margin-bottom: 0.2rem;
+    color: var(--bf-primary);
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.07em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.employee-identity h3 {
+    overflow-wrap: break-word;
+    margin-bottom: 0.2rem;
+    font-size: 1rem;
+    font-weight: var(--bf-heading-weight);
+}
+
+.employee-identity p {
+    overflow: hidden;
+    margin-bottom: 0;
+    color: var(--bf-muted);
+    font-size: 0.75rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.employee-status {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.55rem;
+    color: var(--bf-muted);
+    background-color: var(--bf-background);
+    border-radius: 999px;
+    font-size: 0.65rem;
+    font-weight: 750;
+    white-space: nowrap;
+}
+
+.employee-status > span {
+    width: 0.4rem;
+    height: 0.4rem;
+    background-color: currentColor;
+    border-radius: 50%;
+}
+
+.employee-status.is-active {
+    color: var(--bf-success);
+    background-color: var(--bf-primary-soft);
+}
+
+.employee-details {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin-bottom: 0;
+    padding: 1.15rem;
+}
+
+.employee-details div {
+    min-width: 0;
+}
+
+.employee-details dt {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.25rem;
+    color: var(--bf-muted);
+    font-size: 0.68rem;
+    font-weight: 650;
+}
+
+.employee-details dd {
+    overflow-wrap: anywhere;
+    margin-bottom: 0;
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.employee-card-footer {
+    margin-top: auto;
+    padding: 0 1.15rem 1.15rem;
+}
+
+.employee-profile-link {
+    display: flex;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.65rem 0.85rem;
+    color: var(--bf-primary);
+    font-size: 0.8rem;
+    font-weight: 750;
+    text-decoration: none;
+    border: 1px solid var(--bf-border);
+    border-radius: var(--bf-radius-sm);
+}
+
+.employee-profile-link:hover,
+.employee-profile-link:focus {
+    color: #ffffff;
+    background-color: var(--bf-primary);
+    border-color: var(--bf-primary);
+}
+
+/* Loading, lỗi và rỗng dùng chung chiều cao để tránh giao diện nhảy mạnh. */
+.employees-state,
+.employees-empty {
+    display: flex;
+    min-height: 22rem;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 0.65rem;
+    padding: 2rem;
+    text-align: center;
+}
+
+.employees-state p,
+.employees-empty p {
+    max-width: 32rem;
+    margin-bottom: 0.5rem;
+    color: var(--bf-muted);
+}
+
+.employees-state-icon {
+    width: 3.5rem;
+    height: 3.5rem;
+    font-size: 1.35rem;
+}
+
+.employees-state-error .employees-state-icon {
+    color: var(--bf-danger);
+    background-color: #fdecec;
+}
+
+@media (max-width: 767.98px) {
+    .employees-page {
+        padding-bottom: 5rem;
+    }
+
+    .employees-hero {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 0.85rem;
+    }
+
+    .employees-hero h1 {
+        font-size: 1.75rem;
+    }
+
+    .employees-hero-copy > p:last-child {
+        font-size: 0.82rem;
+    }
+
+    .employees-create-button {
+        width: 100%;
+    }
+
+    .employees-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 575.98px) {
+    .employees-filter {
+        padding: 1rem;
+    }
+
+    .employees-filter-heading {
+        align-items: flex-start;
+    }
+
+    .employees-list-heading {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .employee-card-header {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .employee-identity {
+        min-width: calc(100% - 4.25rem);
+    }
+
+    .employee-status {
+        margin-left: 4.15rem;
+    }
+}
+
+@media (max-width: 420px) {
+    .employee-details {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0.8rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .employee-card {
+        transition: none;
+    }
+}

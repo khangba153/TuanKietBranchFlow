@@ -8,98 +8,91 @@
 
 <PageTitle>Chi nhánh</PageTitle>
 
-<div class="container-fluid px-0">
-    <div class="mb-4">
-        <p class="text-success fw-semibold small mb-1">
-            HỆ THỐNG
-        </p>
-
-        <h1 class="h3 mb-2">
-            Chi nhánh
-        </h1>
-
-        <p class="text-secondary mb-0">
-            Danh sách chi nhánh tài khoản được phép truy cập.
-        </p>
-    </div>
-
+<div class="branches-page bf-page">
     @if (_isLoading)
     {
-        <div class="d-flex align-items-center gap-2 text-secondary">
-            <span class="spinner-border spinner-border-sm" aria-hidden="true">
-            </span>
+        <section class="branches-state bf-surface" aria-live="polite">
+            <div class="spinner-border text-success" role="status">
+                <span class="visually-hidden">Đang tải danh sách chi nhánh</span>
+            </div>
 
-            <span>Đang tải danh sách chi nhánh...</span>
-        </div>
+            <h1 class="h5 mb-0">Đang tải chi nhánh</h1>
+            <p>Hệ thống đang kiểm tra phạm vi bạn được phép truy cập.</p>
+        </section>
     }
     else if (!string.IsNullOrWhiteSpace(_errorMessage))
     {
-        <div class="alert alert-danger" role="alert">
-            <p class="mb-3">
-                @_errorMessage
-            </p>
+        <section class="branches-state branches-state-error bf-surface" role="alert">
+            <h1 class="h5 mb-0">Không thể tải chi nhánh</h1>
+            <p>@_errorMessage</p>
 
-            <button type="button" class="btn btn-outline-danger btn-sm" @onclick="LoadBranchesAsync">
+            <button type="button" class="btn btn-danger" @onclick="LoadBranchesAsync">
                 Thử lại
             </button>
-        </div>
-    }
-    else if (_branches.Count == 0)
-    {
-        <div class="alert alert-info" role="status">
-            Tài khoản chưa có chi nhánh nào để hiển thị.
-        </div>
+        </section>
     }
     else
     {
-        <div class="row g-3">
-            @foreach (AccessibleBranchDTO branch in _branches)
+        <header class="branches-hero">
+            <div class="branches-hero-copy">
+                <h1>Chi nhánh</h1>
+                <p>Chọn chi nhánh để xem nhân viên.</p>
+            </div>
+        </header>
+
+        <section class="branches-list" aria-labelledby="branches-list-title">
+            <div class="branches-list-heading">
+                <div>
+                    <h2 id="branches-list-title">Danh sách chi nhánh</h2>
+                </div>
+
+                <span>@_branches.Count kết quả</span>
+            </div>
+
+            @if (_branches.Count == 0)
             {
-                <div class="col-12 col-md-6 col-xl-4">
-                    <div class="card h-100 border-0 shadow-sm">
-                        <div class="card-body p-4">
-                            <div class="d-flex justify-content-between
-                                align-items-start gap-3 mb-3">
+                <div class="branches-empty bf-surface" role="status">
+                    <h3 class="h5 mb-0">Chưa có chi nhánh</h3>
+                    <p>Tài khoản hiện chưa được cấp quyền truy cập chi nhánh nào.</p>
+                </div>
+            }
+            else
+            {
+                <div class="branches-grid">
+                    @foreach (AccessibleBranchDTO branch in _branches)
+                    {
+                        <article class="branches-card">
+                            <header class="branches-card-header">
+                                <span class="branches-code">@branch.Code</span>
 
-                                <div>
-                                    <p class="text-secondary small mb-1">
-                                        @branch.Code
-                                    </p>
-
-                                    <h2 class="h5 mb-0">
-                                        @branch.Name
-                                    </h2>
-                                </div>
-
-                                <span class="badge
-                                    @(branch.IsActive
-                                            ? "text-bg-success"
-                                            : "text-bg-secondary")">
-
-                                    @(branch.IsActive
-                                        ? "Đang hoạt động"
-                                        : "Ngừng hoạt động")
+                                <span class="branches-status @(branch.IsActive ? "is-active" : "is-inactive")">
+                                    <span aria-hidden="true"></span>
+                                    @(branch.IsActive ? "Đang hoạt động" : "Ngừng hoạt động")
                                 </span>
+                            </header>
+
+                            <div class="branches-card-body">
+                                <h3>@branch.Name</h3>
+
+                                <p>@branch.Address</p>
                             </div>
 
-                            <p class="text-secondary mb-0">
-                                @branch.Address
-                            </p>
-                            <div class="mt-3">
+                            <footer class="branches-card-footer">
                                 <AuthorizeView Roles="OWNER,ADMIN">
                                     <Authorized>
-                                        <NavLink class="btn btn-outline-success btn-sm"
+                                        <NavLink class="branches-card-link"
                                                  href="@($"/employees?branchId={branch.Id}")">
-                                            Xem nhân viên
+                                            <span>Xem nhân viên</span>
+                                            <span aria-hidden="true">→</span>
                                         </NavLink>
                                     </Authorized>
                                 </AuthorizeView>
-                            </div>
-                        </div>
-                    </div>
+                            </footer>
+                        </article>
+                    }
                 </div>
             }
-        </div>
+        </section>
     }
 </div>
 

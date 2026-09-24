@@ -1,0 +1,212 @@
+.bf-dashboard-hero {
+    padding: 0 0 1.25rem;
+    border-bottom: 1px solid var(--bf-border);
+}
+
+.bf-dashboard-hero-content {
+    max-width: 48rem;
+}
+
+.bf-dashboard-hero h1 {
+    margin-bottom: 0.3rem;
+    font-size: clamp(1.75rem, 2.5vw, 2.25rem);
+    font-weight: var(--bf-heading-weight);
+    letter-spacing: -0.015em;
+}
+
+.bf-dashboard-introduction {
+    margin-bottom: 0;
+    color: var(--bf-muted);
+    font-size: 0.95rem;
+}
+
+.bf-dashboard-section {
+    margin-top: 1.5rem;
+}
+
+.bf-dashboard-section-title {
+    margin-bottom: 0.25rem;
+    font-size: 1.25rem;
+    font-weight: var(--bf-heading-weight);
+}
+
+.bf-dashboard-action-grid,
+.bf-dashboard-coming-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
+    gap: 1rem;
+    max-width: 50rem;
+}
+
+.bf-dashboard-action-card {
+    display: flex;
+    min-height: 6rem;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem;
+    color: var(--bf-text);
+    text-decoration: none;
+    background-color: var(--bf-surface);
+    border: 1px solid var(--bf-border);
+    border-radius: var(--bf-radius-md);
+    box-shadow: var(--bf-shadow-sm);
+    transition:
+        transform 140ms ease,
+        border-color 140ms ease,
+        box-shadow 140ms ease;
+}
+
+.bf-dashboard-action-card:hover {
+    color: var(--bf-text);
+    border-color: var(--bf-primary);
+    box-shadow: var(--bf-shadow-md);
+    transform: translateY(-0.2rem);
+}
+
+.bf-dashboard-action-card-primary {
+    color: var(--bf-text);
+    background-color: var(--bf-surface);
+    border-left: 3px solid var(--bf-primary);
+}
+
+.bf-dashboard-action-card-primary:hover {
+    color: var(--bf-text);
+}
+
+.bf-dashboard-action-content {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    flex-direction: column;
+}
+
+.bf-dashboard-action-content strong {
+    margin-bottom: 0.35rem;
+    font-size: 1rem;
+}
+
+.bf-dashboard-action-content small {
+    color: var(--bf-muted);
+    line-height: 1.5;
+}
+
+.bf-dashboard-action-arrow {
+    flex: 0 0 auto;
+    font-size: 1.25rem;
+}
+
+.bf-dashboard-coming-card {
+    padding: 1.25rem;
+}
+
+.bf-dashboard-coming-card h3 {
+    margin: 1rem 0 0.5rem;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.bf-dashboard-coming-card p {
+    margin-bottom: 0;
+    color: var(--bf-muted);
+    font-size: 0.875rem;
+    line-height: 1.6;
+}
+
+.bf-dashboard-coming-badge {
+    display: inline-flex;
+    padding: 0.3rem 0.55rem;
+    color: var(--bf-warning);
+    font-size: 0.65rem;
+    font-weight: 800;
+    background-color: #fff2e4;
+    border-radius: 999px;
+    text-transform: uppercase;
+}
+
+@media (max-width: 991.98px) {
+    .bf-dashboard-action-grid,
+    .bf-dashboard-coming-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 575.98px) {
+    .bf-dashboard-hero {
+        padding-bottom: 1rem;
+    }
+
+    .bf-dashboard-hero h1 {
+        font-size: 1.75rem;
+    }
+
+    .bf-dashboard-section {
+        margin-top: 1.25rem;
+    }
+
+    .bf-dashboard-action-grid,
+    .bf-dashboard-coming-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .bf-dashboard-action-card {
+        min-height: 7rem;
+    }
+}
+
+.bf-dashboard-state {
+    display: flex;
+    min-height: 20rem;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 0.85rem;
+    padding: 2rem;
+    text-align: center;
+}
+
+.bf-dashboard-error {
+    border-color: rgba(183, 28, 28, 0.24);
+}
+
+.bf-dashboard-state-icon {
+    display: inline-flex;
+    width: 3rem;
+    height: 3rem;
+    align-items: center;
+    justify-content: center;
+    color: var(--bf-danger);
+    font-size: 1.35rem;
+    font-weight: 800;
+    background-color: #fdecec;
+    border-radius: 50%;
+}
+
+.bf-dashboard-action-card-disabled {
+    cursor: not-allowed;
+    opacity: 0.68;
+}
+
+.bf-dashboard-action-card-disabled:hover {
+    color: var(--bf-text);
+    border-color: var(--bf-border);
+    box-shadow: var(--bf-shadow-sm);
+    transform: none;
+}
+
+.bf-dashboard-action-status {
+    display: inline-flex;
+    flex: 0 0 auto;
+    padding: 0.3rem 0.55rem;
+    color: var(--bf-warning);
+    font-size: 0.65rem;
+    font-weight: 800;
+    background-color: #fff2e4;
+    border-radius: 999px;
+    text-transform: uppercase;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .bf-dashboard-action-card {
+        transition: none;
+    }
+}

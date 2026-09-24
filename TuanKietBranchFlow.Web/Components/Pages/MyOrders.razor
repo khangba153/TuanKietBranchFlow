@@ -8,135 +8,165 @@
 
 <PageTitle>Đơn của tôi</PageTitle>
 
-<div class="container-fluid px-0">
-    <div class="row justify-content-center">
-        <div class="col-12 col-lg-8 col-xl-6">
-            <header class="mb-4">
-                <a href="/order-menu" class="btn btn-outline-secondary mb-3" aria-label="Quay lại trang gọi món">
-                    ←
-                </a>
+<div class="my-orders-page bf-page">
+    <header class="my-orders-hero">
+        <div class="my-orders-hero-main">
+            <a href="/order-menu"
+               class="my-orders-back-button"
+               aria-label="Quay lại trang gọi món">
+                <span aria-hidden="true">←</span>
+            </a>
 
-                <p class="text-success fw-semibold small mb-1">
-                    LỊCH SỬ
-                </p>
+            <div>
+                <h1>Đơn của tôi</h1>
+            </div>
+        </div>
 
-                <h1 class="h3 mb-2">
-                    Đơn của tôi
-                </h1>
+    </header>
 
-                <p class="text-secondary mb-0">
-                    Chỉ hiển thị các đơn do bạn tạo.
-                </p>
-            </header>
+    <section class="my-orders-filter bf-surface-card"
+             aria-labelledby="order-filter-title">
+        <div class="my-orders-filter-heading">
+            <div>
+                <h2 id="order-filter-title">Lọc đơn hàng</h2>
+            </div>
 
-            <section class="card border-0 shadow-sm mb-4" aria-label="Bộ lọc đơn hàng">
-                <div class="card-body">
-                    <div class="row g-2">
-                        <div class="col-12 col-sm">
-                            <label for="order-keyword" class="visually-hidden">
-                                Tìm mã đơn
-                            </label>
-
-                            <input id="order-keyword" type="search" class="form-control" placeholder="Tìm mã đơn"
-                                   @bind="_keyword" @bind:event="oninput" disabled="@_isLoading" />
-                        </div>
-
-                        <div class="col-6 col-sm-auto">
-                            <button type="button" class="btn btn-success w-100" @onclick="SearchOrdersAsync"
-                                    disabled="@_isLoading">
-                                Tìm
-                            </button>
-                        </div>
-
-                        <div class="col-6 col-sm-auto">
-                            <button type="button" class="btn @(_todayOnly
-                                        ? "btn-success"
-                                        : "btn-outline-success") w-100" @onclick="ToggleTodayFilterAsync"
-                                    disabled="@_isLoading" aria-pressed="@_todayOnly">
-                                Hôm nay
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </section>
-            @if (_isLoading)
+            @if (_todayOnly)
             {
-                <section class="text-center py-5" aria-live="polite">
-                    <div class="spinner-border text-success" role="status">
-                        <span class="visually-hidden">
-                            Đang tải danh sách đơn
-                        </span>
-                    </div>
-
-                    <p class="text-secondary mt-3 mb-0">
-                        Đang tải danh sách đơn...
-                    </p>
-                </section>
-            }
-            else if (!string.IsNullOrWhiteSpace(_errorMessage))
-            {
-                <section class="alert alert-danger" role="alert">
-                    <p class="mb-3">
-                        @_errorMessage
-                    </p>
-
-                    <button type="button" class="btn btn-outline-danger" @onclick="LoadOrdersAsync">
-                        Thử lại
-                    </button>
-                </section>
-            }
-            else if (_orders.Count == 0)
-            {
-                <section class="text-center py-5" aria-live="polite">
-                    <p class="text-secondary mb-0">
-                        Không tìm thấy đơn hàng phù hợp.
-                    </p>
-                </section>
-            }
-            else
-            {
-                <section aria-label="Danh sách đơn của tôi">
-                    @foreach (MyOrderListItemDTO order in _orders)
-                    {
-                        <article class="border-bottom py-3">
-                            <div class="d-flex justify-content-between
-                                align-items-start gap-3">
-                                <div>
-                                    <h2 class="h6 mb-1">
-                                        @order.Code
-                                    </h2>
-
-                                    <p class="text-secondary small mb-2">
-                                        @order.CreatedAt.ToString("dd/MM/yyyy - HH:mm")
-                                    </p>
-
-                                    <span class="badge @(GetStatusClass(order.Status))">
-                                        @GetStatusText(order.Status)
-                                    </span>
-                                </div>
-
-                                <div class="text-end">
-                                    <strong class="d-block text-success">
-                                        @order.TotalAmount.ToString("N0") đ
-                                    </strong>
-
-                                    <span class="text-secondary small">
-                                        @order.TotalQuantity món
-                                    </span>
-                                </div>
-                            </div>
-
-                            <a href="@($"/my-orders/{order.Id}")"
-                            class="btn btn-link text-success
-                                text-decoration-none px-0 mt-2">
-                                Xem chi tiết →
-                            </a
-                        </article>
-                    }
-                </section>
+                <span class="my-orders-active-filter">Đang xem hôm nay</span>
             }
         </div>
-    </div>
+
+        <div class="my-orders-filter-grid">
+            <div class="my-orders-search">
+                <label for="order-keyword" class="visually-hidden">
+                    Tìm theo mã đơn
+                </label>
+
+                <input id="order-keyword"
+                       type="search"
+                       class="form-control my-orders-search-input"
+                       placeholder="Nhập mã đơn..."
+                       autocomplete="off"
+                       @bind="_keyword"
+                       @bind:event="oninput"
+                       disabled="@_isLoading" />
+            </div>
+
+            <button type="button"
+                    class="btn btn-primary my-orders-filter-button"
+                    @onclick="SearchOrdersAsync"
+                    disabled="@_isLoading">
+                Tìm đơn
+            </button>
+
+            <button type="button"
+                    class="btn @(_todayOnly ? "btn-primary" : "btn-outline-primary") my-orders-filter-button"
+                    @onclick="ToggleTodayFilterAsync"
+                    disabled="@_isLoading"
+                    aria-pressed="@_todayOnly">
+                Hôm nay
+            </button>
+        </div>
+    </section>
+
+    @if (_isLoading)
+    {
+        <section class="my-orders-state bf-surface-card"
+                 aria-live="polite"
+                 aria-busy="true">
+            <div class="spinner-border text-success" role="status">
+                <span class="visually-hidden">Đang tải danh sách đơn</span>
+            </div>
+
+            <strong>Đang tải lịch sử đơn</strong>
+            <p>Vui lòng chờ trong giây lát.</p>
+        </section>
+    }
+    else if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <section class="my-orders-state my-orders-state-error bf-surface-card"
+                 role="alert">
+            <span class="my-orders-state-icon" aria-hidden="true">!</span>
+            <strong>Không thể tải danh sách đơn</strong>
+            <p>@_errorMessage</p>
+
+            <button type="button"
+                    class="btn btn-outline-danger"
+                    @onclick="LoadOrdersAsync">
+                Thử lại
+            </button>
+        </section>
+    }
+    else if (_orders.Count == 0)
+    {
+        <section class="my-orders-state bf-surface-card" aria-live="polite">
+            <span class="my-orders-state-icon" aria-hidden="true">▤</span>
+            <strong>Chưa tìm thấy đơn phù hợp</strong>
+            <p>Thử đổi mã đơn hoặc tắt bộ lọc hôm nay.</p>
+
+            <a href="/order-menu" class="btn btn-primary">
+                Gọi món cho khách
+            </a>
+        </section>
+    }
+    else
+    {
+        <section class="my-orders-results" aria-labelledby="order-list-title">
+            <div class="my-orders-results-header">
+                <div>
+                    <h2 id="order-list-title">Danh sách đơn</h2>
+                </div>
+
+                <span>@_orders.Count đơn</span>
+            </div>
+
+            <div class="my-orders-grid">
+                @foreach (MyOrderListItemDTO order in _orders)
+                {
+                    <article class="my-orders-card">
+                        <div class="my-orders-card-header">
+                            <div>
+                                <span class="my-orders-card-label">Mã đơn</span>
+                                <h3>@order.Code</h3>
+                            </div>
+
+                            <span class="badge rounded-pill @(GetStatusClass(order.Status))">
+                                @GetStatusText(order.Status)
+                            </span>
+                        </div>
+
+                        <time class="my-orders-created-at"
+                              datetime="@order.CreatedAt.ToString("O")">
+                            <span aria-hidden="true">◷</span>
+                            @order.CreatedAt.ToString("dd/MM/yyyy · HH:mm")
+                        </time>
+
+                        <div class="my-orders-card-metrics">
+                            <div>
+                                <span>Số lượng</span>
+                                <strong>@order.TotalQuantity món</strong>
+                            </div>
+
+                            <div class="text-end">
+                                <span>Tổng tiền</span>
+                                <strong class="my-orders-total">
+                                    @order.TotalAmount.ToString("N0") đ
+                                </strong>
+                            </div>
+                        </div>
+
+                        <a href="@($"/my-orders/{order.Id}")"
+                           class="my-orders-detail-link"
+                           aria-label="Xem chi tiết đơn @order.Code">
+                            <span>Xem chi tiết</span>
+                            <span aria-hidden="true">→</span>
+                        </a>
+                    </article>
+                }
+            </div>
+        </section>
+    }
 </div>
 
 @code {

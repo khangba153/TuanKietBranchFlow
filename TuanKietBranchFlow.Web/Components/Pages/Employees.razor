@@ -8,199 +8,243 @@
 
 <PageTitle>Nhân viên</PageTitle>
 
-<div class="container-fluid px-0">
-    <div class="d-flex flex-column flex-md-row
-        justify-content-between align-items-md-center
-        gap-3 mb-4">
-        <AuthorizeView Roles="ADMIN">
-            <Authorized>
-                <a class="btn btn-success" href="@($"/employees/create?branchId={BranchId}")">
-                    <span class="me-1">+</span>
-                    Thêm nhân viên
+<div class="employees-page bf-page">
+    @if (_isLoading)
+    {
+        <section class="employees-state bf-surface-card" aria-live="polite">
+            <div class="spinner-border text-success" role="status">
+                <span class="visually-hidden">Đang tải danh sách nhân viên</span>
+            </div>
+
+            <h1 class="h5 mb-0">Đang tải đội ngũ</h1>
+            <p>Hệ thống đang lấy danh sách nhân viên trong chi nhánh đã chọn.</p>
+        </section>
+    }
+    else if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <section class="employees-state employees-state-error bf-surface-card" role="alert">
+            <h1 class="h5 mb-0">Không thể tải nhân viên</h1>
+            <p>@_errorMessage</p>
+
+            <div class="d-flex flex-wrap justify-content-center gap-2">
+                <a class="btn btn-outline-secondary" href="/branches">
+                    Chọn chi nhánh
                 </a>
-            </Authorized>
-        </AuthorizeView>
-        <div>
-            <p class="text-success fw-semibold small mb-1">
-                NHÂN SỰ
-            </p>
 
-            <h1 class="h3 mb-2">
-                Nhân viên
-            </h1>
+                <button type="button" class="btn btn-danger" @onclick="LoadEmployeesAsync">
+                    Thử lại
+                </button>
+            </div>
+        </section>
+    }
+    else
+    {
+        <header class="employees-hero">
+            <div class="employees-hero-copy">
+                <a class="employees-back-link" href="/branches">
+                    <span aria-hidden="true">←</span> Chi nhánh
+                </a>
 
-            <p class="text-secondary mb-0">
-                Hồ sơ, tài khoản và lịch sử phân công chi nhánh.
-            </p>
-        </div>
-    </div>
+                <h1>Nhân viên</h1>
+                <p>@BranchDisplayName</p>
+            </div>
 
-    <div class="card border-0 shadow-sm">
-        <div class="card-body border-bottom">
-            <div class="row g-3">
-                <div class="col-12 col-md-6 col-lg-5">
-                    <label for="employee-keyword" class="form-label">
-                        Tìm nhân viên
-                    </label>
+            <AuthorizeView Roles="ADMIN">
+                <Authorized>
+                    <a class="btn btn-primary employees-create-button"
+                       href="@($"/employees/create?branchId={BranchId}")">
+                        Thêm nhân viên
+                    </a>
+                </Authorized>
+            </AuthorizeView>
+        </header>
 
-                    <input id="employee-keyword" type="text" class="form-control"
-                           placeholder="Nhập tên hoặc mã nhân viên" @bind="_keyword" @bind:event="oninput"
-                           disabled="@_isLoading" />
+        <section class="employees-filter bf-surface-card" aria-labelledby="employees-filter-title">
+            <div class="employees-filter-heading">
+                <div>
+                    <h2 id="employees-filter-title">Tìm nhân viên</h2>
                 </div>
 
-                <div class="col-12 col-md-4 col-lg-3">
-                    <label for="employee-status" class="form-label">
-                        Trạng thái
-                    </label>
+                @if (HasActiveFilters)
+                {
+                    <button type="button"
+                            class="btn btn-link btn-sm employees-clear-button"
+                            @onclick="ClearFiltersAsync"
+                            disabled="@_isLoading">
+                        Xóa bộ lọc
+                    </button>
+                }
+            </div>
 
-                    <select id="employee-status" class="form-select" @bind="_statusFilter" disabled="@_isLoading">
+            <div class="row g-3 align-items-end">
+                <div class="col-12 col-lg-6">
+                    <label for="employee-keyword" class="form-label">Tên hoặc mã nhân viên</label>
 
-                        <option value="">
-                            Tất cả trạng thái
-                        </option>
+                    <div class="employees-search-field">
+                        <input id="employee-keyword"
+                               type="search"
+                               class="form-control"
+                               placeholder="Ví dụ: Nguyễn Văn An hoặc NV001"
+                               @bind="_keyword"
+                               @bind:event="oninput"
+                               disabled="@_isLoading" />
+                    </div>
+                </div>
 
-                        <option value="true">
-                            Đang làm việc
-                        </option>
+                <div class="col-12 col-sm-7 col-lg-3">
+                    <label for="employee-status" class="form-label">Trạng thái</label>
 
-                        <option value="false">
-                            Đã nghỉ việc
-                        </option>
+                    <select id="employee-status"
+                            class="form-select"
+                            @bind="_statusFilter"
+                            disabled="@_isLoading">
+                        <option value="">Tất cả trạng thái</option>
+                        <option value="true">Đang làm việc</option>
+                        <option value="false">Đã nghỉ việc</option>
                     </select>
                 </div>
 
-                <div class="col-12 col-md-2 d-flex align-items-end">
-                    <button type="button" class="btn btn-success w-100" @onclick="SearchEmployeesAsync"
+                <div class="col-12 col-sm-5 col-lg-3">
+                    <button type="button"
+                            class="btn btn-primary w-100 employees-search-button"
+                            @onclick="SearchEmployeesAsync"
                             disabled="@_isLoading">
-                        Tìm kiếm
+                        Áp dụng bộ lọc
                     </button>
                 </div>
             </div>
-        </div>
+        </section>
 
-        @if (_isLoading)
-        {
-            <div class="card-body text-center py-5">
-                <span class="spinner-border spinner-border-sm me-2" aria-hidden="true">
-                </span>
+        <section class="employees-list" aria-labelledby="employees-list-title">
+            <div class="employees-list-heading">
+                <div>
+                    <h2 id="employees-list-title">Nhân viên tại chi nhánh</h2>
+                </div>
 
-                <span class="text-secondary">
-                    Đang tải danh sách nhân viên...
-                </span>
+                <span>@_employees.Count kết quả · @ActiveEmployeeCount đang làm · @InactiveEmployeeCount đã nghỉ</span>
             </div>
-        }
-        else if (!string.IsNullOrWhiteSpace(_errorMessage))
-        {
-            <div class="card-body">
-                <div class="alert alert-danger mb-0" role="alert">
 
-                    <p class="mb-3">
-                        @_errorMessage
+            @if (_employees.Count == 0)
+            {
+                <div class="employees-empty bf-surface-card" role="status">
+                    <h3 class="h5 mb-0">
+                        @(HasActiveFilters
+                            ? "Không tìm thấy nhân viên phù hợp"
+                            : "Chi nhánh chưa có nhân viên")
+                    </h3>
+
+                    <p>
+                        @(HasActiveFilters
+                            ? "Hãy thử từ khóa khác hoặc xóa bộ lọc để xem toàn bộ đội ngũ."
+                            : "Khi nhân viên được phân công vào chi nhánh, hồ sơ sẽ xuất hiện tại đây.")
                     </p>
 
-                    <button type="button" class="btn btn-outline-danger btn-sm" @onclick="LoadEmployeesAsync">
-                        Thử lại
-                    </button>
+                    @if (HasActiveFilters)
+                    {
+                        <button type="button" class="btn btn-outline-primary" @onclick="ClearFiltersAsync">
+                            Xem toàn bộ nhân viên
+                        </button>
+                    }
                 </div>
-            </div>
-        }
-        else if (_employees.Count == 0)
-        {
-            <div class="card-body">
-                <div class="alert alert-info mb-0" role="status">
-                    Không tìm thấy nhân viên phù hợp.
-                </div>
-            </div>
-        }
-        else
-        {
-            <div class="table-responsive">
-                <table class="table align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Nhân viên</th>
-                            <th>Chức vụ</th>
-                            <th>Chi nhánh hiện tại</th>
-                            <th>Ngày vào làm</th>
-                            <th>Trạng thái</th>
-                            <th class="text-end">Thao tác</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        @foreach (EmployeeListItemDTO employee in _employees)
-                        {
-                            <tr>
-                                <td>
-                                    <strong>
-                                        @employee.FullName
-                                    </strong>
-
-                                    <div class="text-secondary small">
-                                        @employee.EmployeeCode
-                                    </div>
-                                </td>
-
-                                <td>
-                                    @(employee.Position
-                                        ?? "Chưa cập nhật")
-                                </td>
-
-                                <td>
-                                    @employee.BranchName
-                                </td>
-
-                                <td>
-                                    @employee.HireDate.ToString("dd/MM/yyyy")
-                                </td>
-
-                                <td>
-                                    <span class="badge
-                                        @(employee.IsActive
-                                                    ? "text-bg-success"
-                                                    : "text-bg-secondary")">
-
-                                        @(employee.IsActive
-                                            ? "Đang làm việc"
-                                            : "Đã nghỉ việc")
+            }
+            else
+            {
+                <div class="employees-grid">
+                    @foreach (EmployeeListItemDTO employee in _employees)
+                    {
+                        <article class="employee-card" @key="employee.Id">
+                            <header class="employee-card-header">
+                                @if (!string.IsNullOrWhiteSpace(employee.AvatarUrl))
+                                {
+                                    <img class="employee-avatar"
+                                         src="@employee.AvatarUrl"
+                                         alt="Ảnh đại diện của @employee.FullName" />
+                                }
+                                else
+                                {
+                                    <span class="employee-avatar employee-avatar-fallback" aria-hidden="true">
+                                        @GetEmployeeInitial(employee.FullName)
                                     </span>
-                                </td>
+                                }
 
-                                <td class="text-end">
-                                    <a class="btn btn-outline-success btn-sm"
-                                       href="@($"/employees/{employee.Id}?branchId={employee.BranchId}")">
-                                        Hồ sơ
-                                    </a>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        }
-    </div>
+                                <div class="employee-identity">
+                                    <span class="employee-code">@employee.EmployeeCode</span>
+                                    <h3>@employee.FullName</h3>
+                                    <p>@(employee.Position ?? "Chưa cập nhật chức vụ")</p>
+                                </div>
+
+                                <span class="employee-status @(employee.IsActive ? "is-active" : "is-inactive")">
+                                    <span aria-hidden="true"></span>
+                                    @(employee.IsActive ? "Đang làm" : "Đã nghỉ")
+                                </span>
+                            </header>
+
+                            <dl class="employee-details">
+                                <div>
+                                    <dt>
+                                        Chi nhánh
+                                    </dt>
+                                    <dd>@employee.BranchName</dd>
+                                </div>
+
+                                <div>
+                                    <dt>
+                                        Ngày vào làm
+                                    </dt>
+                                    <dd>@employee.HireDate.ToString("dd/MM/yyyy")</dd>
+                                </div>
+                            </dl>
+
+                            <footer class="employee-card-footer">
+                                <a class="employee-profile-link"
+                                   href="@($"/employees/{employee.Id}?branchId={employee.BranchId}")">
+                                    <span>
+                                        Xem hồ sơ
+                                    </span>
+
+                                    <span aria-hidden="true">→</span>
+                                </a>
+                            </footer>
+                        </article>
+                    }
+                </div>
+            }
+        </section>
+    }
 </div>
+
 @code {
     // Nhận branchId từ URL: /employees?branchId=1
     [Parameter]
     [SupplyParameterFromQuery(Name = "branchId")]
     public int BranchId { get; set; }
 
-    // Chứa điều kiện tìm kiếm người dùng
     private string _keyword = string.Empty;
-
-    // Null: tất cả, true: đang làm, false: đã nghỉ
     private string _statusFilter = string.Empty;
+    private string? _branchName;
 
-    // Chứa danh sách nhân viên nhận từ API
     private List<EmployeeListItemDTO> _employees =
         new List<EmployeeListItemDTO>();
 
-    // Quản lý trạng thái tải dữ liệu và thông báo lỗi
     private bool _isLoading = true;
     private string? _errorMessage;
 
-    // Tải dữ liệu sau khi component render lần đầu
+    private int ActiveEmployeeCount =>
+        _employees.Count(employee => employee.IsActive);
+
+    private int InactiveEmployeeCount =>
+        _employees.Count(employee => !employee.IsActive);
+
+    private bool HasActiveFilters =>
+        !string.IsNullOrWhiteSpace(_keyword)
+        || !string.IsNullOrWhiteSpace(_statusFilter);
+
+    private string BranchDisplayName =>
+        !string.IsNullOrWhiteSpace(_branchName)
+            ? _branchName
+            : $"chi nhánh #{BranchId}";
+
+    // Tải dữ liệu sau khi component render lần đầu để đọc được token LocalStorage.
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender)
@@ -209,12 +253,10 @@
         }
 
         await LoadEmployeesAsync();
-
-        // OnAfterRenderAsync không tự render lại giao diện
         StateHasChanged();
     }
 
-    // Chuyển giá trị giao diện thành điều kiện gửi xuống API
+    // Chuyển giá trị select thành điều kiện nullable gửi xuống API.
     private bool? GetIsActiveFilter()
     {
         if (_statusFilter == "true")
@@ -227,10 +269,10 @@
             return false;
         }
 
-        // Chuỗi rỗng nghĩa là không lọc trạng thái
         return null;
     }
-    // Gọi API lấy danh sách nhân viên theo điều kiện hiện tại
+
+    // Gọi API lấy danh sách nhân viên theo chi nhánh và bộ lọc hiện tại.
     private async Task LoadEmployeesAsync()
     {
         _isLoading = true;
@@ -238,11 +280,9 @@
 
         try
         {
-            // Không gọi API khi chưa có chi nhánh hợp lệ
             if (BranchId <= 0)
             {
                 _errorMessage = "Vui lòng chọn chi nhánh trước khi xem nhân viên.";
-
                 return;
             }
 
@@ -254,16 +294,21 @@
                     _keyword,
                     isActive);
 
-            // Null thể hiện khi API trả lỗi
             if (employees == null)
             {
                 _errorMessage = "Không thể tải danh sách nhân viên.";
-
                 return;
             }
 
-            // Danh sách rỗng vẫn là kết quả thành công
             _employees = employees;
+
+            // Giữ tên chi nhánh khi bộ lọc sau đó không có kết quả.
+            EmployeeListItemDTO? firstEmployee = _employees.FirstOrDefault();
+
+            if (firstEmployee != null)
+            {
+                _branchName = firstEmployee.BranchName;
+            }
         }
         catch (HttpRequestException)
         {
@@ -278,10 +323,40 @@
             _isLoading = false;
         }
     }
-    // Gọi lại API khi người dùng nhấn nút tìm kiếm
+
     private async Task SearchEmployeesAsync()
     {
         await LoadEmployeesAsync();
     }
 
+    // Xóa cả từ khóa và trạng thái rồi tải lại danh sách đầy đủ.
+    private async Task ClearFiltersAsync()
+    {
+        _keyword = string.Empty;
+        _statusFilter = string.Empty;
+
+        await LoadEmployeesAsync();
+    }
+
+    // Tạo ký tự đại diện đơn giản khi hồ sơ chưa có ảnh.
+    private static string GetEmployeeInitial(string fullName)
+    {
+        if (string.IsNullOrWhiteSpace(fullName))
+        {
+            return "NV";
+        }
+
+        string[] nameParts = fullName
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+        if (nameParts.Length == 1)
+        {
+            return nameParts[0][0].ToString().ToUpperInvariant();
+        }
+
+        string firstInitial = nameParts[0][0].ToString();
+        string lastInitial = nameParts[nameParts.Length - 1][0].ToString();
+
+        return (firstInitial + lastInitial).ToUpperInvariant();
+    }
 }

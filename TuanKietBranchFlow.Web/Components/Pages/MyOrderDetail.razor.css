@@ -1,0 +1,456 @@
+.my-order-detail-page {
+    padding-bottom: 2rem;
+}
+
+/* Đầu trang chỉ giữ định danh và trạng thái, tránh lặp tổng tiền bên dưới. */
+.my-order-detail-hero {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.35rem 0 1rem;
+    border-bottom: 1px solid var(--bf-border);
+}
+
+.my-order-detail-hero-main {
+    display: flex;
+    min-width: 0;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.my-order-detail-back-button {
+    display: inline-flex;
+    width: 2.75rem;
+    height: 2.75rem;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    color: var(--bf-primary-dark);
+    font-size: 1.25rem;
+    text-decoration: none;
+    background-color: var(--bf-primary-soft);
+    border: 1px solid var(--bf-border);
+    border-radius: 50%;
+}
+
+.my-order-detail-back-button:hover,
+.my-order-detail-back-button:focus {
+    color: #ffffff;
+    background-color: var(--bf-primary);
+}
+
+.my-order-detail-hero-copy {
+    min-width: 0;
+}
+
+.my-order-detail-eyebrow {
+    margin-bottom: 0.2rem;
+    color: var(--bf-muted);
+    font-size: 0.75rem;
+}
+
+.my-order-detail-hero h1 {
+    overflow-wrap: break-word;
+    margin-bottom: 0.25rem;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: var(--bf-heading-weight);
+    letter-spacing: -0.025em;
+}
+
+.my-order-detail-hero-copy > p:last-child {
+    margin-bottom: 0;
+    color: var(--bf-muted);
+}
+
+.my-order-detail-hero-summary {
+    flex: 0 0 auto;
+}
+
+.my-order-detail-status {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+}
+
+/* Desktop dùng hai cột; mobile đổi thứ tự để thông tin chung xuất hiện trước danh sách món. */
+.my-order-detail-content {
+    display: grid;
+    grid-template-areas:
+        "items information"
+        "items action";
+    grid-template-columns: minmax(0, 1.5fr) minmax(18rem, 0.75fr);
+    align-items: start;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.my-order-detail-information {
+    grid-area: information;
+    padding: 1.2rem;
+}
+
+.my-order-detail-items {
+    min-width: 0;
+    grid-area: items;
+}
+
+.my-order-detail-action {
+    display: grid;
+    grid-area: action;
+    gap: 1rem;
+}
+
+.my-order-detail-section-heading {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.my-order-detail-section-heading h2,
+.my-order-detail-items-heading h2,
+.my-order-detail-review-card h2 {
+    margin-bottom: 0;
+    font-size: 1.1rem;
+    font-weight: var(--bf-heading-weight);
+}
+
+.my-order-detail-description-list {
+    display: grid;
+    gap: 0;
+    margin: 1rem 0 0;
+}
+
+.my-order-detail-description-list > div {
+    display: grid;
+    grid-template-columns: minmax(6.5rem, 0.8fr) minmax(0, 1.2fr);
+    gap: 0.75rem;
+    padding: 0.8rem 0;
+    border-top: 1px solid var(--bf-border);
+}
+
+.my-order-detail-description-list dt {
+    color: var(--bf-muted);
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.my-order-detail-description-list dd {
+    overflow-wrap: anywhere;
+    margin-bottom: 0;
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-align: right;
+}
+
+.my-order-detail-items-heading {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.my-order-detail-items-heading > span {
+    color: var(--bf-muted);
+    font-size: 0.78rem;
+}
+
+.my-order-detail-item-list {
+    display: grid;
+    gap: 1rem;
+}
+
+.my-order-detail-item-card {
+    overflow: hidden;
+    background-color: var(--bf-surface);
+    border: 1px solid var(--bf-border);
+    border-radius: var(--bf-radius-md);
+    box-shadow: var(--bf-shadow-sm);
+}
+
+.my-order-detail-item-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.15rem 1.2rem;
+}
+
+.my-order-detail-item-header h3 {
+    margin-bottom: 0.45rem;
+    font-size: 1rem;
+    font-weight: 800;
+}
+
+.my-order-detail-item-header > strong {
+    flex: 0 0 auto;
+    color: var(--bf-primary);
+    font-size: 1rem;
+}
+
+.my-order-detail-item-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.my-order-detail-item-meta span,
+.my-order-detail-note-list span {
+    padding: 0.3rem 0.55rem;
+    color: var(--bf-primary-dark);
+    font-size: 0.72rem;
+    font-weight: 700;
+    background-color: var(--bf-primary-soft);
+    border-radius: 999px;
+}
+
+.my-order-detail-item-body {
+    padding: 1rem 1.2rem 1.15rem;
+    background-color: var(--bf-background);
+    border-top: 1px solid var(--bf-border);
+}
+
+.my-order-detail-price-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    color: var(--bf-muted);
+    font-size: 0.8rem;
+}
+
+.my-order-detail-price-row + .my-order-detail-price-row {
+    margin-top: 0.45rem;
+}
+
+.my-order-detail-price-row strong {
+    flex: 0 0 auto;
+    color: var(--bf-text);
+    font-weight: 650;
+}
+
+.my-order-detail-option-group {
+    margin-top: 1rem;
+    padding-top: 0.9rem;
+    border-top: 1px dashed var(--bf-border);
+}
+
+.my-order-detail-option-group h4 {
+    margin-bottom: 0.65rem;
+    color: var(--bf-text);
+    font-size: 0.78rem;
+    font-weight: 750;
+}
+
+.my-order-detail-note-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.my-order-detail-empty {
+    display: flex;
+    min-height: 12rem;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 0.65rem;
+    color: var(--bf-muted);
+    text-align: center;
+}
+
+/* Tổng tiền và báo sai nằm chung một cột hành động để người dùng xử lý nhanh. */
+.my-order-detail-total {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.2rem;
+    border-color: rgba(15, 118, 110, 0.3);
+}
+
+.my-order-detail-total span,
+.my-order-detail-total small,
+.my-order-detail-total strong {
+    display: block;
+}
+
+.my-order-detail-total span {
+    font-weight: 750;
+}
+
+.my-order-detail-total small {
+    margin-top: 0.2rem;
+    color: var(--bf-muted);
+    font-size: 0.7rem;
+}
+
+.my-order-detail-total strong {
+    flex: 0 0 auto;
+    color: var(--bf-primary);
+    font-size: 1.3rem;
+}
+
+.my-order-detail-review-card {
+    display: flex;
+    gap: 0.85rem;
+    padding: 1.2rem;
+    color: #6f4216;
+    background-color: #fff8e8;
+    border: 1px solid #f2d7a6;
+    border-radius: var(--bf-radius-md);
+}
+
+.my-order-detail-review-reason {
+    margin: 0.75rem 0 0.5rem;
+    color: #5d4933;
+    white-space: pre-wrap;
+}
+
+.my-order-detail-review-card small {
+    color: #7c694e;
+}
+
+.my-order-detail-report-card {
+    padding: 1.2rem;
+}
+
+.my-order-detail-report-description {
+    margin: 1rem 0;
+    color: var(--bf-muted);
+    font-size: 0.82rem;
+}
+
+.my-order-detail-report-input {
+    resize: vertical;
+}
+
+.my-order-detail-character-count {
+    display: block;
+    margin-top: 0.4rem;
+    color: var(--bf-muted);
+    text-align: right;
+}
+
+.my-order-detail-report-button {
+    width: 100%;
+    min-height: 2.75rem;
+    margin-top: 1rem;
+}
+
+/* Trạng thái tải, lỗi và thiếu dữ liệu dùng cùng khung để hạn chế nhảy bố cục. */
+.my-order-detail-state {
+    display: flex;
+    min-height: 24rem;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 0.65rem;
+    padding: 2rem;
+    text-align: center;
+}
+
+.my-order-detail-state p {
+    max-width: 30rem;
+    margin-bottom: 0.5rem;
+    color: var(--bf-muted);
+}
+
+.my-order-detail-state-icon {
+    display: inline-flex;
+    width: 3.5rem;
+    height: 3.5rem;
+    align-items: center;
+    justify-content: center;
+    color: var(--bf-primary);
+    font-size: 1.4rem;
+    background-color: var(--bf-primary-soft);
+    border-radius: 50%;
+}
+
+.my-order-detail-state-error .my-order-detail-state-icon {
+    color: var(--bf-danger);
+    background-color: #fdecec;
+}
+
+@media (max-width: 991.98px) {
+    .my-order-detail-content {
+        grid-template-areas:
+            "information"
+            "items"
+            "action";
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 767.98px) {
+    .my-order-detail-page {
+        padding-bottom: calc(6rem + env(safe-area-inset-bottom));
+    }
+
+    .my-order-detail-hero {
+        align-items: flex-start;
+        gap: 0.75rem;
+        padding: 0 0 0.85rem;
+    }
+
+    .my-order-detail-hero-main {
+        gap: 0.75rem;
+    }
+
+    .my-order-detail-back-button {
+        width: 2.5rem;
+        height: 2.5rem;
+    }
+
+    .my-order-detail-hero h1 {
+        font-size: 1.75rem;
+    }
+
+    .my-order-detail-hero-copy > p:last-child {
+        font-size: 0.82rem;
+    }
+
+    .my-order-detail-content {
+        margin-top: 1rem;
+    }
+
+    .my-order-detail-information,
+    .my-order-detail-report-card {
+        padding: 1rem;
+    }
+
+    .my-order-detail-item-header,
+    .my-order-detail-item-body {
+        padding-right: 1rem;
+        padding-left: 1rem;
+    }
+}
+
+@media (max-width: 420px) {
+    .my-order-detail-item-header {
+        flex-direction: column;
+    }
+
+    .my-order-detail-item-header > strong {
+        align-self: flex-end;
+    }
+
+    .my-order-detail-description-list > div {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0.25rem;
+    }
+
+    .my-order-detail-description-list dd {
+        text-align: left;
+    }
+
+    .my-order-detail-total {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .my-order-detail-total strong {
+        align-self: flex-end;
+    }
+}

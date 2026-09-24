@@ -1,98 +1,189 @@
-.page {
-    position: relative;
+.bf-shell {
     display: flex;
-    flex-direction: column;
+    min-height: 100vh;
+    background-color: var(--bf-background);
 }
 
-main {
+.bf-sidebar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    flex: 0 0 270px;
+    width: 270px;
+    height: 100vh;
+    overflow: hidden;
+    background-color: var(--bf-primary-dark);
+}
+
+.bf-main-column {
+    min-width: 0;
     flex: 1;
 }
 
-.sidebar {
-    background-image: linear-gradient(180deg, rgb(5, 39, 103) 0%, #3a0647 70%);
+.bf-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    min-height: 4.5rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.75rem 2rem;
+    background-color: rgba(255, 255, 255, 0.96);
+    border-bottom: 1px solid var(--bf-border);
+    backdrop-filter: blur(0.75rem);
 }
 
-.top-row {
-    background-color: #f7f7f7;
-    border-bottom: 1px solid #d6d5d5;
-    justify-content: flex-end;
-    height: 3.5rem;
+.bf-topbar-brand {
     display: flex;
     align-items: center;
+    gap: 0.75rem;
 }
 
-    .top-row ::deep a, .top-row ::deep .btn-link {
-        white-space: nowrap;
-        margin-left: 1.5rem;
-        text-decoration: none;
-    }
-
-    .top-row ::deep a:hover, .top-row ::deep .btn-link:hover {
-        text-decoration: underline;
-    }
-
-    .top-row ::deep a:first-child {
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-@media (max-width: 640.98px) {
-    .top-row {
-        justify-content: space-between;
-    }
-
-    .top-row ::deep a, .top-row ::deep .btn-link {
-        margin-left: 0;
-    }
+.bf-topbar-brand strong,
+.bf-topbar-brand small {
+    display: block;
 }
 
-@media (min-width: 641px) {
-    .page {
-        flex-direction: row;
-    }
+.bf-topbar-brand strong {
+    line-height: 1.2;
+}
 
-    .sidebar {
-        width: 250px;
-        height: 100vh;
-        position: sticky;
-        top: 0;
-    }
+.bf-topbar-brand small {
+    margin-top: 0.125rem;
+    color: var(--bf-muted);
+    font-size: 0.75rem;
+}
 
-    .top-row {
-        position: sticky;
-        top: 0;
-        z-index: 1;
-    }
+.bf-brand-mark {
+    display: inline-flex;
+    width: 2.25rem;
+    height: 2.25rem;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-size: 0.75rem;
+    font-weight: 800;
+    background-color: var(--bf-primary);
+    border-radius: 0.625rem;
+}
 
-    .top-row.auth ::deep a:first-child {
-        flex: 1;
-        text-align: right;
-        width: 0;
-    }
+.bf-user-area {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 1rem;
+}
 
-    .top-row, article {
-        padding-left: 2rem !important;
-        padding-right: 1.5rem !important;
-    }
+.bf-user-information {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    line-height: 1.2;
+}
+
+.bf-user-label {
+    margin-bottom: 0.125rem;
+    color: var(--bf-muted);
+    font-size: 0.75rem;
+}
+
+.bf-content {
+    padding-right: clamp(1rem, 3vw, 2.5rem);
+    padding-left: clamp(1rem, 3vw, 2.5rem);
+}
+
+.bf-content-container {
+    width: 100%;
+    max-width: 1440px;
+    margin-right: auto;
+    margin-left: auto;
 }
 
 #blazor-error-ui {
-    color-scheme: light only;
-    background: lightyellow;
-    bottom: 0;
-    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
-    box-sizing: border-box;
-    display: none;
-    left: 0;
-    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
     position: fixed;
-    width: 100%;
-    z-index: 1000;
+    right: 1rem;
+    bottom: 1rem;
+    left: 1rem;
+    z-index: 2000;
+    display: none;
+    max-width: 42rem;
+    margin-left: auto;
+    padding: 1rem 3rem 1rem 1rem;
+    color: #ffffff;
+    background-color: var(--bf-danger);
+    border-radius: var(--bf-radius-md);
+    box-shadow: var(--bf-shadow-md);
 }
 
-    #blazor-error-ui .dismiss {
-        cursor: pointer;
-        position: absolute;
-        right: 0.75rem;
-        top: 0.5rem;
+#blazor-error-ui .reload {
+    margin-left: 0.5rem;
+    color: #ffffff;
+    font-weight: 700;
+}
+
+#blazor-error-ui .dismiss {
+    position: absolute;
+    top: 50%;
+    right: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    color: #ffffff;
+    font-size: 1.25rem;
+    line-height: 1;
+    background: transparent;
+    border: 0;
+    transform: translateY(-50%);
+}
+
+@media (min-width: 768px) {
+    .bf-topbar-brand {
+        visibility: hidden;
     }
+}
+
+@media (max-width: 767.98px) {
+    .bf-shell {
+        display: block;
+    }
+
+    .bf-sidebar {
+        position: sticky;
+        width: 100%;
+        height: auto;
+    }
+
+    .bf-topbar {
+        position: static;
+        min-height: 4rem;
+        padding: 0.625rem 1rem;
+    }
+
+    /* ADMIN/OWNER đã có logo ở menu; EMPLOYEE dùng thanh điều hướng dưới nên giữ logo ở topbar. */
+    .bf-topbar-brand {
+        display: none;
+    }
+
+    .bf-shell:has(.bf-employee-mobile-navigation) .bf-topbar-brand {
+        display: flex;
+    }
+
+    .bf-user-information {
+        display: none;
+    }
+
+    .bf-content {
+        padding-right: 1rem;
+        padding-left: 1rem;
+    }
+}
+
+@media (max-width: 420px) {
+    .bf-topbar-brand small {
+        display: none;
+    }
+
+    .bf-user-area {
+        gap: 0.5rem;
+    }
+}

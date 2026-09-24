@@ -1,0 +1,184 @@
+.employee-create-page {
+    max-width: 1100px;
+    padding-bottom: 2rem;
+}
+
+/* Giữ tên trang và chi nhánh trước form, không dùng banner trang trí lớn. */
+.employee-create-hero {
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--bf-border);
+}
+
+.employee-create-back-link {
+    display: inline-flex;
+    min-height: 2.5rem;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.7rem;
+    color: var(--bf-primary);
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.employee-create-back-link:hover,
+.employee-create-back-link:focus {
+    color: var(--bf-primary-dark);
+    text-decoration: underline;
+}
+
+.employee-create-hero h1 {
+    margin-bottom: 0.25rem;
+    font-size: clamp(1.75rem, 2.5vw, 2.25rem);
+    font-weight: var(--bf-heading-weight);
+    letter-spacing: -0.015em;
+}
+
+.employee-create-hero div > p:last-child {
+    margin-bottom: 0;
+    color: var(--bf-muted);
+}
+
+/* Mỗi nhóm thông tin giữ riêng label và validation của EditForm hiện có. */
+.employee-create-sections {
+    display: grid;
+    gap: 1rem;
+}
+
+.employee-create-section {
+    min-width: 0;
+    overflow: hidden;
+}
+
+.employee-create-section-heading {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 1.35rem 1.5rem 0;
+}
+
+.employee-create-step {
+    display: inline-flex;
+    width: 2.5rem;
+    height: 2.5rem;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    color: var(--bf-primary);
+    background-color: var(--bf-primary-soft);
+    border-radius: 50%;
+    font-size: 0.8rem;
+    font-weight: 800;
+}
+
+.employee-create-section-heading p {
+    margin-bottom: 0.15rem;
+    color: var(--bf-primary);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.employee-create-section-heading h2 {
+    margin-bottom: 0;
+    font-size: 1.1rem;
+    font-weight: 800;
+}
+
+.employee-create-section-body {
+    padding: 0.9rem 1.5rem 1.5rem;
+}
+
+.employee-create-section-description {
+    margin-bottom: 1.2rem;
+    color: var(--bf-muted);
+    font-size: 0.82rem;
+}
+
+.employee-create-section .form-label {
+    margin-bottom: 0.4rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.employee-create-section .form-label span,
+.employee-create-actions p span {
+    color: var(--bf-danger);
+}
+
+.employee-create-section .form-control,
+.employee-create-section .input-group-text {
+    min-height: 2.75rem;
+}
+
+.employee-create-section .form-control {
+    min-width: 0;
+}
+
+.employee-create-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding: 1rem 1.5rem;
+}
+
+.employee-create-actions p {
+    margin-bottom: 0;
+    color: var(--bf-muted);
+    font-size: 0.76rem;
+}
+
+.employee-create-action-buttons {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 0.65rem;
+}
+
+.employee-create-action-buttons .btn {
+    min-height: 2.75rem;
+}
+
+@media (max-width: 767.98px) {
+    .employee-create-page {
+        padding-bottom: 5rem;
+    }
+
+    .employee-create-hero {
+        padding-bottom: 1rem;
+    }
+
+    .employee-create-hero h1 {
+        font-size: 1.8rem;
+    }
+
+    .employee-create-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .employee-create-action-buttons {
+        width: 100%;
+    }
+
+    .employee-create-action-buttons .btn {
+        flex: 1 1 0;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .employee-create-section-heading {
+        padding: 1.15rem 1.15rem 0;
+    }
+
+    .employee-create-section-body {
+        padding: 0.9rem 1.15rem 1.15rem;
+    }
+
+    .employee-create-actions {
+        padding: 1rem 1.15rem;
+    }
+}

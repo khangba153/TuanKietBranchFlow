@@ -83,8 +83,9 @@ public class OrdersController : ControllerBase
                 detail: "Hệ thống không nhận được dữ liệu đơn vừa tạo.");
         }
 
-        return CreatedAtAction(
-            nameof(GetMyOrderDetailAsync),
+        // Dùng route có tên để Location luôn trỏ đúng endpoint chi tiết đơn.
+        return CreatedAtRoute(
+            "GetMyOrderDetail",
             new { orderId = result.Order.Id },
             result.Order);
     }
@@ -125,7 +126,7 @@ public class OrdersController : ControllerBase
     /// <summary>
     /// Lấy chi tiết một đơn do employee hiện tại tạo
     /// </summary>
-    [HttpGet("{orderId:int}")]
+    [HttpGet("{orderId:int}", Name = "GetMyOrderDetail")]
     [ProducesResponseType(typeof(MyOrderDetailDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]

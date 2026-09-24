@@ -1,7 +1,212 @@
 ﻿@page "/"
 
-<PageTitle>Home</PageTitle>
+@using System.Text.Json
+@using TuanKietBranchFlow.Application.DTOs.Users
+@using TuanKietBranchFlow.Web.Services
 
-<h1>Hello, world!</h1>
+@inject UserApiService UserApiService
 
-Welcome to your new app.
+<PageTitle>Tổng quan - BranchFlow</PageTitle>
+
+<section class="bf-page">
+    @if (_isLoading)
+    {
+        <div class="bf-dashboard-state bf-surface-card" role="status" aria-live="polite">
+            <div class="spinner-border text-success" aria-hidden="true">
+            </div>
+
+            <strong>Đang tải không gian làm việc</strong>
+            <span class="bf-muted">Vui lòng chờ trong giây lát.</span>
+        </div>
+    }
+    else if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <div class="bf-dashboard-state bf-dashboard-error bf-surface-card" role="alert">
+            <span class="bf-dashboard-state-icon" aria-hidden="true">
+                !
+            </span>
+
+            <strong>Không thể tải Dashboard</strong>
+            <span class="bf-muted">@_errorMessage</span>
+
+            <button type="button" class="btn btn-primary" @onclick="LoadDashboardAsync">
+                Thử lại
+            </button>
+        </div>
+    }
+    else if (_profile is null)
+    {
+        <div class="bf-empty-state">
+            Không có thông tin tài khoản để hiển thị.
+        </div>
+    }
+    else
+    {
+        <header class="bf-dashboard-hero">
+            <div class="bf-dashboard-hero-content">
+                <h1>Trang chủ</h1>
+
+                @if (_profile.Role == "EMPLOYEE")
+                {
+                    @if (!string.IsNullOrWhiteSpace(
+                        _profile.CurrentBranchName))
+                    {
+                        <p class="bf-dashboard-introduction">
+                            Chi nhánh hiện tại: <strong>@_profile.CurrentBranchName</strong>
+                        </p>
+                    }
+                    else
+                    {
+                        <p class="bf-dashboard-introduction">
+                            Tài khoản hiện chưa có chi nhánh đang hoạt động.
+                        </p>
+                    }
+                }
+            </div>
+        </header>
+
+        <section class="bf-dashboard-section" aria-labelledby="quick-actions-title">
+            <div class="bf-page-header">
+                <div>
+                    <h2 id="quick-actions-title" class="bf-dashboard-section-title">
+                        Thao tác nhanh
+                    </h2>
+                </div>
+            </div>
+
+            <div class="bf-dashboard-action-grid">
+                @if (_profile.Role == "EMPLOYEE")
+                {
+                    <a href="/order-menu" class="bf-dashboard-action-card
+                        bf-dashboard-action-card-primary">
+                        <span class="bf-dashboard-action-content">
+                            <strong>Gọi món cho khách</strong>
+                            <small>
+                                Chọn món, cấu hình và tạo đơn mới
+                            </small>
+                        </span>
+
+                        <span class="bf-dashboard-action-arrow" aria-hidden="true">
+                            →
+                        </span>
+                    </a>
+
+                    <a href="/my-orders" class="bf-dashboard-action-card">
+                        <span class="bf-dashboard-action-content">
+                            <strong>Đơn của tôi</strong>
+                            <small>
+                                Xem lịch sử và chi tiết đơn đã tạo
+                            </small>
+                        </span>
+
+                        <span class="bf-dashboard-action-arrow" aria-hidden="true">
+                            →
+                        </span>
+                    </a>
+
+                }
+                else if (_profile.Role == "ADMIN")
+                {
+                    <a href="/branches" class="bf-dashboard-action-card
+                        bf-dashboard-action-card-primary">
+                        <span class="bf-dashboard-action-content">
+                            <strong>Chi nhánh và nhân viên</strong>
+                            <small>
+                                Chọn chi nhánh và quản lý nhân viên
+                            </small>
+                        </span>
+
+                        <span class="bf-dashboard-action-arrow" aria-hidden="true">
+                            →
+                        </span>
+                    </a>
+
+                }
+                else if (_profile.Role == "OWNER")
+                {
+                    <a href="/branches" class="bf-dashboard-action-card
+                        bf-dashboard-action-card-primary">
+                        <span class="bf-dashboard-action-content">
+                            <strong>Danh sách chi nhánh</strong>
+                            <small>
+                                Xem các chi nhánh trong hệ thống
+                            </small>
+                        </span>
+
+                        <span class="bf-dashboard-action-arrow" aria-hidden="true">
+                            →
+                        </span>
+                    </a>
+
+                }
+                else
+                {
+                    <div class="bf-empty-state">
+                        Vai trò hiện tại chưa có Dashboard phù hợp.
+                    </div>
+                }
+            </div>
+        </section>
+    }
+</section>
+
+@code {
+    private UserProfileDTO? _profile;
+    private bool _isLoading = true;
+    private string? _errorMessage;
+
+    // LocalStorage chỉ có thể được đọc sau lần render đầu tiên.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        await LoadDashboardAsync();
+
+        // OnAfterRenderAsync không tự render lại sau khi await hoàn thành.
+        StateHasChanged();
+    }
+
+    // Lấy hồ sơ hiện tại để Dashboard xác định người dùng và vai trò.
+    private async Task LoadDashboardAsync()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+        _profile = null;
+
+        try
+        {
+            UserProfileDTO? profile =
+                await UserApiService.GetCurrentProfileAsync();
+
+            if (profile is null)
+            {
+                _errorMessage =
+                    "Không thể tải thông tin tài khoản hiện tại.";
+
+                return;
+            }
+
+            _profile = profile;
+        }
+        catch (HttpRequestException)
+        {
+            _errorMessage = "Không thể kết nối đến API.";
+        }
+        catch (JSException)
+        {
+            _errorMessage = "Không thể đọc thông tin đăng nhập.";
+        }
+        catch (JsonException)
+        {
+            _errorMessage = "Dữ liệu tài khoản trả về không hợp lệ.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+}
