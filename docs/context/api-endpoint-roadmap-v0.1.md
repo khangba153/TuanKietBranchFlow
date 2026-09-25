@@ -4,8 +4,7 @@
 
 > Cập nhật định hướng 2026-09-05: giữ file này làm danh mục endpoint dự kiến,
 > không coi các giai đoạn dưới đây là thứ tự bắt buộc hoặc trạng thái đã hoàn thành.
-> Thứ tự học, nối frontend, CI và deploy theo
-> [lộ trình học–production](../learning/production-learning-roadmap.md).
+> Thứ tự học, nối frontend, CI và deploy được theo dõi riêng trong tài liệu nội bộ.
 > Đối chiếu lại từng route với code và nghiệp vụ mới nhất trước khi triển khai;
 > ví dụ không tự xây chức năng EMPLOYEE sửa hồ sơ vì có route dự kiến trong danh mục.
 

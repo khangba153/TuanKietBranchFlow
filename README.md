@@ -528,7 +528,6 @@ Additional project documents are available in the `docs` directory:
 - [Business requirements](docs/context/business-requirements-v1.5.md)
 - [Database analysis](docs/context/database-schema-analysis.md)
 - [API endpoint roadmap](docs/context/api-endpoint-roadmap-v0.3.md)
-- [Learning and production roadmap](docs/learning/production-learning-roadmap.md)
 - [UI prototypes](docs/prototype-ui)
 
 ---
