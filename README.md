@@ -11,8 +11,8 @@ The project demonstrates a complete application flow from a responsive Blazor in
 
 - **Source code:** [github.com/khangba153/TuanKietBranchFlow](https://github.com/khangba153/TuanKietBranchFlow)
 - **Live demo:** [TuanKiet BranchFlow on Azure](https://branchflow-web-khang153-gphzgbakgdg0dndr.eastasia-01.azurewebsites.net)
-- **API documentation:** Swagger is available at `/swagger` when running the API
-- **Health endpoint:** `/health`
+- **API documentation:** `/swagger` is enabled in the Development environment only
+- **API health endpoint:** `/health`
 
 > The application is under active development. The public deployment is a demonstration environment, not a production system.
 
@@ -49,13 +49,12 @@ The project is developed incrementally using vertical slices. Each slice goes th
 
 ### Employee Management
 
-- View employees by branch
+- View employees by branch in the Web application
 - Search employees by name or employee code
 - Filter employees by employment status
 - View employee profiles
-- Create and update employee information
-- Change employee status
-- Transfer employees between branches
+- Create employees from the Web application
+- Update employee information, change status, and transfer branches through the API
 - Preserve branch-assignment history
 - Validate effective dates and employment business rules
 
@@ -70,6 +69,16 @@ The project is developed incrementally using vertical slices. Each slice goes th
 - Search product names with Vietnamese accent-insensitive matching
 - Responsive Bootstrap interface for desktop and mobile
 - Handle loading, empty, error, unauthorized, and not-found states
+
+### Employee Ordering
+
+- Configure a product with a required size, optional toppings and quick notes, and item quantity
+- Manage a cart and submit it through `POST /api/orders`
+- Validate branch availability and option limits; re-read prices from the database on the API
+- Generate an order code and save the order, items, toppings, notes, and price/name snapshots in one transaction
+- View an employee's own order list and historical order details
+- Report an incorrect completed order for review without overwriting the original report
+- Use responsive ordering, cart, order-list, and order-detail screens on desktop and mobile
 
 ### Testing and CI
 
@@ -95,21 +104,9 @@ The project is developed incrementally using vertical slices. Each slice goes th
 
 ---
 
-## Currently in Development
+## Current Focus
 
-The current development slice focuses on the employee ordering workflow:
-
-- Select a required product size
-- Select optional toppings
-- Apply topping quantity limits
-- Select quick notes
-- Change item quantity
-- Calculate the temporary item total
-- Add configured items to the shopping cart
-- Submit an order through `POST /api/orders`
-- Re-read product and topping prices from the database before creating an order
-
-The API never trusts prices sent by the Web application. Current database values will be used to validate and calculate the final order total.
+The next development slice is administrator menu management: categories, sizes, products and prices, toppings, and quick notes. Menu data and prices are shared across branches; product and topping availability is controlled per branch. This administration workflow is planned, not yet implemented.
 
 ---
 
@@ -117,8 +114,6 @@ The API never trusts prices sent by the Web application. Current database values
 
 The following features are planned and have not been fully implemented:
 
-- Shopping cart completion
-- Order creation and order-detail snapshots
 - Administrator menu CRUD
 - Administrator and owner order management
 - Employee self-service profile
@@ -270,14 +265,13 @@ TuanKietBranchFlow/
 |   |-- BranchFlowDB.sql
 |   `-- azure/
 |       |-- 001-initial-schema.sql
-|       `-- 002-seed-tuan-kiet-menu.sql
+|       |-- 002-seed-tuan-kiet-menu.sql
+|       `-- 003-grant-order-flow-runtime.sql
 |
 |-- docs/
 |   |-- context/
-|   |-- learning/
 |   `-- prototype-ui/
 |
-|-- tools/
 |-- TuanKietBranchFlow.slnx
 |-- README.md
 `-- .gitignore
@@ -306,6 +300,8 @@ Database schema documentation is available in:
 
 - [`docs/context/database-schema-analysis.md`](docs/context/database-schema-analysis.md)
 - [`docs/context/business-requirements-v1.5.md`](docs/context/business-requirements-v1.5.md)
+
+The Azure order-flow permissions are recorded in `database/azure/003-grant-order-flow-runtime.sql`. That script is scoped to the demo database and its existing API database user; it is not a complete database setup script or a grant for every API feature.
 
 ---
 
@@ -486,7 +482,7 @@ CI validates that the committed source can be restored, compiled, and tested on 
 - Azure configuration uses App Service environment settings
 - API endpoints use JWT authentication and role authorization
 - Branch-specific operations validate the current user's active assignment
-- Order prices will be recalculated from database values instead of trusting Web request prices
+- Order prices are recalculated from database values instead of trusting Web request prices
 
 Never commit:
 
@@ -501,22 +497,25 @@ Never commit:
 
 ## Verification Status
 
-The following evidence currently exists:
+As of 2026-09-25, the following evidence exists:
 
 - Release builds complete successfully
-- Application service unit tests pass
+- All 19 current Application service unit tests pass locally
 - GitHub Actions restore, build, and test workflow runs successfully
 - Menu authorization cases have been tested through Swagger
 - Local SQL Server queries have been exercised through the API
 - The public Web demo has been manually tested on desktop, mobile, and different browsers
-- API and Web are currently accessible through Azure HTTPS endpoints
+- Public employee smoke tests covered menu browsing, order creation (`201`), order list/detail, and reporting an order for review
+- Public API checks returned `401` without a JWT and `403` with an ADMIN JWT for the EMPLOYEE-only order-list endpoint
+- The public Web homepage and API `/health` endpoint returned HTTP `200` when this README was updated
 
 Current limitations:
 
 - Automated integration tests are not yet included
 - Automated browser tests are not yet committed
 - Deployment is still manual
-- The deployment command previously reported a startup timeout even though runtime logs and public smoke tests showed the Web application running
+- Cross-employee order ownership has not yet been verified on the public demo with two separate employee accounts
+- Database restore and application rollback have not yet been rehearsed
 - The demo environment should not be considered a production-ready system
 
 ---
@@ -536,16 +535,13 @@ Additional project documents are available in the `docs` directory:
 
 The current development order is:
 
-1. Complete employee product customization
-2. Implement the shopping cart
-3. Implement `POST /api/orders`
-4. Implement administrator menu management
-5. Implement administrator and owner order workflows
-6. Implement employee self-service profile
-7. Implement inventory workflows
-8. Implement payroll and reporting
-9. Expand automated integration and browser testing
-10. Stabilize deployment before enabling Continuous Deployment
+1. Implement administrator menu management
+2. Implement administrator and owner order workflows
+3. Implement employee self-service profile
+4. Implement inventory workflows
+5. Implement payroll and reporting
+6. Expand automated integration and browser testing
+7. Rehearse restore and rollback, then evaluate Continuous Deployment
 
 ---
 
