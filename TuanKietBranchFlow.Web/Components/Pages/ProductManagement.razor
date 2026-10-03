@@ -1,0 +1,1250 @@
+@using System.Text.Json
+@using Microsoft.JSInterop
+@using TuanKietBranchFlow.Application.DTOs.MenuManagement
+@using TuanKietBranchFlow.Web.Services
+@using TuanKietBranchFlow.Web.Models
+
+@inject CategoryApiService CategoryApiService
+@inject SizeApiService SizeApiService
+@inject ProductApiService ProductApiService
+
+<section class="bf-surface-card overflow-hidden" aria-labelledby="product-title">
+        <header class="d-flex flex-column flex-sm-row align-items-sm-center
+            justify-content-between gap-3 p-3 p-md-4 border-bottom">
+            <div>
+                <h2 id="product-title" class="h5 mb-1">Danh sách sản phẩm</h2>
+                <p class="bf-page-description mb-0">
+                    Sản phẩm dùng chung; tình trạng bán theo chi nhánh được cấu hình riêng.
+                </p>
+            </div>
+
+            <AuthorizeView Roles="ADMIN">
+                <Authorized>
+                    <button type="button" class="btn btn-primary align-self-start align-self-sm-auto"
+                            @onclick="ShowCreateProductForm"
+                            disabled="@HasOpenOperation">
+                        Thêm sản phẩm
+                    </button>
+                </Authorized>
+            </AuthorizeView>
+        </header>
+
+        <AuthorizeView Roles="ADMIN">
+            <Authorized>
+                @if (_isCreateProductFormVisible)
+                {
+                    <section class="p-3 p-md-4 border-bottom bg-body-tertiary" aria-labelledby="create-product-title">
+                        <h3 id="create-product-title" class="h6 mb-3">
+                            Thêm sản phẩm
+                        </h3>
+
+                        @if (!string.IsNullOrWhiteSpace(_createProductErrorMessage))
+                        {
+                            <div class="alert alert-danger" role="alert">
+                                @_createProductErrorMessage
+                            </div>
+                        }
+
+                        <div class="row g-3">
+                            <div class="col-12 col-md-6">
+                                <label for="product-category" class="form-label">
+                                    Danh mục
+                                </label>
+                                <select id="product-category" class="form-select" @bind="_newProductCategoryId"
+                                        disabled="@_isCreatingProduct">
+                                    <option value="">Chọn danh mục</option>
+                                    @foreach (MenuCategoryDTO category in _categories)
+                                    {
+                                        <option value="@category.Id">
+                                            @category.Name
+                                            @(category.IsActive ? "" : " (Tạm ngừng)")
+                                        </option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <label for="product-name" class="form-label">
+                                    Tên sản phẩm
+                                </label>
+                                <input id="product-name" type="text" class="form-control" maxlength="150"
+                                       placeholder="Ví dụ: Trà sữa truyền thống" @bind="_newProductName" @bind:event="oninput"
+                                       disabled="@_isCreatingProduct" />
+                                <div class="form-text">Tên sản phẩm tối đa 150 ký tự.</div>
+                            </div>
+
+                            <div class="col-12">
+                                <label for="product-image-url" class="form-label">
+                                    Đường dẫn ảnh
+                                </label>
+                                <input id="product-image-url" type="text" class="form-control" maxlength="1000"
+                                       placeholder="https://..." @bind="_newProductImageUrl" @bind:event="oninput"
+                                       disabled="@_isCreatingProduct" />
+                                <div class="form-text">
+                                    Nhập URL hoặc đường dẫn ảnh. Chức năng tải file chưa được triển khai.
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4" />
+
+                        <div class="mb-3">
+                            <h4 class="h6 mb-1">Size và giá</h4>
+                            <p class="form-text mb-0">
+                                Mỗi sản phẩm cần ít nhất hai size. Giá được dùng chung giữa các chi nhánh.
+                            </p>
+                        </div>
+
+                        @for (int index = 0; index < _newProductSizes.Count; index++)
+                        {
+                            CreateProductSizeRequestDTO productSize = _newProductSizes[index];
+                            int rowNumber = index + 1;
+
+                            <div class="row g-3 mb-3" @key="productSize">
+                                <div class="col-12 col-md-6">
+                                    <label for="@($"product-size-{rowNumber}")" class="form-label">
+                                        Size @rowNumber
+                                    </label>
+                                    <select id="@($"product-size-{rowNumber}")" class="form-select" @bind="productSize.SizeId"
+                                            disabled="@_isCreatingProduct">
+                                        <option value="0">Chọn size</option>
+                                        @foreach (MenuSizeDTO size in _sizes.Where(size => size.IsActive))
+                                        {
+                                            <option value="@size.Id">@size.Name</option>
+                                        }
+                                    </select>
+                                </div>
+
+                                <div class="col-12 col-sm-8 col-md-4">
+                                    <label for="@($"product-size-price-{rowNumber}")" class="form-label">
+                                        Giá
+                                    </label>
+                                    <input id="@($"product-size-price-{rowNumber}")" type="number" min="0.01" step="0.01"
+                                           class="form-control" placeholder="Ví dụ: 30000" @bind="productSize.Price"
+                                           disabled="@_isCreatingProduct" />
+                                </div>
+
+                                <div class="col-12 col-sm-4 col-md-2 d-flex align-items-end">
+                                    <button type="button" class="btn btn-outline-danger w-100"
+                                            aria-label="@($"Xóa dòng size {rowNumber}")"
+                                            @onclick="() => RemoveProductSizeRow(productSize)"
+                                            disabled="@(_isCreatingProduct || _newProductSizes.Count <= 2)">
+                                        Xóa
+                                    </button>
+                                </div>
+                            </div>
+                        }
+
+                        <button type="button" class="btn btn-outline-primary" @onclick="AddProductSizeRow"
+                                disabled="@_isCreatingProduct">
+                            Thêm size
+                        </button>
+
+                        <div class="d-grid d-sm-flex justify-content-sm-end gap-2 mt-4">
+                            <button type="button" class="btn btn-outline-secondary" @onclick="CancelCreateProductForm"
+                                    disabled="@_isCreatingProduct">
+                                Hủy
+                            </button>
+                            <button type="button" class="btn btn-primary" @onclick="CreateProductAsync"
+                                    disabled="@_isCreatingProduct">
+                                @if (_isCreatingProduct)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+                                    <span>Đang lưu...</span>
+                                }
+                                else
+                                {
+                                    <span>Lưu sản phẩm</span>
+                                }
+                            </button>
+                        </div>
+                    </section>
+                }
+            </Authorized>
+        </AuthorizeView>
+
+        <div class="row g-2 p-3 p-md-4 border-bottom">
+            <div class="col-12 col-md-8">
+                <label for="product-search" class="visually-hidden">
+                    Tìm tên món
+                </label>
+                <input id="product-search" type="search" class="form-control" placeholder="Tìm tên món"
+                       @bind="_productSearchText" @bind:event="oninput" />
+            </div>
+
+            <div class="col-12 col-md-4">
+                <label for="product-category-filter" class="visually-hidden">
+                    Lọc theo danh mục
+                </label>
+                <select id="product-category-filter" class="form-select" @bind="_selectedProductCategoryId">
+                    <option value="">Tất cả danh mục</option>
+                    @foreach (MenuCategoryDTO category in _categories)
+                    {
+                        <option value="@category.Id">
+                            @category.Name
+                            @(category.IsActive ? "" : " (Tạm ngừng)")
+                        </option>
+                    }
+                </select>
+            </div>
+        </div>
+
+        @{
+            List<MenuProductDTO> filteredProducts = GetFilteredProducts();
+        }
+
+        @if (_isLoadingProducts)
+        {
+            <div class="p-4 text-center" role="status">
+                <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+                <span>Đang tải danh sách sản phẩm...</span>
+            </div>
+        }
+        else if (!string.IsNullOrWhiteSpace(_productErrorMessage))
+        {
+            <div class="alert alert-danger m-3" role="alert">
+                <p class="mb-2">@_productErrorMessage</p>
+                <button type="button" class="btn btn-outline-danger btn-sm" @onclick="LoadProductsAsync" disabled="@HasOpenOperation">
+                    Thử tải lại
+                </button>
+            </div>
+        }
+        else if (_products.Count == 0)
+        {
+            <div class="alert alert-light m-3 mb-0">
+                Chưa có sản phẩm nào.
+            </div>
+        }
+        else if (filteredProducts.Count == 0)
+        {
+            <div class="alert alert-light m-3 mb-0">
+                Không tìm thấy sản phẩm phù hợp.
+            </div>
+        }
+        else
+        {
+            <div class="list-group list-group-flush">
+                @foreach (MenuProductDTO product in filteredProducts)
+                {
+                    <article class="list-group-item p-3 p-md-4">
+                        <div class="row g-3 align-items-center">
+                            <div class="col-4 col-sm-3 col-md-2">
+                                <div class="ratio ratio-1x1">
+                                    @if (!string.IsNullOrWhiteSpace(product.ImageUrl))
+                                    {
+                                        <img src="@product.ImageUrl" alt="@product.Name" class="rounded object-fit-cover" />
+                                    }
+                                    else
+                                    {
+                                        <div class="rounded bg-body-tertiary d-flex
+                                            align-items-center justify-content-center
+                                            text-body-secondary small" role="img" aria-label="Sản phẩm chưa có ảnh">
+                                            Chưa có ảnh
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="col">
+                                <h3 class="h6 mb-2">@product.Name</h3>
+                                <p class="mb-0 text-body-secondary">
+                                    Danh mục: @product.CategoryName
+                                </p>
+                            </div>
+
+                            @if (product.ProductSizes.Count > 0)
+                            {
+                                <div class="d-flex flex-wrap gap-2 mt-2" aria-label="Size và giá sản phẩm">
+                                    @foreach (MenuProductSizeDTO productSize in product.ProductSizes)
+                                    {
+                                        <span class="badge rounded-pill bg-body-tertiary text-body border">
+                                            @productSize.SizeName · @productSize.Price.ToString("N0") đ
+                                        </span>
+
+                                        @if (!productSize.IsProductSizeActive)
+                                        {
+                                            <span class="badge rounded-pill text-bg-secondary">
+                                                Giá tạm ngừng
+                                            </span>
+                                        }
+
+                                        @if (!productSize.IsSizeAvailable)
+                                        {
+                                            <span class="badge rounded-pill text-bg-warning">
+                                                Size không khả dụng
+                                            </span>
+                                        }
+                                    }
+                                </div>
+                            }
+
+                            <div class="col-12 col-md-auto">
+                                <div class="d-flex flex-wrap align-items-center gap-2">
+                                    @if (product.IsActive)
+                                    {
+                                        <span class="badge rounded-pill text-bg-success">
+                                            Đang hoạt động
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge rounded-pill text-bg-secondary">
+                                            Tạm ngừng
+                                        </span>
+                                    }
+
+                                    <AuthorizeView Roles="ADMIN">
+                                        <Authorized>
+                                            <button type="button" class="btn btn-outline-primary btn-sm"
+                                                    @onclick="() => BeginEditProduct(product)" disabled="@HasOpenOperation">
+                                                Sửa
+                                            </button>
+
+                                            <button type="button" class="btn btn-outline-danger btn-sm"
+                                                    @onclick="() => RequestProductDelete(product)" disabled="@HasOpenOperation">
+                                                @if (_deletingProductId == product.Id)
+                                                {
+                                                    <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+                                                    <span>Đang xóa...</span>
+                                                }
+                                                else
+                                                {
+                                                    <span>Xóa</span>
+                                                }
+                                            </button>
+                                        </Authorized>
+                                    </AuthorizeView>
+                                </div>
+                            </div>
+                        </div>
+                        <AuthorizeView Roles="ADMIN">
+                            <Authorized>
+                                @if (_editingProductId == product.Id
+                                    && _editedProductRequest is not null)
+                                {
+                                    <section class="mt-3 p-3 p-md-4 border rounded bg-body-tertiary"
+                                             aria-labelledby="@($"edit-product-title-{product.Id}")">
+                                        <h4 id="@($"edit-product-title-{product.Id}")" class="h6 mb-3">
+                                            Chỉnh sửa sản phẩm
+                                        </h4>
+
+                                        @if (!string.IsNullOrWhiteSpace(_updateProductErrorMessage))
+                                        {
+                                            <div class="alert alert-danger" role="alert">
+                                                @_updateProductErrorMessage
+                                            </div>
+                                        }
+
+                                        <div class="row g-3">
+                                            <div class="col-12 col-md-6">
+                                                <label for="@($"edit-product-category-{product.Id}")" class="form-label">
+                                                    Danh mục
+                                                </label>
+                                                <select id="@($"edit-product-category-{product.Id}")" class="form-select"
+                                                        @bind="_editedProductRequest.CategoryId" disabled="@_isUpdatingProduct">
+                                                    @foreach (MenuCategoryDTO category in _categories)
+                                                    {
+                                                        <option value="@category.Id">
+                                                            @category.Name
+                                                            @(category.IsActive ? "" : " (Tạm ngừng)")
+                                                        </option>
+                                                    }
+                                                </select>
+                                            </div>
+
+                                            <div class="col-12 col-md-6">
+                                                <label for="@($"edit-product-name-{product.Id}")" class="form-label">
+                                                    Tên sản phẩm
+                                                </label>
+                                                <input id="@($"edit-product-name-{product.Id}")" type="text" class="form-control"
+                                                       maxlength="150" @bind="_editedProductRequest.Name" @bind:event="oninput"
+                                                       disabled="@_isUpdatingProduct" />
+                                            </div>
+
+                                            <div class="col-12">
+                                                <label for="@($"edit-product-image-{product.Id}")" class="form-label">
+                                                    Đường dẫn ảnh
+                                                </label>
+                                                <input id="@($"edit-product-image-{product.Id}")" type="text" class="form-control"
+                                                       maxlength="1000" @bind="_editedProductRequest.ImageUrl" @bind:event="oninput"
+                                                       disabled="@_isUpdatingProduct" />
+                                                <div class="form-text">
+                                                    Nhập URL hoặc đường dẫn ảnh; chưa hỗ trợ tải file lên.
+                                                </div>
+                                            </div>
+
+                                            <div class="col-12 col-md-6">
+                                                <label for="@($"edit-product-status-{product.Id}")" class="form-label">
+                                                    Trạng thái sản phẩm
+                                                </label>
+                                                <select id="@($"edit-product-status-{product.Id}")" class="form-select"
+                                                        value="@(_editedProductRequest.IsActive == true ? "true" : "false")"
+                                                        @onchange="HandleProductStatusChanged" disabled="@_isUpdatingProduct">
+                                                    <option value="true">Đang hoạt động</option>
+                                                    <option value="false">Tạm ngừng</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <hr class="my-4" />
+
+                                        <h5 class="h6">Size và giá</h5>
+                                        <p class="form-text">
+                                            Mỗi sản phẩm cần ít nhất hai size. Size không hoạt động hiện có vẫn được giữ lại
+                                            để bạn có thể chọn size khác.
+                                        </p>
+
+                                        @for (int index = 0;
+                                              index < _editedProductRequest.ProductSizes.Count;
+                                              index++)
+                                        {
+                                            UpdateProductSizeRequestDTO productSize =
+                                                _editedProductRequest.ProductSizes[index];
+                                            int rowNumber = index + 1;
+                                            int productSizeIndex = index;
+
+                                            <div class="row g-3 mb-3">
+                                                <div class="col-12 col-md-4">
+                                                    <label for="@($"edit-product-size-{product.Id}-{rowNumber}")" class="form-label">
+                                                        Size @rowNumber
+                                                    </label>
+                                                    <select id="@($"edit-product-size-{product.Id}-{rowNumber}")" class="form-select"
+                                                            value="@productSize.SizeId" @onchange="eventArgs =>
+                                                                HandleProductSizeChanged(productSizeIndex, eventArgs)"
+    disabled="@_isUpdatingProduct">
+<option value="0">Chọn size</option>
+
+                @if (!_sizes.Any(size => size.Id == productSize.SizeId))
+                                                        {
+                                                            MenuProductSizeDTO? unavailableSize =
+                                                                product.ProductSizes.FirstOrDefault(
+                                                                    size => size.SizeId == productSize.SizeId);
+
+                                                            if (unavailableSize is not null)
+                                                            {
+                                                                <option value="@unavailableSize.SizeId">
+                                                                    @unavailableSize.SizeName (Không khả dụng)
+                                                                </option>
+                                                            }
+                                                        }
+
+                                                        @foreach (MenuSizeDTO size in _sizes.Where(size =>
+                                                            size.IsActive || size.Id == productSize.SizeId))
+                                                        {
+                                                            <option value="@size.Id">
+                                                                @size.Name
+                                                                @(size.IsActive ? "" : " (Tạm ngừng)")
+                                                            </option>
+                                                        }
+                                                    </select>
+                                                </div>
+
+                                                <div class="col-12 col-sm-6 col-md-3">
+                                                    <label for="@($"edit-product-price-{product.Id}-{rowNumber}")" class="form-label">
+                                                        Giá
+                                                    </label>
+                                                    <input id="@($"edit-product-price-{product.Id}-{rowNumber}")" type="number"
+                                                           min="0.01" step="0.01" class="form-control" @bind="productSize.Price""
+                                                           disabled=" @_isUpdatingProduct" />
+                                                </div>
+
+                                                <div class="col-12 col-sm-6 col-md-3">
+                                                    <label for="@($"edit-product-size-status-{product.Id}-{rowNumber}")"
+                                                           class="form-label">
+                                                        Trạng thái giá
+                                                    </label>
+                                                    <select id="@($"edit-product-size-status-{product.Id}-{rowNumber}")"
+                                                            class="form-select" value="@(productSize.IsActive == true ? "true" : "false")"
+                                                            @onchange="eventArgs =>
+                                                                HandleProductSizeStatusChanged(productSizeIndex, eventArgs)"
+    disabled="@_isUpdatingProduct">
+<option value="true">Đang hoạt động</option>
+<option value="false">Tạm ngừng</option>
+</select>
+                                                </div>
+
+                                                <div class="col-12 col-md-2 d-flex align-items-end">
+                                                    <button type="button" class="btn btn-outline-danger w-100"
+                                                            @onclick="() => RemoveProductEditSize(productSizeIndex)" disabled="@(_isUpdatingProduct
+                                                                || _editedProductRequest.ProductSizes.Count <= 2)">
+                                        Bỏ size
+                                    </button>
+                                </div>
+                            </div>
+                        }
+
+                        <button type="button" class="btn btn-outline-primary" @onclick="AddProductEditSize"
+                                disabled="@_isUpdatingProduct">
+                            Thêm size
+                        </button>
+
+                        <div class="d-grid d-sm-flex justify-content-sm-end gap-2">
+                            <button type="button" class="btn btn-outline-secondary" @onclick="CancelEditProduct"
+                                    disabled="@_isUpdatingProduct">
+                                Hủy
+                            </button>
+                            <button type="button" class="btn btn-primary" @onclick="SaveProductChangesAsync"
+                                    disabled="@_isUpdatingProduct">
+                                @if (_isUpdatingProduct)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+                                    <span>Đang lưu...</span>
+                                }
+                                else
+                                {
+                                    <span>Lưu thay đổi</span>
+                                }
+                            </button>
+                        </div>
+                    </section>
+                }
+            </Authorized>
+        </AuthorizeView>
+    </article>
+}
+</div>
+        }
+</section>
+
+@if (_productPendingDelete is not null)
+{
+    <AuthorizeView Roles="ADMIN">
+        <Authorized>
+            <div class="modal-backdrop fade show" aria-hidden="true"></div>
+
+            <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true"
+                 aria-labelledby="delete-product-confirm-title" aria-describedby="delete-product-confirm-description">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h2 id="delete-product-confirm-title" class="modal-title fs-5">
+                                Xác nhận xóa sản phẩm
+                            </h2>
+                        </div>
+
+                        <div class="modal-body">
+                            <p id="delete-product-confirm-description">
+                                Bạn có chắc muốn xóa sản phẩm
+                                <strong>@_productPendingDelete.Name</strong>?
+                            </p>
+
+                            <div class="alert alert-warning mb-0">
+                                Sản phẩm sẽ bị ẩn khỏi menu nhân viên.
+                                ProductSize và lịch sử đơn hàng vẫn được giữ trong database.
+                            </div>
+
+                            @if (!string.IsNullOrWhiteSpace(_deleteProductErrorMessage))
+                            {
+                                <div class="alert alert-danger mt-3 mb-0" role="alert">
+                                    @_deleteProductErrorMessage
+                                </div>
+                            }
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary" @onclick="CancelProductDelete"
+                                    disabled="@_deletingProductId.HasValue">
+                                Hủy
+                            </button>
+
+                            <button type="button" class="btn btn-danger" @onclick="ConfirmProductDeleteAsync"
+                                    disabled="@_deletingProductId.HasValue">
+                                @if (_deletingProductId == _productPendingDelete.Id)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+                                    <span>Đang xóa...</span>
+                                }
+                                else
+                                {
+                                    <span>Xác nhận xóa</span>
+                                }
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </Authorized>
+    </AuthorizeView>
+}
+
+@code {
+    // Báo trạng thái thao tác cho Menu để giữ đúng tab đang làm việc
+    [Parameter] public EventCallback<bool> OnBusyChanged { get; set; }
+    private bool _lastBusyState;
+
+    // Khóa chuyển tab khi đang tải, nhập form hoặc xác nhận xóa
+    private bool HasOpenOperation =>
+        _isLoadingProducts || _isCreateProductFormVisible || _isCreatingProduct
+        || _editingProductId.HasValue || _isUpdatingProduct
+        || _productPendingDelete != null || _deletingProductId.HasValue;
+
+    // Danh mục và size chỉ phục vụ bộ lọc và form sản phẩm
+    private List<MenuCategoryDTO> _categories = new List<MenuCategoryDTO>();
+    private List<MenuSizeDTO> _sizes = new List<MenuSizeDTO>();
+
+    // State của danh sách sản phẩm và quá trình tải dữ liệu
+    private List<MenuProductDTO> _products =
+        new List<MenuProductDTO>();
+
+    private bool _isLoadingProducts = true;
+    private string? _productErrorMessage;
+
+    // State của form tạo sản phẩm và các cặp size–giá
+    private bool _isCreateProductFormVisible;
+    private int? _newProductCategoryId;
+    private string _newProductName = string.Empty;
+    private string _newProductImageUrl = string.Empty;
+    private List<CreateProductSizeRequestDTO> _newProductSizes =
+        new List<CreateProductSizeRequestDTO>
+        {
+            new CreateProductSizeRequestDTO(),
+            new CreateProductSizeRequestDTO()
+        };
+    private bool _isCreatingProduct;
+    private string? _createProductErrorMessage;
+
+    // State của form sửa sản phẩm
+    private int? _editingProductId;
+    private UpdateProductRequestDTO? _editedProductRequest;
+    private bool _isUpdatingProduct;
+    private string? _updateProductErrorMessage;
+
+    // State của tìm kiếm sản phẩm và lọc theo danh mục
+    private string _productSearchText = string.Empty;
+    private int? _selectedProductCategoryId;
+
+    // State của xác nhận và quá trình xóa sản phẩm
+    private int? _deletingProductId;
+    private string? _deleteProductErrorMessage;
+    private MenuProductDTO? _productPendingDelete;
+
+    // Tải sau render đầu tiên để có thể đọc token từ localStorage
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadProductsAsync();
+            StateHasChanged();
+        }
+
+        bool isBusy = HasOpenOperation;
+        if (_lastBusyState != isBusy)
+        {
+            _lastBusyState = isBusy;
+            await OnBusyChanged.InvokeAsync(isBusy);
+        }
+        else if (firstRender)
+        {
+            // Mở khóa tab cả khi lần tải đầu không có dữ liệu hoặc gặp lỗi
+            await OnBusyChanged.InvokeAsync(isBusy);
+        }
+    }
+
+    // Tải danh sách Product và lưu kết quả vào state của component
+    private async Task LoadProductsAsync()
+    {
+        _isLoadingProducts = true;
+        _productErrorMessage = null;
+
+        try
+        {
+            // Đọc lại lookup khi mở tab để nhận thay đổi từ màn danh mục/size
+            List<MenuCategoryDTO>? categories =
+                await CategoryApiService.GetMenuCategoriesAsync();
+            List<MenuSizeDTO>? sizes =
+                await SizeApiService.GetMenuSizesAsync();
+
+            if (categories == null || sizes == null)
+            {
+                _productErrorMessage = "Không thể tải danh mục hoặc size. Vui lòng thử lại.";
+                return;
+            }
+
+            _categories = categories;
+            _sizes = sizes;
+
+            List<MenuProductDTO>? products =
+                await ProductApiService.GetMenuProductsAsync();
+
+            if (products is null)
+            {
+                _productErrorMessage =
+                    "Không thể tải danh sách sản phẩm. Vui lòng thử lại.";
+                return;
+            }
+
+            _products = products;
+        }
+        catch (HttpRequestException)
+        {
+            _productErrorMessage = "Không thể kết nối đến API.";
+        }
+        catch (JSException)
+        {
+            _productErrorMessage = "Không thể đọc token đăng nhập.";
+        }
+        catch (JsonException)
+        {
+            _productErrorMessage = "Dữ liệu sản phẩm từ API không hợp lệ.";
+        }
+        finally
+        {
+            _isLoadingProducts = false;
+        }
+    }
+
+    // Lọc danh sách sản phẩm đã tải theo tên món và danh mục.
+    private List<MenuProductDTO> GetFilteredProducts()
+    {
+        List<MenuProductDTO> filteredProducts = _products;
+
+        if (!string.IsNullOrWhiteSpace(_productSearchText))
+        {
+            string searchText = _productSearchText.Trim();
+
+            filteredProducts = filteredProducts
+                .Where(product => product.Name.Contains(
+                    searchText,
+                    StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        if (_selectedProductCategoryId.HasValue)
+        {
+            filteredProducts = filteredProducts
+                .Where(product => product.CategoryId == _selectedProductCategoryId.Value)
+                .ToList();
+        }
+
+        return filteredProducts;
+    }
+
+    // Xóa dữ liệu cũ và tạo lại hai dòng size ban đầu
+    private void ResetCreateProductForm()
+    {
+        _newProductCategoryId = null;
+        _newProductName = string.Empty;
+        _newProductImageUrl = string.Empty;
+        _newProductSizes = new List<CreateProductSizeRequestDTO>
+        {
+            new CreateProductSizeRequestDTO(),
+            new CreateProductSizeRequestDTO()
+        };
+        _createProductErrorMessage = null;
+    }
+
+    // Mở form tạo Product
+    private void ShowCreateProductForm()
+    {
+        if (HasOpenOperation)
+        {
+            return;
+        }
+
+        if (_isCreatingProduct)
+        {
+            return;
+        }
+
+        ResetCreateProductForm();
+        _isCreateProductFormVisible = true;
+    }
+
+    // Đóng form và xóa nội dung nhập dở
+    private void CancelCreateProductForm()
+    {
+        if (_isCreatingProduct)
+        {
+            return;
+        }
+
+        _isCreateProductFormVisible = false;
+        ResetCreateProductForm();
+    }
+
+    // Thêm một dòng nhập size–giá
+    private void AddProductSizeRow()
+    {
+        if (_isCreatingProduct)
+        {
+            return;
+        }
+
+        _newProductSizes.Add(new CreateProductSizeRequestDTO());
+    }
+
+    // Xóa dòng được chọn nhưng luôn giữ tối thiểu hai dòng
+    private void RemoveProductSizeRow(
+        CreateProductSizeRequestDTO productSize)
+    {
+        if (_isCreatingProduct || _newProductSizes.Count <= 2)
+        {
+            return;
+        }
+
+        _newProductSizes.Remove(productSize);
+    }
+
+    // Kiểm tra dữ liệu rồi gửi yêu cầu tạo Product lên API
+    private async Task CreateProductAsync()
+    {
+        if (_isCreatingProduct)
+        {
+            return;
+        }
+
+        _createProductErrorMessage = null;
+
+        if (!_newProductCategoryId.HasValue
+            || _newProductCategoryId.Value <= 0)
+        {
+            _createProductErrorMessage = "Vui lòng chọn danh mục.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_newProductName))
+        {
+            _createProductErrorMessage = "Vui lòng nhập tên sản phẩm.";
+            return;
+        }
+
+        string productName = _newProductName.Trim();
+
+        if (productName.Length > 150)
+        {
+            _createProductErrorMessage =
+                "Tên sản phẩm không được vượt quá 150 ký tự.";
+            return;
+        }
+
+        if (_newProductImageUrl.Trim().Length > 1000)
+        {
+            _createProductErrorMessage =
+                "Đường dẫn ảnh không được vượt quá 1000 ký tự.";
+            return;
+        }
+
+        if (_newProductSizes.Count < 2)
+        {
+            _createProductErrorMessage =
+                "Sản phẩm phải có ít nhất hai size.";
+            return;
+        }
+
+        bool hasInvalidProductSize = _newProductSizes.Any(productSize =>
+            productSize.SizeId <= 0
+            || productSize.Price <= 0);
+
+        if (hasInvalidProductSize)
+        {
+            _createProductErrorMessage =
+                "Vui lòng chọn size và nhập giá lớn hơn 0 cho từng dòng.";
+            return;
+        }
+
+        List<int> sizeIds = _newProductSizes
+            .Select(productSize => productSize.SizeId)
+            .ToList();
+
+        if (sizeIds.Distinct().Count() != sizeIds.Count)
+        {
+            _createProductErrorMessage =
+                "Không thể chọn trùng size cho cùng một sản phẩm.";
+            return;
+        }
+
+        _isCreatingProduct = true;
+
+        try
+        {
+            CreateProductRequestDTO request =
+                new CreateProductRequestDTO
+                {
+                    CategoryId = _newProductCategoryId.Value,
+                    Name = productName,
+                    ImageUrl = string.IsNullOrWhiteSpace(_newProductImageUrl)
+                        ? null
+                        : _newProductImageUrl.Trim(),
+                    ProductSizes = _newProductSizes
+                        .Select(productSize => new CreateProductSizeRequestDTO
+                        {
+                            SizeId = productSize.SizeId,
+                            Price = productSize.Price
+                        })
+                        .ToList()
+                };
+
+            ProductCreateApiResult result =
+                await ProductApiService.CreateProductAsync(request);
+
+            if (!result.IsSuccess || result.Product == null)
+            {
+                _createProductErrorMessage =
+                    string.IsNullOrWhiteSpace(result.ErrorMessage)
+                    ? "Không thể tạo sản phẩm. Vui lòng thử lại."
+                    : result.ErrorMessage;
+
+                return;
+            }
+
+            _products.Add(result.Product);
+            _isCreateProductFormVisible = false;
+            ResetCreateProductForm();
+        }
+        catch (HttpRequestException)
+        {
+            _createProductErrorMessage = "Không thể kết nối đến API.";
+        }
+        catch (JSException)
+        {
+            _createProductErrorMessage = "Không thể đọc token đăng nhập.";
+        }
+        catch (JsonException)
+        {
+            _createProductErrorMessage =
+                "Dữ liệu sản phẩm từ API không hợp lệ.";
+        }
+        finally
+        {
+            _isCreatingProduct = false;
+        }
+    }
+
+    // Nạp dữ liệu Product hiện tại vào request tạm để chỉnh sửa
+    private void BeginEditProduct(MenuProductDTO product)
+    {
+        if (HasOpenOperation)
+        {
+            return;
+        }
+
+        if (_editingProductId.HasValue || _isUpdatingProduct)
+        {
+            return;
+        }
+
+        _editingProductId = product.Id;
+        _updateProductErrorMessage = null;
+
+        _editedProductRequest = new UpdateProductRequestDTO
+        {
+            CategoryId = product.CategoryId,
+            Name = product.Name,
+            ImageUrl = product.ImageUrl,
+            IsActive = product.IsActive,
+            ProductSizes = product.ProductSizes
+                .Select(productSize => new UpdateProductSizeRequestDTO
+                {
+                    SizeId = productSize.SizeId,
+                    Price = productSize.Price,
+                    IsActive = productSize.IsProductSizeActive
+                })
+                .ToList()
+        };
+    }
+
+    // Hủy chỉnh sửa và xóa dữ liệu tạm
+    private void CancelEditProduct()
+    {
+        if (_isUpdatingProduct)
+        {
+            return;
+        }
+
+        _editingProductId = null;
+        _editedProductRequest = null;
+        _updateProductErrorMessage = null;
+    }
+
+    // Kiểm tra dữ liệu, gửi cập nhật lên API và thay Product trong state khi thành công
+    private async Task SaveProductChangesAsync()
+    {
+        if (_editingProductId == null
+            || _editedProductRequest == null
+            || _isUpdatingProduct)
+        {
+            return;
+        }
+
+        _updateProductErrorMessage = null;
+
+        UpdateProductRequestDTO requestDTO = _editedProductRequest;
+
+        if (requestDTO.CategoryId <= 0)
+        {
+            _updateProductErrorMessage = "Vui lòng chọn danh mục.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(requestDTO.Name))
+        {
+            _updateProductErrorMessage = "Vui lòng nhập tên sản phẩm.";
+            return;
+        }
+
+        requestDTO.Name = requestDTO.Name.Trim();
+
+        if (requestDTO.Name.Length > 150)
+        {
+            _updateProductErrorMessage = "Tên sản phẩm không được vượt quá 150 ký tự.";
+            return;
+        }
+
+        if (requestDTO.ProductSizes.Count < 2)
+        {
+            _updateProductErrorMessage = "Sản phẩm phải có ít nhất hai size.";
+            return;
+        }
+
+        if (requestDTO.ProductSizes.Any(size =>
+            size.SizeId <= 0 || size.Price <= 0 || size.IsActive == null))
+        {
+            _updateProductErrorMessage = "Vui lòng kiểm tra lại size, giá và trạng thái.";
+            return;
+        }
+
+        if (requestDTO.ProductSizes
+            .Select(size => size.SizeId)
+            .Distinct()
+            .Count() != requestDTO.ProductSizes.Count)
+        {
+            _updateProductErrorMessage = "Không thể chọn trùng size.";
+            return;
+        }
+
+        requestDTO.ImageUrl = string.IsNullOrWhiteSpace(requestDTO.ImageUrl)
+            ? null
+            : requestDTO.ImageUrl.Trim();
+
+        _isUpdatingProduct = true;
+
+        try
+        {
+            ProductUpdateApiResult result =
+                await ProductApiService.UpdateProductAsync(
+                    _editingProductId.Value,
+                    requestDTO);
+
+            if (!result.IsSuccess || result.Product == null)
+            {
+                _updateProductErrorMessage =
+                    string.IsNullOrWhiteSpace(result.ErrorMessage)
+                        ? "Không thể cập nhật sản phẩm."
+                        : result.ErrorMessage;
+
+                return;
+            }
+
+            int productIndex =
+                _products.FindIndex(product => product.Id == result.Product.Id);
+
+            if (productIndex >= 0)
+            {
+                _products[productIndex] = result.Product;
+            }
+
+            _editingProductId = null;
+            _editedProductRequest = null;
+            _updateProductErrorMessage = null;
+        }
+        catch (HttpRequestException)
+        {
+            _updateProductErrorMessage = "Không thể kết nối đến API. Vui lòng thử lại.";
+        }
+        catch (JSException)
+        {
+            _updateProductErrorMessage = "Không thể đọc token đăng nhập.";
+        }
+        catch (JsonException)
+        {
+            _updateProductErrorMessage = "Dữ liệu sản phẩm từ API không hợp lệ.";
+        }
+        finally
+        {
+            _isUpdatingProduct = false;
+        }
+    }
+
+    // Chuyển giá trị select thành trạng thái Product trong request tạm
+    private void HandleProductStatusChanged(ChangeEventArgs eventArgs)
+    {
+        if (_editedProductRequest == null)
+        {
+            return;
+        }
+
+        if (bool.TryParse(eventArgs.Value?.ToString(), out bool isActive))
+        {
+            _editedProductRequest.IsActive = isActive;
+        }
+    }
+
+    // Thêm một dòng size–giá mới vào request tạm
+    private void AddProductEditSize()
+    {
+        if (_editedProductRequest == null || _isUpdatingProduct)
+        {
+            return;
+        }
+
+        _editedProductRequest.ProductSizes.Add(
+            new UpdateProductSizeRequestDTO
+            {
+                IsActive = true
+            });
+
+        _updateProductErrorMessage = null;
+    }
+
+    // Bỏ một dòng, nhưng luôn giữ tối thiểu hai size
+    private void RemoveProductEditSize(int index)
+    {
+        if (_editedProductRequest == null
+            || _isUpdatingProduct
+            || _editedProductRequest.ProductSizes.Count <= 2
+            || index < 0
+            || index >= _editedProductRequest.ProductSizes.Count)
+        {
+            return;
+        }
+
+        _editedProductRequest.ProductSizes.RemoveAt(index);
+        _updateProductErrorMessage = null;
+    }
+
+    // Cập nhật SizeId của dòng được chọn
+    private void HandleProductSizeChanged(int index, ChangeEventArgs eventArgs)
+    {
+        if (_editedProductRequest == null
+            || _isUpdatingProduct
+            || index < 0
+            || index >= _editedProductRequest.ProductSizes.Count)
+        {
+            return;
+        }
+
+        if (int.TryParse(eventArgs.Value?.ToString(), out int sizeId)
+            && sizeId >= 0)
+        {
+            _editedProductRequest.ProductSizes[index].SizeId = sizeId;
+            _updateProductErrorMessage = null;
+        }
+    }
+
+    // Cập nhật trạng thái của dòng size–giá
+    private void HandleProductSizeStatusChanged(
+        int index,
+        ChangeEventArgs eventArgs)
+    {
+        if (_editedProductRequest == null
+            || _isUpdatingProduct
+            || index < 0
+            || index >= _editedProductRequest.ProductSizes.Count)
+        {
+            return;
+        }
+
+        if (bool.TryParse(eventArgs.Value?.ToString(), out bool isActive))
+        {
+            _editedProductRequest.ProductSizes[index].IsActive = isActive;
+            _updateProductErrorMessage = null;
+        }
+    }
+
+    // Mở xác nhận xóa Product
+    private void RequestProductDelete(MenuProductDTO product)
+    {
+        if (HasOpenOperation)
+        {
+            return;
+        }
+
+        if (_deletingProductId.HasValue
+            || _editingProductId.HasValue
+            || _isUpdatingProduct)
+        {
+            return;
+        }
+
+        _deleteProductErrorMessage = null;
+        _productPendingDelete = product;
+    }
+
+    // Đóng xác nhận mà không gửi yêu cầu đến API
+    private void CancelProductDelete()
+    {
+        if (_deletingProductId.HasValue)
+        {
+            return;
+        }
+
+        _productPendingDelete = null;
+        _deleteProductErrorMessage = null;
+    }
+
+    // Chỉ gọi API sau khi ADMIN xác nhận
+    private async Task ConfirmProductDeleteAsync()
+    {
+        MenuProductDTO? product = _productPendingDelete;
+
+        if (product is null
+            || _deletingProductId.HasValue
+            || _editingProductId.HasValue
+            || _isUpdatingProduct)
+        {
+            return;
+        }
+
+        await DeleteProductAsync(product);
+    }
+
+    // Xóa Product qua API; chỉ bỏ khỏi giao diện nếu API báo thành công
+    private async Task DeleteProductAsync(MenuProductDTO product)
+    {
+        if (_productPendingDelete?.Id != product.Id
+            || _deletingProductId.HasValue
+            || _editingProductId.HasValue
+            || _isUpdatingProduct)
+        {
+            return;
+        }
+
+        _deleteProductErrorMessage = null;
+        _deletingProductId = product.Id;
+
+        try
+        {
+            ProductDeleteApiResult result =
+                await ProductApiService.DeleteProductAsync(product.Id);
+
+            if (!result.IsSuccess)
+            {
+                _deleteProductErrorMessage =
+                    string.IsNullOrWhiteSpace(result.ErrorMessage)
+                    ? "Không thể xóa sản phẩm. Vui lòng thử lại."
+                    : result.ErrorMessage;
+
+                return;
+            }
+
+            _products.Remove(product);
+            _productPendingDelete = null;
+        }
+        catch (HttpRequestException)
+        {
+            _deleteProductErrorMessage = "Không thể kết nối đến API.";
+        }
+        catch (JSException)
+        {
+            _deleteProductErrorMessage = "Không thể đọc token đăng nhập.";
+        }
+        catch (JsonException)
+        {
+            _deleteProductErrorMessage = "Dữ liệu lỗi từ API không hợp lệ.";
+        }
+        finally
+        {
+            _deletingProductId = null;
+        }
+    }
+}

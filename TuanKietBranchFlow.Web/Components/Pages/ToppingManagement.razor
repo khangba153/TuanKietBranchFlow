@@ -1,0 +1,1489 @@
+@using System.Text.Json
+@using Microsoft.JSInterop
+@using TuanKietBranchFlow.Application.DTOs.MenuManagement
+@using TuanKietBranchFlow.Web.Services
+@using TuanKietBranchFlow.Web.Models
+
+@inject ToppingGroupApiService ToppingGroupApiService
+@inject ToppingApiService ToppingApiService
+
+<AuthorizeView Roles="OWNER,ADMIN">
+    <Authorized>
+        <section class="bf-surface-card overflow-hidden" aria-labelledby="topping-group-title">
+            <header class="d-flex flex-column flex-sm-row align-items-sm-center
+                justify-content-between gap-3 p-3 p-md-4 border-bottom">
+                <div>
+                    <h2 id="topping-group-title" class="h5 mb-1">
+                        Nhóm topping và topping
+                    </h2>
+                    <p class="bf-page-description mb-0">
+                        Cấu hình dùng chung toàn doanh nghiệp.
+                    </p>
+                </div>
+
+                <AuthorizeView Roles="ADMIN">
+                    <Authorized Context="addGroupAuthorization">
+                        <button type="button" class="btn btn-outline-primary align-self-start align-self-sm-auto"
+                                @onclick="ShowCreateToppingGroupForm" disabled="@HasOpenOperation">
+                            Thêm nhóm
+                        </button>
+                    </Authorized>
+                </AuthorizeView>
+            </header>
+
+            <AuthorizeView Roles="ADMIN">
+                <Authorized Context="createGroupAuthorization">
+                    @if (_isCreateToppingGroupFormVisible)
+                    {
+                        <section class="p-3 p-md-4 border-bottom bg-body-tertiary"
+                                 aria-labelledby="create-topping-group-title">
+                            <h3 id="create-topping-group-title" class="h6 mb-3">
+                                Thêm nhóm topping
+                            </h3>
+
+                            @if (!string.IsNullOrWhiteSpace(_createToppingGroupErrorMessage))
+                            {
+                                <div class="alert alert-danger" role="alert">
+                                    @_createToppingGroupErrorMessage
+                                </div>
+                            }
+
+                            <div class="row g-3 align-items-end">
+                                <div class="col-12 col-md">
+                                    <label for="topping-group-name" class="form-label">
+                                        Tên nhóm topping
+                                    </label>
+
+                                    <input id="topping-group-name" type="text" class="form-control" maxlength="100"
+                                           placeholder="Ví dụ: Topping thêm" aria-describedby="topping-group-name-help"
+                                           @bind="_newToppingGroupName" disabled="@_isCreatingToppingGroup" />
+
+                                    <div id="topping-group-name-help" class="form-text">
+                                        Tên nhóm topping tối đa 100 ký tự.
+                                    </div>
+                                </div>
+
+                                <div class="col-12 col-md-auto d-flex gap-2">
+                                    <button type="button" class="btn btn-outline-secondary"
+                                            @onclick="CancelCreateToppingGroup" disabled="@_isCreatingToppingGroup">
+                                        Hủy
+                                    </button>
+
+                                    <button type="button" class="btn btn-primary" @onclick="CreateToppingGroupAsync"
+                                            disabled="@_isCreatingToppingGroup">
+                                        @if (_isCreatingToppingGroup)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+                                            <span>Đang lưu...</span>
+                                        }
+                                        else
+                                        {
+                                            <span>Lưu nhóm topping</span>
+                                        }
+                                    </button>
+                                </div>
+                            </div>
+                        </section>
+                    }
+                </Authorized>
+            </AuthorizeView>
+
+            @if (_isLoadingToppingGroups)
+            {
+                <div class="p-3 p-md-4" role="status">
+                    <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+                    <span>Đang tải nhóm topping...</span>
+                </div>
+            }
+            else if (!string.IsNullOrWhiteSpace(_toppingGroupsErrorMessage))
+            {
+                <div class="p-3 p-md-4">
+                    <div class="alert alert-danger mb-0" role="alert">
+                        @_toppingGroupsErrorMessage
+
+                        <button type="button" class="btn btn-outline-danger btn-sm ms-2" @onclick="LoadToppingGroupsAsync" disabled="@HasOpenOperation">
+                            Thử lại
+                        </button>
+                    </div>
+                </div>
+            }
+            else if (_toppingGroups.Count == 0)
+            {
+                <div class="p-3 p-md-4">
+                    <p class="text-secondary mb-0">
+                        Chưa có nhóm topping nào.
+                    </p>
+                </div>
+            }
+            else
+            {
+                <div class="list-group list-group-flush">
+                    @foreach (MenuToppingGroupDTO toppingGroup in _toppingGroups)
+                    {
+                        <article class="list-group-item p-3 p-md-4">
+                            <div class="d-flex flex-column flex-lg-row
+                                align-items-lg-center gap-3">
+                                <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                                    <h3 class="h6 mb-0">@toppingGroup.Name</h3>
+
+                                    @if (toppingGroup.IsActive)
+                                    {
+                                        <span class="badge rounded-pill text-bg-success">
+                                            Đang hoạt động
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge rounded-pill text-bg-secondary">
+                                            Tạm ngừng
+                                        </span>
+                                    }
+                                </div>
+
+                                <AuthorizeView Roles="ADMIN">
+                                    <Authorized Context="editGroupAuthorization">
+                                        <button type="button"
+                                                class="btn btn-outline-primary btn-sm align-self-start align-self-lg-center"
+                                                @onclick="() => ShowCreateToppingForm(toppingGroup)" disabled="@HasOpenOperation">
+                                            Thêm topping
+                                        </button>
+                                        <button type="button"
+                                                class="btn btn-outline-primary btn-sm align-self-start align-self-lg-center"
+                                                @onclick="() => StartEditToppingGroup(toppingGroup)" disabled="@HasOpenOperation">
+                                            Sửa
+                                        </button>
+
+                                        <button type="button"
+                                                class="btn btn-outline-danger btn-sm align-self-start align-self-lg-center"
+                                                @onclick="() => RequestToppingGroupDelete(toppingGroup)" disabled="@HasOpenOperation">
+                                            Xóa
+                                        </button>
+                                    </Authorized>
+                                </AuthorizeView>
+                            </div>
+                            <div class="mt-3">
+                                @if (toppingGroup.Toppings.Count == 0)
+                                {
+                                    <p class="small text-secondary mb-0">
+                                        Chưa có topping trong nhóm.
+                                    </p>
+                                }
+                                else
+                                {
+                                    <div class="list-group">
+                                        @foreach (MenuToppingDTO topping in toppingGroup.Toppings)
+                                        {
+                                            <div class="list-group-item">
+                                                <div class="d-flex flex-column flex-sm-row
+                                                    align-items-sm-center justify-content-between gap-3">
+                                                    <div class="fw-semibold">@topping.Name</div>
+                                                    <div class="small text-secondary">
+                                                        @topping.Price.ToString("N0") đ
+                                                    </div>
+
+
+                                                    <div class="d-flex flex-wrap align-items-center gap-2">
+                                                        @if (topping.IsActive)
+                                                        {
+                                                            <span class="badge rounded-pill text-bg-success">
+                                                                Đang hoạt động
+                                                            </span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="badge rounded-pill text-bg-secondary">
+                                                                Tạm ngừng
+                                                            </span>
+                                                        }
+
+                                                        <AuthorizeView Roles="ADMIN">
+                                                            <Authorized Context="toppingActionsAuthorization">
+                                                                <button type="button" class="btn btn-outline-primary btn-sm"
+                                                                        @onclick="() => StartEditTopping(toppingGroup, topping)"
+                                                                        disabled="@HasOpenOperation">
+                                                                    Sửa
+                                                                </button>
+
+                                                                <button type="button" class="btn btn-outline-danger btn-sm"
+                                                                        @onclick="() => RequestToppingDelete(toppingGroup, topping)"
+                                                                        disabled="@HasOpenOperation">
+                                                                    Xóa
+                                                                </button>
+                                                            </Authorized>
+                                                        </AuthorizeView>
+                                                    </div>
+                                                </div>
+                                                <AuthorizeView Roles="ADMIN">
+                                                    <Authorized Context="editToppingFormAuthorization">
+                                                        @if (_editingToppingId == topping.Id)
+                                                        {
+                                                            <section class="mt-3 p-3 border rounded bg-body-tertiary"
+                                                                     aria-labelledby="@($"edit-topping-title-{topping.Id}")">
+                                                                <h4 id="@($"edit-topping-title-{topping.Id}")" class="h6 mb-3">
+                                                                    Thông tin topping
+                                                                </h4>
+                                                                @if (!string.IsNullOrWhiteSpace(_updateToppingErrorMessage))
+                                                                {
+                                                                    <div class="alert alert-danger" role="alert">
+                                                                        @_updateToppingErrorMessage
+                                                                    </div>
+                                                                }
+                                                                <div class="row g-3">
+                                                                    <div class="col-12 col-md-6">
+                                                                        <label for="@($"edit-topping-name-{topping.Id}")"
+                                                                               class="form-label">Tên topping</label>
+                                                                        <input id="@($"edit-topping-name-{topping.Id}")"
+                                                                               type="text" class="form-control" maxlength="150" @bind="_editedToppingName"
+                                                                               disabled="@_isUpdatingTopping" />
+                                                                    </div>
+
+                                                                    <div class="col-12 col-md-3">
+                                                                        <label for="@($"edit-topping-price-{topping.Id}")"
+                                                                               class="form-label">Giá (đ)</label>
+                                                                        <input id="@($"edit-topping-price-{topping.Id}")"
+                                                                               type="number" class="form-control" min="0.01" step="0.01"
+                                                                               @bind="_editedToppingPrice" disabled="@_isUpdatingTopping" />
+                                                                    </div>
+
+                                                                    <div class="col-12 col-md-3">
+                                                                        <label for="@($"edit-topping-status-{topping.Id}")"
+                                                                               class="form-label">Trạng thái</label>
+                                                                        <select id="@($"edit-topping-status-{topping.Id}")"
+                                                                                class="form-select"
+                                                                                value="@(_editedToppingIsActive ? "true" : "false")"
+                                                                                @onchange="OnEditedToppingStatusChanged"
+                                                                                disabled="@_isUpdatingTopping">
+                                                                            <option value="true">Đang hoạt động</option>
+                                                                            <option value="false">Tạm ngừng</option>
+                                                                        </select>
+                                                                    </div>
+
+                                                                    <div class="col-12 d-flex justify-content-end gap-2">
+                                                                        <button type="button" class="btn btn-outline-secondary"
+                                                                                @onclick="CancelEditTopping" disabled="@_isUpdatingTopping">
+                                                                            Hủy
+                                                                        </button>
+
+                                                                        <button type="button" class="btn btn-primary"
+                                                                                @onclick="SaveToppingChangesAsync"
+                                                                                disabled="@_isUpdatingTopping">
+                                                                            @if (_isUpdatingTopping)
+                                                                            {
+                                                                                <span class="spinner-border spinner-border-sm me-2"
+                                                                                      aria-hidden="true"></span>
+                                                                                <span>Đang lưu...</span>
+                                                                            }
+                                                                            else
+                                                                            {
+                                                                                <span>Lưu thay đổi</span>
+                                                                            }
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </section>
+                                                        }
+                                                    </Authorized>
+                                                </AuthorizeView>
+
+                                                <AuthorizeView Roles="ADMIN">
+                                                    <Authorized Context="deleteToppingFormAuthorization">
+                                                        @if (_toppingPendingDelete?.Id == topping.Id
+                                                             && _toppingGroupIdForDelete == toppingGroup.Id)
+                                                        {
+                                                            <section class="mt-3 p-3 border rounded bg-body-tertiary"
+                                                                     aria-labelledby="@($"delete-topping-title-{topping.Id}")">
+                                                                <h4 id="@($"delete-topping-title-{topping.Id}")"
+                                                                    class="h6 mb-2">
+                                                                    Xác nhận xóa topping
+                                                                </h4>
+
+                                                                <p>
+                                                                    Bạn có chắc muốn xóa topping
+                                                                    <strong>@topping.Name</strong>?
+                                                                </p>
+
+                                                                <div class="alert alert-warning" role="alert">
+                                                                    Topping sẽ bị ẩn khỏi menu nhân viên.
+                                                                    Dữ liệu và lịch sử đơn hàng vẫn được giữ trong database.
+                                                                </div>
+
+                                                                @if (!string.IsNullOrWhiteSpace(_deleteToppingErrorMessage))
+                                                                {
+                                                                    <div class="alert alert-danger" role="alert">
+                                                                        @_deleteToppingErrorMessage
+                                                                    </div>
+                                                                }
+
+                                                                <div class="d-flex flex-column flex-sm-row
+                                                                    justify-content-sm-end gap-2">
+                                                                    <button type="button"
+                                                                            class="btn btn-outline-secondary"
+                                                                            @onclick="CancelToppingDelete"
+                                                                            disabled="@_deletingToppingId.HasValue">
+                                                                        Hủy
+                                                                    </button>
+
+                                                                    <button type="button"
+                                                                            class="btn btn-danger"
+                                                                            @onclick="ConfirmToppingDeleteAsync"
+                                                                            disabled="@_deletingToppingId.HasValue">
+                                                                        @if (_deletingToppingId == topping.Id)
+                                                                        {
+                                                                            <span class="spinner-border spinner-border-sm me-2"
+                                                                                  aria-hidden="true"></span>
+                                                                            <span>Đang xóa...</span>
+                                                                        }
+                                                                        else
+                                                                        {
+                                                                            <span>Xác nhận xóa</span>
+                                                                        }
+                                                                    </button>
+                                                                </div>
+                                                            </section>
+                                                        }
+                                                    </Authorized>
+                                                </AuthorizeView>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                            <AuthorizeView Roles="ADMIN">
+                                <Authorized Context="createToppingFormAuthorization">
+                                    @if (_creatingToppingGroupId == toppingGroup.Id)
+                                    {
+                                        <section class="mt-3 p-3 border rounded bg-body-tertiary"
+                                                 aria-labelledby="@($"create-topping-title-{toppingGroup.Id}")">
+                                            <h4 id="@($"create-topping-title-{toppingGroup.Id}")" class="h6 mb-3">
+                                                Thêm topping vào nhóm @toppingGroup.Name
+                                            </h4>
+                                            @if (!string.IsNullOrWhiteSpace(_createToppingErrorMessage))
+                                            {
+                                                <div class="alert alert-danger" role="alert">
+                                                    @_createToppingErrorMessage
+                                                </div>
+                                            }
+                                            <div class="row g-3">
+                                                <div class="col-12 col-md-8">
+                                                    <label for="@($"new-topping-name-{toppingGroup.Id}")" class="form-label">
+                                                        Tên topping
+                                                    </label>
+
+                                                    <input id="@($"new-topping-name-{toppingGroup.Id}")" type="text"
+                                                           class="form-control" maxlength="150" placeholder="Ví dụ: Trân châu vàng"
+                                                           @bind="_newToppingName" disabled="@_isCreatingTopping" />
+                                                </div>
+
+                                                <div class="col-12 col-md-4">
+                                                    <label for="@($"new-topping-price-{toppingGroup.Id}")" class="form-label">
+                                                        Giá (đ)
+                                                    </label>
+
+                                                    <input id="@($"new-topping-price-{toppingGroup.Id}")" type="number"
+                                                           class="form-control" min="0.01" step="0.01" placeholder="Ví dụ: 5000"
+                                                           @bind="_newToppingPrice" disabled="@_isCreatingTopping" />
+                                                </div>
+
+                                                <div class="col-12 d-flex justify-content-end gap-2">
+                                                    <button type="button" class="btn btn-outline-secondary"
+                                                            @onclick="CancelCreateTopping" disabled="@_isCreatingTopping">
+                                                        Hủy
+                                                    </button>
+
+                                                    <button type="button" class="btn btn-primary" @onclick="CreateToppingAsync"
+                                                            disabled="@_isCreatingTopping">
+                                                        @if (_isCreatingTopping)
+                                                        {
+                                                            <span class="spinner-border spinner-border-sm me-2"
+                                                                  aria-hidden="true"></span>
+                                                            <span>Đang lưu...</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span>Lưu topping</span>
+                                                        }
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </section>
+                                    }
+                                </Authorized>
+                            </AuthorizeView>
+                            <AuthorizeView Roles="ADMIN">
+                                <Authorized Context="editGroupFormAuthorization">
+                                    @if (_editingToppingGroupId == toppingGroup.Id)
+                                    {
+                                        <section class="mt-3 p-3 border rounded bg-body-tertiary"
+                                                 aria-labelledby="@($"edit-topping-group-title-{toppingGroup.Id}")">
+                                            <h4 id="@($"edit-topping-group-title-{toppingGroup.Id}")" class="h6 mb-3">
+                                                Thông tin nhóm topping
+                                            </h4>
+
+                                            @if (!string.IsNullOrWhiteSpace(_updateToppingGroupErrorMessage))
+                                            {
+                                                <div class="alert alert-danger" role="alert">
+                                                    @_updateToppingGroupErrorMessage
+                                                </div>
+                                            }
+
+                                            <div class="row g-3">
+                                                <div class="col-12 col-md-7">
+                                                    <label for="@($"edit-topping-group-name-{toppingGroup.Id}")" class="form-label">
+                                                        Tên nhóm topping
+                                                    </label>
+
+                                                    <input id="@($"edit-topping-group-name-{toppingGroup.Id}")" type="text"
+                                                           class="form-control" maxlength="100" @bind="_editedToppingGroupName"
+                                                           disabled="@_isUpdatingToppingGroup" />
+
+                                                </div>
+
+                                                <div class="col-12 col-md-5">
+                                                    <label for="@($"edit-topping-group-status-{toppingGroup.Id}")"
+                                                           class="form-label">
+                                                        Trạng thái
+                                                    </label>
+
+                                                    <select id="@($"edit-topping-group-status-{toppingGroup.Id}")"
+                                                            class="form-select"
+                                                            value="@(_editedToppingGroupIsActive ? "true" : "false")"
+                                                            @onchange="OnEditedToppingGroupStatusChanged"
+                                                            disabled="@_isUpdatingToppingGroup">
+                                                        <option value="true">Đang hoạt động</option>
+                                                        <option value="false">Tạm ngừng</option>
+                                                    </select>
+                                                </div>
+
+                                                <div class="col-12 d-flex justify-content-end gap-2">
+                                                    <button type="button" class="btn btn-outline-secondary"
+                                                            @onclick="CancelEditToppingGroup" disabled="@_isUpdatingToppingGroup">
+                                                        Hủy
+                                                    </button>
+
+                                                    <button type="button" class="btn btn-primary"
+                                                            @onclick="SaveToppingGroupChangesAsync"
+                                                            disabled="@(_isUpdatingToppingGroup || _isCreatingToppingGroup)">
+                                                        @if (_isUpdatingToppingGroup)
+                                                        {
+                                                            <span class="spinner-border spinner-border-sm me-2"
+                                                                  aria-hidden="true"></span>
+                                                            <span>Đang lưu...</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span>Lưu thay đổi</span>
+                                                        }
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </section>
+                                    }
+                                </Authorized>
+                            </AuthorizeView>
+
+                            <AuthorizeView Roles="ADMIN">
+                                <Authorized Context="deleteGroupFormAuthorization">
+                                    @if (_toppingGroupPendingDelete?.Id == toppingGroup.Id)
+                                    {
+                                        <section class="mt-3 p-3 border rounded bg-body-tertiary"
+                                                 aria-labelledby="@($"delete-topping-group-title-{toppingGroup.Id}")">
+                                            <h4 id="@($"delete-topping-group-title-{toppingGroup.Id}")" class="h6 mb-2">
+                                                Xác nhận xóa nhóm topping
+                                            </h4>
+                                            <p>
+                                                Bạn có chắc muốn xóa nhóm
+                                                <strong>@toppingGroup.Name</strong>?
+                                            </p>
+
+                                            <div class="alert alert-warning">
+                                                Nhóm và các topping thuộc nhóm sẽ bị ẩn khỏi menu nhân viên.
+                                                Dữ liệu vẫn được giữ trong database;
+                                                trạng thái riêng của topping không thay đổi.
+                                            </div>
+
+                                            @if (!string.IsNullOrWhiteSpace(_deleteToppingGroupErrorMessage))
+                                            {
+                                                <div class="alert alert-danger" role="alert">
+                                                    @_deleteToppingGroupErrorMessage
+                                                </div>
+                                            }
+
+                                            <div class="d-flex justify-content-end gap-2">
+                                                <button type="button" class="btn btn-outline-secondary"
+                                                        @onclick="CancelToppingGroupDelete"
+                                                        disabled="@_deletingToppingGroupId.HasValue">
+                                                    Hủy
+                                                </button>
+
+                                                <button type="button" class="btn btn-danger"
+                                                        @onclick="ConfirmToppingGroupDeleteAsync"
+                                                        disabled="@_deletingToppingGroupId.HasValue">
+                                                    @if (_deletingToppingGroupId == toppingGroup.Id)
+                                                    {
+                                                        <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+                                                        <span>Đang xóa...</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span>Xác nhận xóa</span>
+                                                    }
+                                                </button>
+                                            </div>
+                                        </section>
+                                    }
+                                </Authorized>
+                            </AuthorizeView>
+                        </article>
+
+                    }
+                </div>
+            }
+        </section>
+    </Authorized>
+</AuthorizeView>
+
+
+
+@code {
+    // Báo trạng thái thao tác cho Menu để giữ đúng tab đang làm việc
+    [Parameter] public EventCallback<bool> OnBusyChanged { get; set; }
+    private bool _lastBusyState;
+
+    // Khóa chuyển tab khi đang tải, nhập form hoặc xác nhận xóa
+    private bool HasOpenOperation =>
+        _isLoadingToppingGroups || _isCreateToppingGroupFormVisible || _isCreatingToppingGroup
+        || _editingToppingGroupId.HasValue || _isUpdatingToppingGroup
+        || _toppingGroupPendingDelete != null || _deletingToppingGroupId.HasValue
+        || _creatingToppingGroupId.HasValue || _isCreatingTopping
+        || _editingToppingId.HasValue || _isUpdatingTopping
+        || _toppingPendingDelete != null || _deletingToppingId.HasValue;
+
+    // State của danh sách nhóm topping và quá trình tải dữ liệu
+    private List<MenuToppingGroupDTO> _toppingGroups =
+        new List<MenuToppingGroupDTO>();
+
+    private bool _isLoadingToppingGroups = true;
+    private string? _toppingGroupsErrorMessage;
+
+    // State của form tạo nhóm topping
+    private bool _isCreateToppingGroupFormVisible;
+    private bool _isCreatingToppingGroup;
+    private string _newToppingGroupName = string.Empty;
+    private string? _createToppingGroupErrorMessage;
+
+    // State của form sửa nhóm topping
+    private int? _editingToppingGroupId;
+    private string _editedToppingGroupName = string.Empty;
+    private bool _editedToppingGroupIsActive;
+    private bool _isUpdatingToppingGroup;
+    private string? _updateToppingGroupErrorMessage;
+
+    // State của xác nhận và quá trình xóa nhóm topping
+    private MenuToppingGroupDTO? _toppingGroupPendingDelete;
+    private int? _deletingToppingGroupId;
+    private string? _deleteToppingGroupErrorMessage;
+
+    // State của form tạo topping trong nhóm được chọn
+    private int? _creatingToppingGroupId;
+    private string _newToppingName = string.Empty;
+    private decimal? _newToppingPrice;
+    private bool _isCreatingTopping;
+    private string? _createToppingErrorMessage;
+
+    // State của form sửa topping trong nhóm hiện tại
+    private int? _editingToppingGroupIdForTopping;
+    private int? _editingToppingId;
+    private string _editedToppingName = string.Empty;
+    private decimal? _editedToppingPrice;
+    private bool _editedToppingIsActive;
+    private bool _isUpdatingTopping;
+    private string? _updateToppingErrorMessage;
+
+    // State của xác nhận và quá trình xóa topping
+    private int? _toppingGroupIdForDelete;
+    private MenuToppingDTO? _toppingPendingDelete;
+    private int? _deletingToppingId;
+    private string? _deleteToppingErrorMessage;
+
+    // Tải sau render đầu tiên để có thể đọc token từ localStorage
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadToppingGroupsAsync();
+            StateHasChanged();
+        }
+
+        bool isBusy = HasOpenOperation;
+        if (_lastBusyState != isBusy)
+        {
+            _lastBusyState = isBusy;
+            await OnBusyChanged.InvokeAsync(isBusy);
+        }
+        else if (firstRender)
+        {
+            // Mở khóa tab cả khi lần tải đầu không có dữ liệu hoặc gặp lỗi
+            await OnBusyChanged.InvokeAsync(isBusy);
+        }
+    }
+
+    // Tải nhóm topping và lưu kết quả vào state của component
+    private async Task LoadToppingGroupsAsync()
+    {
+        _isLoadingToppingGroups = true;
+        _toppingGroupsErrorMessage = null;
+
+        try
+        {
+            List<MenuToppingGroupDTO>? toppingGroups =
+                await ToppingGroupApiService.GetMenuToppingGroupsAsync();
+
+            if (toppingGroups is null)
+            {
+                _toppingGroupsErrorMessage =
+                    "Không thể tải nhóm topping. Vui lòng thử lại.";
+                return;
+            }
+
+            _toppingGroups = toppingGroups;
+        }
+        catch (HttpRequestException)
+        {
+            _toppingGroupsErrorMessage = "Không thể kết nối đến API.";
+        }
+        catch (JSException)
+        {
+            _toppingGroupsErrorMessage = "Không thể đọc token đăng nhập.";
+        }
+        catch (JsonException)
+        {
+            _toppingGroupsErrorMessage =
+                "Dữ liệu nhóm topping từ API không hợp lệ.";
+        }
+        finally
+        {
+            _isLoadingToppingGroups = false;
+        }
+    }
+
+    // Mở form tạo nhóm topping và xóa dữ liệu/lỗi cũ
+    private void ShowCreateToppingGroupForm()
+    {
+        if (HasOpenOperation)
+        {
+            return;
+        }
+
+        if (_isCreatingToppingGroup
+            || _isUpdatingToppingGroup
+            || _editingToppingGroupId.HasValue
+            || _toppingGroupPendingDelete != null
+            || _deletingToppingGroupId.HasValue
+            || _creatingToppingGroupId.HasValue
+            || _isCreatingTopping
+            || _editingToppingId.HasValue
+            || _isUpdatingTopping
+            || _toppingPendingDelete != null
+            || _deletingToppingId.HasValue)
+        {
+            return;
+        }
+
+        _isCreateToppingGroupFormVisible = true;
+        _newToppingGroupName = string.Empty;
+        _createToppingGroupErrorMessage = null;
+    }
+
+    // Hủy form tạo nhóm topping và xóa dữ liệu đang nhập
+    private void CancelCreateToppingGroup()
+    {
+        if (_isCreatingToppingGroup)
+        {
+            return;
+        }
+
+        _isCreateToppingGroupFormVisible = false;
+        _newToppingGroupName = string.Empty;
+        _createToppingGroupErrorMessage = null;
+    }
+
+    // Kiểm tra dữ liệu rồi gửi yêu cầu tạo nhóm topping lên API
+    private async Task CreateToppingGroupAsync()
+    {
+        if (_isCreatingToppingGroup
+            || _isUpdatingToppingGroup
+            || _editingToppingGroupId.HasValue
+            || _toppingGroupPendingDelete != null
+            || _deletingToppingGroupId.HasValue
+            || _creatingToppingGroupId.HasValue
+            || _isCreatingTopping
+            || _editingToppingId.HasValue
+            || _isUpdatingTopping
+            || _toppingPendingDelete != null
+            || _deletingToppingId.HasValue)
+        {
+            return;
+        }
+
+        _createToppingGroupErrorMessage = null;
+
+        if (string.IsNullOrWhiteSpace(_newToppingGroupName))
+        {
+            _createToppingGroupErrorMessage = "Vui lòng nhập tên nhóm topping.";
+            return;
+        }
+
+        string groupName = _newToppingGroupName.Trim();
+
+        if (groupName.Length > 100)
+        {
+            _createToppingGroupErrorMessage =
+                "Tên nhóm topping không được vượt quá 100 ký tự.";
+            return;
+        }
+
+        _isCreatingToppingGroup = true;
+
+        try
+        {
+            CreateToppingGroupRequestDTO request =
+                new CreateToppingGroupRequestDTO
+                {
+                    Name = groupName
+                };
+
+            ToppingGroupCreateApiResult result =
+                await ToppingGroupApiService.CreateToppingGroupAsync(request);
+
+            if (!result.IsSuccess || result.ToppingGroup == null)
+            {
+                _createToppingGroupErrorMessage =
+                    string.IsNullOrWhiteSpace(result.ErrorMessage)
+                    ? "Không thể tạo nhóm topping. Vui lòng thử lại."
+                    : result.ErrorMessage;
+
+                return;
+            }
+
+            // Chỉ cập nhật danh sách sau khi API xác nhận tạo thành công
+            _toppingGroups.Add(result.ToppingGroup);
+            _newToppingGroupName = string.Empty;
+            _isCreateToppingGroupFormVisible = false;
+        }
+        catch (HttpRequestException)
+        {
+            _createToppingGroupErrorMessage = "Không thể kết nối đến API.";
+        }
+        catch (JSException)
+        {
+            _createToppingGroupErrorMessage = "Không thể đọc token đăng nhập.";
+        }
+        catch (JsonException)
+        {
+            _createToppingGroupErrorMessage =
+                "Dữ liệu nhóm topping từ API không hợp lệ.";
+        }
+        finally
+        {
+            _isCreatingToppingGroup = false;
+        }
+    }
+
+    // Mở form sửa và sao chép dữ liệu hiện tại sang state riêng
+    private void StartEditToppingGroup(MenuToppingGroupDTO toppingGroup)
+    {
+        if (HasOpenOperation)
+        {
+            return;
+        }
+
+        if (_isUpdatingToppingGroup
+        || _isCreatingToppingGroup
+        || _toppingGroupPendingDelete != null
+        || _deletingToppingGroupId.HasValue
+        || _creatingToppingGroupId.HasValue
+        || _isCreatingTopping
+            || _editingToppingId.HasValue
+            || _isUpdatingTopping
+            || _toppingPendingDelete != null
+            || _deletingToppingId.HasValue)
+        {
+            return;
+        }
+
+        _editingToppingGroupId = toppingGroup.Id;
+        _editedToppingGroupName = toppingGroup.Name;
+        _editedToppingGroupIsActive = toppingGroup.IsActive;
+        _updateToppingGroupErrorMessage = null;
+    }
+
+    // Hủy form sửa mà không thay đổi dữ liệu trong danh sách
+    private void CancelEditToppingGroup()
+    {
+        if (_isUpdatingToppingGroup)
+        {
+            return;
+        }
+
+        _editingToppingGroupId = null;
+        _editedToppingGroupName = string.Empty;
+        _editedToppingGroupIsActive = false;
+        _updateToppingGroupErrorMessage = null;
+    }
+
+    // Đọc trạng thái được chọn từ HTML và chuyển thành bool
+    private void OnEditedToppingGroupStatusChanged(ChangeEventArgs args)
+    {
+        if (_isUpdatingToppingGroup)
+        {
+            return;
+        }
+
+        if (bool.TryParse(args.Value?.ToString(), out bool isActive))
+        {
+            _editedToppingGroupIsActive = isActive;
+        }
+    }
+
+    // Gửi thay đổi lên API và cập nhật đúng nhóm trong danh sách
+    private async Task SaveToppingGroupChangesAsync()
+    {
+        if (_editingToppingGroupId == null
+            || _isUpdatingToppingGroup
+            || _isCreatingToppingGroup
+            || _toppingGroupPendingDelete != null
+            || _deletingToppingGroupId.HasValue
+            || _creatingToppingGroupId.HasValue
+            || _isCreatingTopping
+            || _editingToppingId.HasValue
+            || _isUpdatingTopping
+            || _toppingPendingDelete != null
+            || _deletingToppingId.HasValue)
+        {
+            return;
+        }
+
+        _updateToppingGroupErrorMessage = null;
+
+        if (string.IsNullOrWhiteSpace(_editedToppingGroupName))
+        {
+            _updateToppingGroupErrorMessage = "Vui lòng nhập tên nhóm topping.";
+            return;
+        }
+
+        string groupName = _editedToppingGroupName.Trim();
+
+        if (groupName.Length > 100)
+        {
+            _updateToppingGroupErrorMessage =
+                "Tên nhóm topping không được vượt quá 100 ký tự.";
+            return;
+        }
+
+        _isUpdatingToppingGroup = true;
+
+        try
+        {
+            UpdateToppingGroupRequestDTO request =
+                new UpdateToppingGroupRequestDTO
+                {
+                    Name = groupName,
+                    IsActive = _editedToppingGroupIsActive
+                };
+
+            ToppingGroupUpdateApiResult result =
+                await ToppingGroupApiService.UpdateToppingGroupAsync(
+                    _editingToppingGroupId.Value,
+                    request);
+
+            if (!result.IsSuccess || result.ToppingGroup == null)
+            {
+                _updateToppingGroupErrorMessage =
+                    string.IsNullOrWhiteSpace(result.ErrorMessage)
+                    ? "Không thể cập nhật nhóm topping. Vui lòng thử lại."
+                    : result.ErrorMessage;
+
+                return;
+            }
+
+            // Thay đúng nhóm bằng dữ liệu mới từ API, gồm cả topping con
+            for (int index = 0; index < _toppingGroups.Count; index++)
+            {
+                if (_toppingGroups[index].Id == result.ToppingGroup.Id)
+                {
+                    _toppingGroups[index] = result.ToppingGroup;
+                    break;
+                }
+            }
+
+            // Đóng form sau khi lưu thành công
+            _editingToppingGroupId = null;
+            _editedToppingGroupName = string.Empty;
+            _editedToppingGroupIsActive = false;
+            _updateToppingGroupErrorMessage = null;
+        }
+        catch (HttpRequestException)
+        {
+            _updateToppingGroupErrorMessage = "Không thể kết nối đến API.";
+        }
+        catch (JSException)
+        {
+            _updateToppingGroupErrorMessage = "Không thể đọc token đăng nhập.";
+        }
+        catch (JsonException)
+        {
+            _updateToppingGroupErrorMessage =
+                "Dữ liệu nhóm topping từ API không hợp lệ.";
+        }
+        finally
+        {
+            _isUpdatingToppingGroup = false;
+        }
+    }
+
+    // Mở xác nhận xóa cho nhóm được chọn, chưa gửi request
+    private void RequestToppingGroupDelete(MenuToppingGroupDTO toppingGroup)
+    {
+        if (HasOpenOperation)
+        {
+            return;
+        }
+
+        if (_deletingToppingGroupId.HasValue
+            || _isCreatingToppingGroup
+            || _isCreateToppingGroupFormVisible
+            || _isUpdatingToppingGroup
+            || _editingToppingGroupId.HasValue
+            || _creatingToppingGroupId.HasValue
+            || _isCreatingTopping
+            || _editingToppingId.HasValue
+            || _isUpdatingTopping
+            || _toppingPendingDelete != null
+            || _deletingToppingId.HasValue)
+        {
+            return;
+        }
+
+        _toppingGroupPendingDelete = toppingGroup;
+        _deleteToppingGroupErrorMessage = null;
+    }
+
+    // Đóng xác nhận mà không thay đổi dữ liệu
+    private void CancelToppingGroupDelete()
+    {
+        if (_deletingToppingGroupId.HasValue)
+        {
+            return;
+        }
+
+        _toppingGroupPendingDelete = null;
+        _deleteToppingGroupErrorMessage = null;
+    }
+
+    // Chỉ gửi yêu cầu xóa sau khi ADMIN xác nhận
+    private async Task ConfirmToppingGroupDeleteAsync()
+    {
+        MenuToppingGroupDTO? toppingGroup = _toppingGroupPendingDelete;
+
+        if (toppingGroup == null
+            || _deletingToppingGroupId.HasValue
+            || _isCreatingToppingGroup
+            || _isCreateToppingGroupFormVisible
+            || _isUpdatingToppingGroup
+            || _editingToppingGroupId.HasValue
+            || _creatingToppingGroupId.HasValue
+            || _isCreatingTopping
+            || _editingToppingId.HasValue
+            || _isUpdatingTopping
+            || _toppingPendingDelete != null
+            || _deletingToppingId.HasValue)
+        {
+            return;
+        }
+
+        _deleteToppingGroupErrorMessage = null;
+        _deletingToppingGroupId = toppingGroup.Id;
+
+        try
+        {
+            ToppingGroupDeleteApiResult result =
+                await ToppingGroupApiService.DeleteToppingGroupAsync(
+                    toppingGroup.Id);
+
+            if (!result.IsSuccess)
+            {
+                _deleteToppingGroupErrorMessage =
+                    string.IsNullOrWhiteSpace(result.ErrorMessage)
+                    ? "Không thể xóa nhóm topping. Vui lòng thử lại."
+                    : result.ErrorMessage;
+
+                return;
+            }
+
+            // Chỉ bỏ nhóm khỏi danh sách sau khi API xác nhận thành công
+            _toppingGroups.RemoveAll(group => group.Id == toppingGroup.Id);
+            _toppingGroupPendingDelete = null;
+        }
+        catch (HttpRequestException)
+        {
+            _deleteToppingGroupErrorMessage = "Không thể kết nối đến API.";
+        }
+        catch (JSException)
+        {
+            _deleteToppingGroupErrorMessage = "Không thể đọc token đăng nhập.";
+        }
+        catch (JsonException)
+        {
+            _deleteToppingGroupErrorMessage =
+                "Dữ liệu phản hồi từ API không hợp lệ.";
+        }
+        finally
+        {
+            _deletingToppingGroupId = null;
+        }
+    }
+
+    // Mở form thêm topping cho đúng nhóm và xóa dữ liệu cũ
+    private void ShowCreateToppingForm(MenuToppingGroupDTO toppingGroup)
+    {
+        if (HasOpenOperation)
+        {
+            return;
+        }
+
+        if (_isCreatingTopping
+            || _isCreatingToppingGroup
+            || _isCreateToppingGroupFormVisible
+            || _isUpdatingToppingGroup
+            || _editingToppingGroupId.HasValue
+            || _toppingGroupPendingDelete != null
+            || _deletingToppingGroupId.HasValue
+            || _editingToppingId.HasValue
+            || _isUpdatingTopping
+            || _toppingPendingDelete != null
+            || _deletingToppingId.HasValue)
+        {
+            return;
+        }
+
+        _creatingToppingGroupId = toppingGroup.Id;
+        _newToppingName = string.Empty;
+        _newToppingPrice = null;
+        _createToppingErrorMessage = null;
+    }
+
+    // Đóng form thêm topping mà không gửi request
+    private void CancelCreateTopping()
+    {
+        if (_isCreatingTopping)
+        {
+            return;
+        }
+
+        _creatingToppingGroupId = null;
+        _newToppingName = string.Empty;
+        _newToppingPrice = null;
+        _createToppingErrorMessage = null;
+    }
+
+    // Kiểm tra dữ liệu, tạo topping và thêm vào đúng nhóm trên giao diện
+    private async Task CreateToppingAsync()
+    {
+        if (!_creatingToppingGroupId.HasValue
+            || _isCreatingTopping
+            || _isCreatingToppingGroup
+            || _isUpdatingToppingGroup
+            || _toppingGroupPendingDelete != null
+            || _deletingToppingGroupId.HasValue
+            || _editingToppingId.HasValue
+            || _isUpdatingTopping
+            || _toppingPendingDelete != null
+            || _deletingToppingId.HasValue)
+        {
+            return;
+        }
+
+        _createToppingErrorMessage = null;
+
+        if (string.IsNullOrWhiteSpace(_newToppingName))
+        {
+            _createToppingErrorMessage = "Vui lòng nhập tên topping.";
+            return;
+        }
+
+        string toppingName = _newToppingName.Trim();
+
+        if (toppingName.Length > 150)
+        {
+            _createToppingErrorMessage =
+                "Tên topping không được vượt quá 150 ký tự.";
+            return;
+        }
+
+        if (!_newToppingPrice.HasValue
+            || _newToppingPrice.Value <= 0
+            || _newToppingPrice.Value > 9999999999999999.99m
+            || decimal.Round(_newToppingPrice.Value, 2) != _newToppingPrice.Value)
+        {
+            _createToppingErrorMessage =
+                "Giá topping phải lớn hơn 0, trong giới hạn database và có tối đa 2 chữ số thập phân.";
+            return;
+        }
+
+        MenuToppingGroupDTO? toppingGroup = _toppingGroups
+            .FirstOrDefault(group => group.Id == _creatingToppingGroupId.Value);
+
+        if (toppingGroup == null)
+        {
+            _createToppingErrorMessage = "Không tìm thấy nhóm topping đang chọn.";
+            return;
+        }
+
+        _isCreatingTopping = true;
+
+        try
+        {
+            CreateToppingRequestDTO request = new CreateToppingRequestDTO
+            {
+                ToppingGroupId = toppingGroup.Id,
+                Name = toppingName,
+                Price = _newToppingPrice.Value
+            };
+
+            ToppingCreateApiResult result =
+                await ToppingApiService.CreateToppingAsync(request);
+
+            if (!result.IsSuccess || result.Topping == null)
+            {
+                _createToppingErrorMessage =
+                    string.IsNullOrWhiteSpace(result.ErrorMessage)
+                    ? "Không thể tạo topping. Vui lòng thử lại."
+                    : result.ErrorMessage;
+
+                return;
+            }
+
+            // Chỉ thêm dữ liệu vào nhóm sau khi API xác nhận thành công
+            toppingGroup.Toppings.Add(result.Topping);
+
+            _creatingToppingGroupId = null;
+            _newToppingName = string.Empty;
+            _newToppingPrice = null;
+        }
+        catch (HttpRequestException)
+        {
+            _createToppingErrorMessage = "Không thể kết nối đến API.";
+        }
+        catch (JSException)
+        {
+            _createToppingErrorMessage = "Không thể đọc token đăng nhập.";
+        }
+        catch (JsonException)
+        {
+            _createToppingErrorMessage = "Dữ liệu topping từ API không hợp lệ.";
+        }
+        finally
+        {
+            _isCreatingTopping = false;
+        }
+    }
+
+    // Mở form sửa và sao chép dữ liệu topping sang state riêng
+    private void StartEditTopping(
+        MenuToppingGroupDTO toppingGroup,
+        MenuToppingDTO topping)
+    {
+        if (HasOpenOperation)
+        {
+            return;
+        }
+
+        if (_isUpdatingTopping
+            || _isCreatingTopping
+            || _creatingToppingGroupId.HasValue
+            || _isCreatingToppingGroup
+            || _isCreateToppingGroupFormVisible
+            || _isUpdatingToppingGroup
+            || _editingToppingGroupId.HasValue
+            || _toppingGroupPendingDelete != null
+            || _deletingToppingGroupId.HasValue
+            || _toppingPendingDelete != null
+            || _deletingToppingId.HasValue)
+        {
+            return;
+        }
+
+        _editingToppingGroupIdForTopping = toppingGroup.Id;
+        _editingToppingId = topping.Id;
+        _editedToppingName = topping.Name;
+        _editedToppingPrice = topping.Price;
+        _editedToppingIsActive = topping.IsActive;
+        _updateToppingErrorMessage = null;
+    }
+
+    // Hủy form sửa mà không thay đổi topping trong danh sách
+    private void CancelEditTopping()
+    {
+        if (_isUpdatingTopping)
+        {
+            return;
+        }
+
+        _editingToppingGroupIdForTopping = null;
+        _editingToppingId = null;
+        _editedToppingName = string.Empty;
+        _editedToppingPrice = null;
+        _editedToppingIsActive = false;
+        _updateToppingErrorMessage = null;
+    }
+
+    // Chuyển trạng thái được chọn từ HTML thành bool
+    private void OnEditedToppingStatusChanged(ChangeEventArgs args)
+    {
+        if (_isUpdatingTopping)
+        {
+            return;
+        }
+
+        if (bool.TryParse(args.Value?.ToString(), out bool isActive))
+        {
+            _editedToppingIsActive = isActive;
+        }
+    }
+
+    // Gửi thay đổi lên API và cập nhật đúng topping trong nhóm
+    private async Task SaveToppingChangesAsync()
+    {
+        if (!_editingToppingId.HasValue
+            || !_editingToppingGroupIdForTopping.HasValue
+            || _isUpdatingTopping
+            || _isCreatingTopping
+            || _isCreatingToppingGroup
+            || _isUpdatingToppingGroup
+            || _toppingGroupPendingDelete != null
+            || _deletingToppingGroupId.HasValue)
+        {
+            return;
+        }
+
+        _updateToppingErrorMessage = null;
+
+        if (string.IsNullOrWhiteSpace(_editedToppingName))
+        {
+            _updateToppingErrorMessage = "Vui lòng nhập tên topping.";
+            return;
+        }
+
+        string toppingName = _editedToppingName.Trim();
+
+        if (toppingName.Length > 150)
+        {
+            _updateToppingErrorMessage =
+                "Tên topping không được vượt quá 150 ký tự.";
+            return;
+        }
+
+        if (!_editedToppingPrice.HasValue
+            || _editedToppingPrice.Value <= 0
+            || _editedToppingPrice.Value > 9999999999999999.99m
+            || decimal.Round(_editedToppingPrice.Value, 2) != _editedToppingPrice.Value)
+        {
+            _updateToppingErrorMessage =
+                "Giá topping phải lớn hơn 0, trong giới hạn database và có tối đa 2 chữ số thập phân.";
+            return;
+        }
+
+        MenuToppingGroupDTO? toppingGroup = _toppingGroups
+            .FirstOrDefault(group =>
+                group.Id == _editingToppingGroupIdForTopping.Value);
+
+        if (toppingGroup == null)
+        {
+            _updateToppingErrorMessage = "Không tìm thấy nhóm topping đang sửa.";
+            return;
+        }
+
+        _isUpdatingTopping = true;
+
+        try
+        {
+            UpdateToppingRequestDTO request = new UpdateToppingRequestDTO
+            {
+                Name = toppingName,
+                Price = _editedToppingPrice.Value,
+                IsActive = _editedToppingIsActive
+            };
+
+            ToppingUpdateApiResult result =
+                await ToppingApiService.UpdateToppingAsync(
+                    _editingToppingId.Value,
+                    request);
+
+            if (!result.IsSuccess || result.Topping == null)
+            {
+                _updateToppingErrorMessage =
+                    string.IsNullOrWhiteSpace(result.ErrorMessage)
+                    ? "Không thể cập nhật topping. Vui lòng thử lại."
+                    : result.ErrorMessage;
+
+                return;
+            }
+
+            // Thay đúng topping bằng dữ liệu mới từ API
+            for (int index = 0; index < toppingGroup.Toppings.Count; index++)
+            {
+                if (toppingGroup.Toppings[index].Id == result.Topping.Id)
+                {
+                    toppingGroup.Toppings[index] = result.Topping;
+                    break;
+                }
+            }
+
+            // Đóng form sau khi lưu thành công
+            _editingToppingGroupIdForTopping = null;
+            _editingToppingId = null;
+            _editedToppingName = string.Empty;
+            _editedToppingPrice = null;
+            _editedToppingIsActive = false;
+            _updateToppingErrorMessage = null;
+        }
+        catch (HttpRequestException)
+        {
+            _updateToppingErrorMessage = "Không thể kết nối đến API.";
+        }
+        catch (JSException)
+        {
+            _updateToppingErrorMessage = "Không thể đọc token đăng nhập.";
+        }
+        catch (JsonException)
+        {
+            _updateToppingErrorMessage = "Dữ liệu topping từ API không hợp lệ.";
+        }
+        finally
+        {
+            _isUpdatingTopping = false;
+        }
+    }
+
+    // Mở xác nhận xóa đúng topping trong nhóm được chọn
+    private void RequestToppingDelete(
+        MenuToppingGroupDTO toppingGroup,
+        MenuToppingDTO topping)
+    {
+        if (HasOpenOperation)
+        {
+            return;
+        }
+
+        if (_deletingToppingId.HasValue
+            || _toppingPendingDelete != null
+            || _isCreatingTopping
+            || _creatingToppingGroupId.HasValue
+            || _isUpdatingTopping
+            || _editingToppingId.HasValue
+            || _isCreatingToppingGroup
+            || _isCreateToppingGroupFormVisible
+            || _isUpdatingToppingGroup
+            || _editingToppingGroupId.HasValue
+            || _toppingGroupPendingDelete != null
+            || _deletingToppingGroupId.HasValue)
+        {
+            return;
+        }
+
+        _toppingGroupIdForDelete = toppingGroup.Id;
+        _toppingPendingDelete = topping;
+        _deleteToppingErrorMessage = null;
+    }
+
+    // Đóng xác nhận mà không thay đổi dữ liệu topping
+    private void CancelToppingDelete()
+    {
+        if (_deletingToppingId.HasValue)
+        {
+            return;
+        }
+
+        _toppingGroupIdForDelete = null;
+        _toppingPendingDelete = null;
+        _deleteToppingErrorMessage = null;
+    }
+
+    // Gửi yêu cầu xóa sau khi ADMIN xác nhận
+    private async Task ConfirmToppingDeleteAsync()
+    {
+        MenuToppingDTO? topping = _toppingPendingDelete;
+
+        if (topping == null
+            || !_toppingGroupIdForDelete.HasValue
+            || _deletingToppingId.HasValue
+            || _isCreatingTopping
+            || _creatingToppingGroupId.HasValue
+            || _isUpdatingTopping
+            || _editingToppingId.HasValue
+            || _isCreatingToppingGroup
+            || _isCreateToppingGroupFormVisible
+            || _isUpdatingToppingGroup
+            || _editingToppingGroupId.HasValue
+            || _toppingGroupPendingDelete != null
+            || _deletingToppingGroupId.HasValue)
+        {
+            return;
+        }
+
+        _deleteToppingErrorMessage = null;
+
+        MenuToppingGroupDTO? toppingGroup =
+            _toppingGroups.FirstOrDefault(
+                group => group.Id == _toppingGroupIdForDelete.Value);
+
+        if (toppingGroup == null)
+        {
+            _deleteToppingErrorMessage =
+                "Không tìm thấy nhóm chứa topping. Vui lòng tải lại danh sách.";
+            return;
+        }
+
+        _deletingToppingId = topping.Id;
+
+        try
+        {
+            ToppingDeleteApiResult result =
+                await ToppingApiService.DeleteToppingAsync(topping.Id);
+
+            if (!result.IsSuccess)
+            {
+                _deleteToppingErrorMessage =
+                    string.IsNullOrWhiteSpace(result.ErrorMessage)
+                    ? "Không thể xóa topping. Vui lòng thử lại."
+                    : result.ErrorMessage;
+
+                return;
+            }
+
+            // Chỉ bỏ topping khỏi danh sách khi API xác nhận thành công
+            toppingGroup.Toppings.RemoveAll(
+                item => item.Id == topping.Id);
+
+            _toppingGroupIdForDelete = null;
+            _toppingPendingDelete = null;
+        }
+        catch (HttpRequestException)
+        {
+            _deleteToppingErrorMessage = "Không thể kết nối đến API.";
+        }
+        catch (JSException)
+        {
+            _deleteToppingErrorMessage = "Không thể đọc token đăng nhập.";
+        }
+        catch (JsonException)
+        {
+            _deleteToppingErrorMessage =
+                "Dữ liệu phản hồi từ API không hợp lệ.";
+        }
+        finally
+        {
+            _deletingToppingId = null;
+        }
+    }
+}

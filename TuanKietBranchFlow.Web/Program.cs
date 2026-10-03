@@ -59,6 +59,25 @@ builder.Services.AddScoped<BranchApiService>();
 // Đăng ký service gọi các API nhân viên
 builder.Services.AddScoped<EmployeeApiService>();
 
+// Đăng ký service gọi API danh mục menu
+builder.Services.AddScoped<CategoryApiService>();
+
+// Đăng ký service gọi API size menu
+builder.Services.AddScoped<SizeApiService>();
+
+// Đăng ký service gọi API danh sách món
+builder.Services.AddScoped<ProductApiService>();
+
+// Đăng ký service gọi API nhóm topping và topping
+builder.Services.AddScoped<ToppingGroupApiService>();
+
+// Gọi API quản lý topping bằng token của người dùng hiện tại
+builder.Services.AddScoped<ToppingApiService>();
+
+// Caller API cho nhóm ghi chú và lựa chọn con
+builder.Services.AddScoped<NoteGroupApiService>();
+builder.Services.AddScoped<NoteOptionApiService>();
+
 // Đăng ký service gọi các API xác thực
 builder.Services.AddScoped<AuthApiService>();
 

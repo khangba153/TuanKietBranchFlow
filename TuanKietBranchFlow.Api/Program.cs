@@ -64,6 +64,25 @@ builder.Services.AddScoped<IOrderMenuRepository, OrderMenuRepository>();
 // Đăng ký repository để kiểm tra dữ liệu và lưu đơn hàng
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 
+// Đăng ký repository để đọc danh mục quản lý
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+
+// Đăng ký repository để đọc size quản lý
+builder.Services.AddScoped<ISizeRepository, SizeRepository>();
+
+// Đăng ký repository để đọc món quản lý
+builder.Services.AddScoped<IProductRepository, ProductRepository>();
+
+// Đăng ký repository để đọc nhóm topping và topping quản lý
+builder.Services.AddScoped<IToppingGroupRepository, ToppingGroupRepository>();
+
+// Repository xử lý truy vấn và thêm topping
+builder.Services.AddScoped<IToppingRepository, ToppingRepository>();
+
+// Repository cho nhóm ghi chú và lựa chọn con dùng chung
+builder.Services.AddScoped<INoteGroupRepository, NoteGroupRepository>();
+builder.Services.AddScoped<INoteOptionRepository, NoteOptionRepository>();
+
 // Đăng ký công cụ tạo và kiểm tra PasswordHash
 builder.Services.AddScoped<IPasswordHasher<AppUser>, PasswordHasher<AppUser>>();
 
@@ -88,6 +107,25 @@ builder.Services.AddScoped<IOrderMenuService, OrderMenuService>();
 // Đăng ký service xử lý nghiệp vụ tạo đơn hàng
 builder.Services.AddScoped<IOrderService, OrderService>();
 
+// Đăng ký service xử lý danh mục quản lý
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+
+// Đăng ký service xử lý lấy size quản lý
+builder.Services.AddScoped<ISizeService, SizeService>();
+
+// Đăng ký service xử lý danh sách món quản lý
+builder.Services.AddScoped<IProductService, ProductService>();
+
+// Đăng ký service xử lý nhóm topping và topping quản lý
+builder.Services.AddScoped<IToppingGroupService, ToppingGroupService>();
+
+// Service xử lý nghiệp vụ topping
+builder.Services.AddScoped<IToppingService, ToppingService>();
+
+// Service nghiệp vụ quản lý ghi chú nhanh
+builder.Services.AddScoped<INoteGroupService, NoteGroupService>();
+builder.Services.AddScoped<INoteOptionService, NoteOptionService>();
+
 // Đăng ký UnitOfWork để các service có 1 điểm lưu dữ liệu thống nhất
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
@@ -96,6 +134,7 @@ builder.Services.AddScoped<JwtTokenService>(servicePorvider =>
 {
     return new JwtTokenService(jwtKey, jwtIssuer, jwtAudience, jwtExpireMinutes);
 });
+
 // Đăng ký controller, model binding và chuyển đổi dữ liệu JSON
 builder.Services.AddControllers();
 

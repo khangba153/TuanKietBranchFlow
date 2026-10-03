@@ -1,0 +1,92 @@
+@page "/menu"
+
+<PageTitle>Menu - BranchFlow</PageTitle>
+
+<section class="bf-page">
+    <header class="bf-page-header">
+        <div>
+            <h1 class="bf-page-title">Menu</h1>
+            <p class="bf-page-description mb-0">
+                Quản lý danh mục và cấu hình món dùng chung cho các chi nhánh.
+            </p>
+        </div>
+    </header>
+
+    <nav class="d-flex gap-2 overflow-auto pb-2 mb-4" aria-label="Các phần quản lý menu">
+        <button type="button" disabled="@_isMenuOperationOpen"
+                class="@(_activeMenuTab == "products" ? "btn btn-primary flex-shrink-0" : "btn btn-outline-primary flex-shrink-0")"
+                aria-current="@(_activeMenuTab == "products" ? "page" : null)"
+                @onclick='() => SelectMenuTab("products")'>
+            Sản phẩm
+        </button>
+        <button type="button" disabled="@_isMenuOperationOpen"
+                class="@(_activeMenuTab == "categories" ? "btn btn-primary flex-shrink-0" : "btn btn-outline-primary flex-shrink-0")"
+                aria-current="@(_activeMenuTab == "categories" ? "page" : null)"
+                @onclick='() => SelectMenuTab("categories")'>
+            Danh mục
+        </button>
+        <button type="button" disabled="@_isMenuOperationOpen"
+                class="@(_activeMenuTab == "sizes" ? "btn btn-primary flex-shrink-0" : "btn btn-outline-primary flex-shrink-0")"
+                aria-current="@(_activeMenuTab == "sizes" ? "page" : null)"
+                @onclick='() => SelectMenuTab("sizes")'>
+            Size
+        </button>
+        <button type="button" disabled="@_isMenuOperationOpen"
+                class="@(_activeMenuTab == "topping" ? "btn btn-primary flex-shrink-0" : "btn btn-outline-primary flex-shrink-0")"
+                aria-current="@(_activeMenuTab == "topping" ? "page" : null)"
+                @onclick='() => SelectMenuTab("topping")'>
+            Topping
+        </button>
+        <button type="button" disabled="@_isMenuOperationOpen"
+                class="@(_activeMenuTab == "notes" ? "btn btn-primary flex-shrink-0" : "btn btn-outline-primary flex-shrink-0")"
+                aria-current="@(_activeMenuTab == "notes" ? "page" : null)"
+                @onclick='() => SelectMenuTab("notes")'>
+            Ghi chú nhanh
+        </button>
+    </nav>
+
+    @if (_activeMenuTab == "products")
+    {
+        <ProductManagement OnBusyChanged="OnMenuBusyChanged" />
+    }
+    else if (_activeMenuTab == "categories")
+    {
+        <CategoryManagement OnBusyChanged="OnMenuBusyChanged" />
+    }
+    else if (_activeMenuTab == "sizes")
+    {
+        <SizeManagement OnBusyChanged="OnMenuBusyChanged" />
+    }
+    else if (_activeMenuTab == "topping")
+    {
+        <ToppingManagement OnBusyChanged="OnMenuBusyChanged" />
+    }
+    else if (_activeMenuTab == "notes")
+    {
+        <NoteManagement OnBusyChanged="OnMenuBusyChanged" />
+    }
+</section>
+
+@code {
+    // Tab đang xem và trạng thái thao tác của component đang hiển thị
+    private string _activeMenuTab = "topping";
+    private bool _isMenuOperationOpen = true;
+
+    // Không tháo component khi người dùng đang nhập hoặc chờ API
+    private void SelectMenuTab(string tab)
+    {
+        if (_isMenuOperationOpen || _activeMenuTab == tab)
+        {
+            return;
+        }
+
+        _isMenuOperationOpen = true;
+        _activeMenuTab = tab;
+    }
+
+    // Component con báo khi tải xong, mở/đóng form hoặc kết thúc request
+    private void OnMenuBusyChanged(bool isBusy)
+    {
+        _isMenuOperationOpen = isBusy;
+    }
+}

@@ -1,0 +1,697 @@
+@using System.Text.Json
+@using Microsoft.JSInterop
+@using TuanKietBranchFlow.Application.DTOs.MenuManagement
+@using TuanKietBranchFlow.Web.Services
+@using TuanKietBranchFlow.Web.Models
+
+@inject SizeApiService SizeApiService
+
+<section class="bf-surface-card overflow-hidden" aria-labelledby="size-title">
+    <header class="d-flex flex-column flex-sm-row align-items-sm-center
+        justify-content-between gap-3 p-3 p-md-4 border-bottom">
+        <div>
+            <h2 id="size-title" class="h5 mb-1">Danh mục size</h2>
+            <p class="bf-page-description mb-0">
+                Size dùng chung; giá được cấu hình riêng theo từng sản phẩm.
+            </p>
+        </div>
+
+        <AuthorizeView Roles="ADMIN">
+            <Authorized>
+                <button type="button" class="btn btn-primary align-self-start align-self-sm-auto"
+                        @onclick="ShowCreateSizeForm" disabled="@HasOpenOperation">
+                    Thêm size
+                </button>
+            </Authorized>
+        </AuthorizeView>
+    </header>
+
+    <AuthorizeView Roles="ADMIN">
+        <Authorized>
+            @if (_isCreateSizeFormVisible)
+            {
+                <section class="p-3 p-md-4 border-bottom bg-body-tertiary" aria-labelledby="create-size-title">
+                    <h3 id="create-size-title" class="h6 mb-3">
+                        Thêm size
+                    </h3>
+
+                    @if (!string.IsNullOrWhiteSpace(_createSizeErrorMessage))
+                    {
+                        <div class="alert alert-danger" role="alert">
+                            @_createSizeErrorMessage
+                        </div>
+                    }
+
+                    <div class="row g-3 align-items-end">
+                        <div class="col-12 col-md-7">
+                            <label for="size-name" class="form-label">
+                                Tên size
+                            </label>
+                            <input id="size-name" type="text" class="form-control" maxlength="50"
+                                   placeholder="Ví dụ: M, L, XL" @bind="_newSizeName" @bind:event="oninput"
+                                   disabled="@_isCreatingSize" />
+                            <div class="form-text">
+                                Tên size tối đa 50 ký tự.
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-5 d-flex justify-content-end gap-2">
+                            <button type="button" class="btn btn-outline-secondary" @onclick="CancelCreateSize"
+                                    disabled="@_isCreatingSize">
+                                Hủy
+                            </button>
+
+                            <button type="button" class="btn btn-primary" @onclick="CreateSizeAsync"
+                                    disabled="@_isCreatingSize">
+                                @if (_isCreatingSize)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+                                    <span>Đang lưu...</span>
+                                }
+                                else
+                                {
+                                    <span>Lưu size</span>
+                                }
+                            </button>
+                        </div>
+                    </div>
+                </section>
+            }
+        </Authorized>
+    </AuthorizeView>
+    @if (_isLoadingSizes)
+    {
+        <div class="alert alert-info m-3" role="status">
+            <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+            Đang tải danh sách size...
+        </div>
+    }
+    else if (!string.IsNullOrWhiteSpace(_sizeErrorMessage))
+    {
+        <div class="alert alert-danger m-3" role="alert">
+            <p class="mb-2">@_sizeErrorMessage</p>
+            <button type="button" class="btn btn-outline-danger btn-sm" @onclick="LoadSizesAsync" disabled="@HasOpenOperation">
+                Thử tải lại
+            </button>
+        </div>
+    }
+    else if (_sizes.Count == 0)
+    {
+        <div class="alert alert-light m-3 mb-0">
+            Chưa có size nào.
+        </div>
+    }
+    else
+    {
+        <div class="list-group list-group-flush">
+            @for (int index = 0; index < _sizes.Count; index++)
+            {
+                MenuSizeDTO size = _sizes[index];
+
+                <article class="list-group-item p-3 p-md-4">
+                    <div class="d-flex flex-column flex-sm-row
+                        align-items-sm-center justify-content-between gap-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="text-body-secondary small">
+                                @((index + 1).ToString("D2"))
+                            </span>
+                            <h3 class="h6 mb-0">@size.Name</h3>
+                        </div>
+
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                            @if (size.IsActive)
+                            {
+                                <span class="badge rounded-pill text-bg-success">
+                                    Đang hoạt động
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge rounded-pill text-bg-secondary">
+                                    Tạm ngừng
+                                </span>
+                            }
+
+                            <AuthorizeView Roles="ADMIN">
+                                <Authorized>
+                                    @if (_editingSizeId == size.Id)
+                                    {
+                                        <span class="badge text-bg-primary">Đang chỉnh sửa</span>
+                                    }
+                                    else
+                                    {
+                                        <button type="button" class="btn btn-outline-primary btn-sm"
+                                                @onclick="() => BeginEditSize(size)" disabled="@HasOpenOperation">
+            Sửa
+        </button>
+    }
+
+    <button type="button" class="btn btn-outline-danger btn-sm"
+            @onclick="() => RequestSizeDelete(size)" disabled="@HasOpenOperation">
+        Xóa
+    </button>
+</Authorized>
+</AuthorizeView>
+</div>
+</div>
+<AuthorizeView Roles="ADMIN">
+    <Authorized>
+        @if (_sizePendingDelete?.Id == size.Id)
+        {
+            <div class="mt-3 p-3 border rounded bg-body-tertiary">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h2 class="modal-title fs-5">Xác nhận xóa size</h2>
+                        </div>
+
+                        <div class="modal-body">
+                            @if (!string.IsNullOrWhiteSpace(_deleteSizeErrorMessage))
+                            {
+                                <div class="alert alert-danger" role="alert">
+                                    @_deleteSizeErrorMessage
+                                </div>
+                            }
+
+                            <p>
+                                Bạn có chắc muốn xóa size
+                                <strong>@size.Name</strong>?
+                            </p>
+
+                            <div class="alert alert-warning mb-0">
+                                Size sẽ bị ẩn khỏi menu nhân viên.
+                                Dữ liệu vẫn được giữ trong database.
+                            </div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary"
+                                    @onclick="CancelSizeDelete" disabled="@_deletingSizeId.HasValue">
+                                Hủy
+                            </button>
+
+                            <button type="button" class="btn btn-danger" @onclick="ConfirmSizeDeleteAsync"
+                                    disabled="@_deletingSizeId.HasValue">
+                                @if (_deletingSizeId == size.Id)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2"
+                                          aria-hidden="true"></span>
+                                    <span>Đang xóa...</span>
+                                }
+                                else
+                                {
+                                    <span>Xác nhận xóa</span>
+                                }
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </Authorized>
+</AuthorizeView>
+<AuthorizeView Roles="ADMIN">
+    <Authorized>
+        @if (_editingSizeId == size.Id)
+        {
+            <div class="mt-3 p-3 border rounded bg-body-tertiary">
+                <h4 class="h6 mb-3">Thông tin size</h4>
+
+                @if (!string.IsNullOrWhiteSpace(_updateSizeErrorMessage))
+                {
+                    <div class="alert alert-danger" role="alert">
+                        @_updateSizeErrorMessage
+                    </div>
+                }
+
+                <div class="row g-3 align-items-end">
+                    <div class="col-12 col-md-7">
+                        <label for="size-name-@size.Id" class="form-label">
+                            Tên size
+                        </label>
+                        <input id="size-name-@size.Id" type="text" class="form-control" maxlength="50"
+                               @bind="_editedSizeName" @bind:event="oninput" disabled="@_isUpdatingSize" />
+                    </div>
+
+                    <div class="col-12 col-md-5">
+                        <label for="size-status-@size.Id" class="form-label">
+                            Trạng thái
+                        </label>
+                        <select id="size-status-@size.Id" class="form-select"
+                                value="@_editedSizeIsActive.ToString().ToLowerInvariant()"
+                                @onchange="HandleSizeStatusChanged" disabled="@_isUpdatingSize">
+                            <option value="true">Đang hoạt động</option>
+                            <option value="false">Tạm ngừng</option>
+                        </select>
+                    </div>
+
+                    <div class="col-12 d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-outline-secondary" @onclick="CancelEditSize"
+                                disabled="@_isUpdatingSize">
+                            Hủy
+                        </button>
+
+                        <button type="button" class="btn btn-primary" @onclick="SaveSizeChangesAsync"
+                                disabled="@_isUpdatingSize">
+                            @if (_isUpdatingSize)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+                                <span>Đang lưu...</span>
+                            }
+                            else
+                            {
+                                <span>Lưu thay đổi</span>
+                            }
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    </Authorized>
+</AuthorizeView>
+</article>
+                }
+</div>
+        }
+</section>
+
+
+
+@code {
+    // Báo trạng thái thao tác cho Menu để giữ đúng tab đang làm việc
+    [Parameter] public EventCallback<bool> OnBusyChanged { get; set; }
+    private bool _lastBusyState;
+
+    // Khóa chuyển tab khi đang tải, nhập form hoặc xác nhận xóa
+    private bool HasOpenOperation =>
+        _isLoadingSizes || _isCreateSizeFormVisible || _isCreatingSize
+        || _editingSizeId.HasValue || _isUpdatingSize
+        || _sizePendingDelete != null || _deletingSizeId.HasValue;
+
+    // State của danh sách size và quá trình tải dữ liệu
+    private List<MenuSizeDTO> _sizes =
+        new List<MenuSizeDTO>();
+
+    private bool _isLoadingSizes = true;
+    private string? _sizeErrorMessage;
+
+    // State của form tạo size
+    private bool _isCreateSizeFormVisible;
+    private string _newSizeName = string.Empty;
+    private bool _isCreatingSize;
+    private string? _createSizeErrorMessage;
+
+    // State của form sửa size
+    private int? _editingSizeId;
+    private string _editedSizeName = string.Empty;
+    private bool _editedSizeIsActive;
+    private bool _isUpdatingSize;
+    private string? _updateSizeErrorMessage;
+
+    // State của xác nhận và quá trình xóa size
+    private int? _deletingSizeId;
+    private string? _deleteSizeErrorMessage;
+    private MenuSizeDTO? _sizePendingDelete;
+
+    // Tải sau render đầu tiên để có thể đọc token từ localStorage
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadSizesAsync();
+            StateHasChanged();
+        }
+
+        bool isBusy = HasOpenOperation;
+        if (_lastBusyState != isBusy)
+        {
+            _lastBusyState = isBusy;
+            await OnBusyChanged.InvokeAsync(isBusy);
+        }
+        else if (firstRender)
+        {
+            // Mở khóa tab cả khi lần tải đầu không có dữ liệu hoặc gặp lỗi
+            await OnBusyChanged.InvokeAsync(isBusy);
+        }
+    }
+
+    // Tải danh sách size và lưu vào state của component
+    private async Task LoadSizesAsync()
+    {
+        _isLoadingSizes = true;
+        _sizeErrorMessage = null;
+
+        try
+        {
+            List<MenuSizeDTO>? sizes =
+                await SizeApiService.GetMenuSizesAsync();
+
+            if (sizes is null)
+            {
+                _sizeErrorMessage = "Không thể tải danh sách size. Vui lòng thử lại.";
+                return;
+            }
+
+            _sizes = sizes;
+        }
+        catch (HttpRequestException)
+        {
+            _sizeErrorMessage = "Không thể kết nối đến API.";
+        }
+        catch (JSException)
+        {
+            _sizeErrorMessage = "Không thể đọc token đăng nhập.";
+        }
+        catch (JsonException)
+        {
+            _sizeErrorMessage = "Dữ liệu size từ API không hợp lệ.";
+        }
+        finally
+        {
+            _isLoadingSizes = false;
+        }
+    }
+
+    // Mở form tạo Size và xóa dữ liệu/lỗi cũ
+    private void ShowCreateSizeForm()
+    {
+        if (HasOpenOperation)
+        {
+            return;
+        }
+
+        if (_isCreatingSize)
+        {
+            return;
+        }
+
+        _isCreateSizeFormVisible = true;
+        _newSizeName = string.Empty;
+        _createSizeErrorMessage = null;
+    }
+
+    // Hủy form tạo Size và xóa dữ liệu đang nhập
+    private void CancelCreateSize()
+    {
+        if (_isCreatingSize)
+        {
+            return;
+        }
+
+        _isCreateSizeFormVisible = false;
+        _newSizeName = string.Empty;
+        _createSizeErrorMessage = null;
+    }
+
+    // Kiểm tra dữ liệu rồi gửi yêu cầu tạo Size lên API
+    private async Task CreateSizeAsync()
+    {
+        if (_isCreatingSize)
+        {
+            return;
+        }
+
+        _createSizeErrorMessage = null;
+
+        if (string.IsNullOrWhiteSpace(_newSizeName))
+        {
+            _createSizeErrorMessage = "Vui lòng nhập tên size.";
+            return;
+        }
+
+        string sizeName = _newSizeName.Trim();
+
+        if (sizeName.Length > 50)
+        {
+            _createSizeErrorMessage = "Tên size không được vượt quá 50 ký tự.";
+            return;
+        }
+
+        _isCreatingSize = true;
+
+        try
+        {
+            CreateSizeRequestDTO request =
+                new CreateSizeRequestDTO
+                {
+                    Name = sizeName
+                };
+
+            SizeCreateApiResult result =
+                await SizeApiService.CreateSizeAsync(request);
+
+            if (!result.IsSuccess || result.Size == null)
+            {
+                _createSizeErrorMessage =
+                    string.IsNullOrWhiteSpace(result.ErrorMessage)
+                    ? "Không thể tạo size. Vui lòng thử lại."
+                    : result.ErrorMessage;
+
+                return;
+            }
+
+            _sizes.Add(result.Size);
+            _newSizeName = string.Empty;
+            _isCreateSizeFormVisible = false;
+        }
+        catch (HttpRequestException)
+        {
+            _createSizeErrorMessage = "Không thể kết nối đến API.";
+        }
+        catch (JSException)
+        {
+            _createSizeErrorMessage = "Không thể đọc token đăng nhập.";
+        }
+        catch (JsonException)
+        {
+            _createSizeErrorMessage = "Dữ liệu size từ API không hợp lệ.";
+        }
+        finally
+        {
+            _isCreatingSize = false;
+        }
+    }
+
+    // Nạp thông tin Size được chọn vào state chỉnh sửa
+    private void BeginEditSize(MenuSizeDTO size)
+    {
+        if (HasOpenOperation)
+        {
+            return;
+        }
+
+        _editingSizeId = size.Id;
+        _editedSizeName = size.Name;
+        _editedSizeIsActive = size.IsActive;
+        _updateSizeErrorMessage = null;
+    }
+
+    // Chuyển giá trị select thành trạng thái bool đang chỉnh sửa
+    private void HandleSizeStatusChanged(ChangeEventArgs eventArgs)
+    {
+        if (bool.TryParse(eventArgs.Value?.ToString(), out bool isActive))
+        {
+            _editedSizeIsActive = isActive;
+        }
+    }
+
+    // Hủy chỉnh sửa và xóa state tạm
+    private void CancelEditSize()
+    {
+        if (_isUpdatingSize)
+        {
+            return;
+        }
+
+        _editingSizeId = null;
+        _editedSizeName = string.Empty;
+        _editedSizeIsActive = false;
+        _updateSizeErrorMessage = null;
+    }
+
+    // Gửi thay đổi lên API và cập nhật đúng Size trong danh sách
+    private async Task SaveSizeChangesAsync()
+    {
+        if (_editingSizeId == null || _isUpdatingSize)
+        {
+            return;
+        }
+
+        _updateSizeErrorMessage = null;
+
+        if (string.IsNullOrWhiteSpace(_editedSizeName))
+        {
+            _updateSizeErrorMessage = "Vui lòng nhập tên size.";
+            return;
+        }
+
+        if (_editedSizeName.Trim().Length > 50)
+        {
+            _updateSizeErrorMessage = "Tên size không được vượt quá 50 ký tự.";
+            return;
+        }
+
+        _isUpdatingSize = true;
+
+        try
+        {
+            UpdateSizeRequestDTO request =
+                new UpdateSizeRequestDTO
+                {
+                    Name = _editedSizeName,
+                    IsActive = _editedSizeIsActive
+                };
+
+            SizeUpdateApiResult result =
+                await SizeApiService.UpdateSizeAsync(
+                    _editingSizeId.Value,
+                    request);
+
+            if (!result.IsSuccess || result.Size == null)
+            {
+                _updateSizeErrorMessage =
+                    string.IsNullOrWhiteSpace(result.ErrorMessage)
+                    ? "Không thể cập nhật size. Vui lòng thử lại."
+                    : result.ErrorMessage;
+
+                return;
+            }
+
+            for (int index = 0; index < _sizes.Count; index++)
+            {
+                if (_sizes[index].Id == result.Size.Id)
+                {
+                    _sizes[index] = result.Size;
+                    break;
+                }
+            }
+
+            _editingSizeId = null;
+            _editedSizeName = string.Empty;
+            _editedSizeIsActive = false;
+            _updateSizeErrorMessage = null;
+        }
+        catch (HttpRequestException)
+        {
+            _updateSizeErrorMessage = "Không thể kết nối đến API.";
+        }
+        catch (JSException)
+        {
+            _updateSizeErrorMessage = "Không thể đọc token đăng nhập.";
+        }
+        catch (JsonException)
+        {
+            _updateSizeErrorMessage = "Dữ liệu size từ API không hợp lệ.";
+        }
+        finally
+        {
+            _isUpdatingSize = false;
+        }
+    }
+
+    // Mở hộp thoại xác nhận trước khi bắt đầu xóa Size
+    private void RequestSizeDelete(MenuSizeDTO size)
+    {
+        if (HasOpenOperation)
+        {
+            return;
+        }
+
+        if (_deletingSizeId.HasValue
+            || _editingSizeId.HasValue
+            || _isUpdatingSize)
+        {
+            return;
+        }
+
+        _deleteSizeErrorMessage = null;
+        _sizePendingDelete = size;
+    }
+
+    // Đóng hộp thoại mà không gửi yêu cầu đến API
+    private void CancelSizeDelete()
+    {
+        if (_deletingSizeId.HasValue)
+        {
+            return;
+        }
+
+        _sizePendingDelete = null;
+        _deleteSizeErrorMessage = null;
+    }
+
+    // Chỉ gửi yêu cầu xóa sau khi ADMIN xác nhận
+    private async Task ConfirmSizeDeleteAsync()
+    {
+        MenuSizeDTO? size = _sizePendingDelete;
+
+        if (size is null
+            || _deletingSizeId.HasValue
+            || _editingSizeId.HasValue
+            || _isUpdatingSize)
+        {
+            return;
+        }
+
+        await DeleteSizeAsync(size);
+    }
+
+    // Xóa Size qua API và cập nhật giao diện khi thành công
+    private async Task DeleteSizeAsync(MenuSizeDTO size)
+    {
+        if (_sizePendingDelete?.Id != size.Id
+            || _deletingSizeId.HasValue
+            || _editingSizeId.HasValue
+            || _isUpdatingSize)
+        {
+            return;
+        }
+
+        _deleteSizeErrorMessage = null;
+        _deletingSizeId = size.Id;
+
+        try
+        {
+            SizeDeleteApiResult result =
+                await SizeApiService.DeleteSizeAsync(size.Id);
+
+            if (!result.IsSuccess)
+            {
+                _deleteSizeErrorMessage =
+                    string.IsNullOrWhiteSpace(result.ErrorMessage)
+                    ? "Không thể xóa size. Vui lòng thử lại."
+                    : result.ErrorMessage;
+
+                return;
+            }
+
+            for (int index = 0; index < _sizes.Count; index++)
+            {
+                if (_sizes[index].Id == size.Id)
+                {
+                    _sizes.RemoveAt(index);
+                    break;
+                }
+            }
+
+            _sizePendingDelete = null;
+            _deleteSizeErrorMessage = null;
+        }
+        catch (HttpRequestException)
+        {
+            _deleteSizeErrorMessage = "Không thể kết nối đến API.";
+        }
+        catch (JSException)
+        {
+            _deleteSizeErrorMessage = "Không thể đọc token đăng nhập.";
+        }
+        catch (JsonException)
+        {
+            _deleteSizeErrorMessage = "Dữ liệu lỗi từ API không hợp lệ.";
+        }
+        finally
+        {
+            _deletingSizeId = null;
+        }
+    }
+}
