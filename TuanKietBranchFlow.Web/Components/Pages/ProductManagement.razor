@@ -443,9 +443,13 @@
                                                     <label for="@($"edit-product-price-{product.Id}-{rowNumber}")" class="form-label">
                                                         Giá
                                                     </label>
-                                                    <input id="@($"edit-product-price-{product.Id}-{rowNumber}")" type="number"
-                                                           min="0.01" step="0.01" class="form-control" @bind="productSize.Price""
-                                                           disabled=" @_isUpdatingProduct" />
+                                                    <input id="@($"edit-product-price-{product.Id}-{rowNumber}")"
+                                                            type="number"
+                                                            min="0.01"
+                                                            step="0.01"
+                                                            class="form-control"
+                                                            @bind="productSize.Price"
+                                                            disabled="@_isUpdatingProduct" />
                                                 </div>
 
                                                 <div class="col-12 col-sm-6 col-md-3">

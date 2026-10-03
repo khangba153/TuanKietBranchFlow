@@ -10,17 +10,20 @@ public class ProductService : IProductService
     private readonly IProductRepository _productRepository;
     private readonly ICategoryRepository _categoryRepository;
     private readonly ISizeRepository _sizeRepository;
+    private readonly IBranchRepository _branchRepository;
     private readonly IUnitOfWork _unitOfWork;
 
     public ProductService(
         IProductRepository productRepository,
         ICategoryRepository categoryRepository,
         ISizeRepository sizeRepository,
+        IBranchRepository branchRepository,
         IUnitOfWork unitOfWork)
     {
         _productRepository = productRepository;
         _categoryRepository = categoryRepository;
         _sizeRepository = sizeRepository;
+        _branchRepository = branchRepository;
         _unitOfWork = unitOfWork;
     }
 
@@ -160,6 +163,23 @@ public class ProductService : IProductService
             product.ProductSizes.Add(productSize);
         }
 
+        // Món mới mặc định được bán tại các chi nhánh đang hoạt động
+        List<Branch> activeBranches =
+            await _branchRepository.GetActiveNotDeletedAsync();
+
+        foreach (Branch branch in activeBranches)
+        {
+            BranchProduct branchProduct = new BranchProduct
+            {
+                BranchId = branch.Id,
+                IsAvailable = true,
+                UpdatedAt = createdAt
+            };
+
+            product.BranchProducts.Add(branchProduct);
+        }
+
+        // Lưu Product, ProductSize và BranchProduct cùng một lần
         await _productRepository.AddAsync(product);
         await _unitOfWork.SaveChangesAsync();
 

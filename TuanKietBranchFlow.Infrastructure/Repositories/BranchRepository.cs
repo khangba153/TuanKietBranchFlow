@@ -47,4 +47,14 @@ public class BranchRepository : RepositoryBase<Branch>, IBranchRepository
            && userBranch.ActiveFrom <= currentDate
            && (userBranch.ActiveTo == null || userBranch.ActiveTo >= currentDate));
     }
+
+    // Lấy các chi nhánh hiện đang hoạt động và chưa bị xóa
+    public async Task<List<Branch>> GetActiveNotDeletedAsync()
+    {
+        return await Context.Branches
+            .AsNoTracking()
+            .Where(branch => branch.IsActive && !branch.Deleted)
+            .OrderBy(branch => branch.Id)
+            .ToListAsync();
+    }
 }

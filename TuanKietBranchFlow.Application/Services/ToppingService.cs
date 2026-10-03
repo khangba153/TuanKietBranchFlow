@@ -9,15 +9,18 @@ public class ToppingService : IToppingService
 {
     private readonly IToppingRepository _toppingRepository;
     private readonly IToppingGroupRepository _toppingGroupRepository;
+    private readonly IBranchRepository _branchRepository;
     private readonly IUnitOfWork _unitOfWork;
 
     public ToppingService(
         IToppingRepository toppingRepository,
         IToppingGroupRepository toppingGroupRepository,
+        IBranchRepository branchRepository,
         IUnitOfWork unitOfWork)
     {
         _toppingRepository = toppingRepository;
         _toppingGroupRepository = toppingGroupRepository;
+        _branchRepository = branchRepository;
         _unitOfWork = unitOfWork;
     }
 
@@ -75,6 +78,23 @@ public class ToppingService : IToppingService
             Deleted = false
         };
 
+        // Topping mới mặc định được bán tại các chi nhánh đang hoạt động
+        List<Branch> activeBranches =
+            await _branchRepository.GetActiveNotDeletedAsync();
+
+        foreach (Branch branch in activeBranches)
+        {
+            BranchTopping branchTopping = new BranchTopping
+            {
+                BranchId = branch.Id,
+                IsAvailable = true,
+                UpdatedAt = topping.CreatedAt
+            };
+
+            topping.BranchToppings.Add(branchTopping);
+        }
+
+        // Lưu Topping và các liên kết chi nhánh cùng một lần
         await _toppingRepository.AddAsync(topping);
         await _unitOfWork.SaveChangesAsync();
 

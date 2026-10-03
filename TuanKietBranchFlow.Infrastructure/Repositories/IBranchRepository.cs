@@ -15,4 +15,7 @@ public interface IBranchRepository : IRepositoryBase<Branch>
 
     // Kiểm tra người dùng có được phân công tại chi nhánh không
     Task<bool> HasActiveAssignmentAsync(int userId, int branchId, DateOnly currentDate);
+
+    // Lấy chi nhánh đang hoạt động để gán món và topping mới
+    Task<List<Branch>> GetActiveNotDeletedAsync();
 }
