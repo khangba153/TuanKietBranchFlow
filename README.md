@@ -13,7 +13,7 @@ Demo access is available on request from the author. Account passwords are not p
 
 ## Features
 
-- **Access control:** JWT authentication, `OWNER`, `ADMIN`, and `EMPLOYEE` roles, and branch-scoped API access.
+- **Access control:** HttpOnly cookie authentication on Web, JWT authentication on API, `OWNER`, `ADMIN`, and `EMPLOYEE` roles, and branch-scoped API access. Refresh-token rotation and account-wide logout revoke API sessions.
 - **Employee management:** branch employee lists, search and status filters, profile viewing and creation in Web; API support for updates, status changes, and branch transfers with assignment history.
 - **Menu management:** ADMIN can create, edit, and soft-delete categories, sizes, products and prices, toppings, and quick notes. OWNER has read-only access. Menu definitions and prices are shared; product and topping availability is branch-specific.
 - **Employee ordering:** browse and filter the branch menu, choose sizes and options, manage a cart, and submit orders.
@@ -48,15 +48,19 @@ Blazor component → Web API client → API controller
 
 ## Current Status
 
-**Updated: 2026-10-06**
+**Updated: 2026-10-09**
 
 Menu management and employee ordering have been deployed to the Azure demo and manually smoke-tested by the author.
 
-The public demo currently uses JWT authentication with browser-side token storage. Refresh-token rotation and account-wide session revocation are implemented and manually tested in the local API. Web integration with HttpOnly cookies and server-side token storage is still in progress; this auth update has **not** been deployed to Azure.
+The auth update is deployed to Azure. Web uses a Secure, HttpOnly session cookie and keeps API tokens on the server, not in browser storage. API access tokens last 15 minutes; refresh tokens rotate within a fixed seven-day session, with only their hashes stored in SQL. Logout revokes all existing sessions of the same account; detected refresh-token reuse also triggers account-wide revocation.
+
+The author manually smoke-tested login, F5/new tabs, cookie flags, WebSocket connectivity, refresh rotation, account-wide logout, and login rate limiting on Azure. The current Release test suite has 30 passing tests.
+
+**Demo limits:** Web token storage and rate-limit counters are in process memory. The deployment uses one instance; Web restart/deploy requires signing in again. There is no distributed session store, and backup restoration has not yet been rehearsed.
 
 Deployment is manual. GitHub Actions performs restore, Release build, and automated tests; automatic deployment is not enabled.
 
-Next work: complete and deploy the auth update, then add administrator/owner order workflows. Inventory, payroll, reporting, and audit logging remain planned.
+Next work: administrator/owner order workflows. Inventory, payroll, reporting, and audit logging remain planned.
 
 ## Running Locally
 
@@ -79,11 +83,11 @@ dotnet tool restore
 
 Run [database/BranchFlowDB.sql](database/BranchFlowDB.sql) against a local SQL Server to initialize `BranchFlowDB`. The script refuses to initialize an existing schema.
 
-**Current setup limitation:** the baseline script does not yet include the new `AuthSession` and `RefreshToken` tables required by the local auth implementation. Versioned setup scripts for these tables and local test-account provisioning are still pending. A fresh database is therefore not yet sufficient to run the current login flow.
+The baseline does not include `AuthSession` and `RefreshToken`, which are required for login. Their versioned schema is in [004-add-auth-session-refresh-token.sql](database/azure/004-add-auth-session-refresh-token.sql). For local setup, review a separate copy, change its database-name guard to your local `BranchFlowDB`, and run it only against that local database after the baseline. It deliberately refuses to overwrite existing auth tables.
+
+[005-grant-auth-runtime.sql](database/azure/005-grant-auth-runtime.sql) grants the Azure demo API database user `SELECT`, `INSERT`, and `UPDATE` on these tables. Both scripts target `BranchFlowDB-Demo` as committed; do not run them unchanged for local setup or assume the same runtime database user exists locally. Local account/data provisioning is not yet automated.
 
 Login also requires an active account with a password hash generated using the API's `PasswordHasher<AppUser>`. Employee menu access requires valid branch assignment and menu availability data.
-
-The tools under `tools/BranchFlow.DemoSeed` and `tools/BranchFlow.PasswordReset` target the Azure demo; they are **not local setup tools**. Do not run them to initialize a local database.
 
 ### 3. Configure API secrets
 
@@ -92,6 +96,7 @@ Supply your local connection string and signing key through .NET User Secrets:
 ```powershell
 dotnet user-secrets set "ConnectionStrings:BranchFlowDatabase" "<local-connection-string>" --project TuanKietBranchFlow.Api
 dotnet user-secrets set "Jwt:Key" "<strong-random-signing-key>" --project TuanKietBranchFlow.Api
+dotnet user-secrets set "Jwt:ExpireMinutes" "15" --project TuanKietBranchFlow.Api
 ```
 
 Replace the placeholders locally. Do not commit credentials or use the Azure demo database for local testing.
