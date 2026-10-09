@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\TuanKietBranchFlow.Application\TuanKietBranchFlow.Application.csproj" />
+    <ProjectReference Include="..\TuanKietBranchFlow.Web\TuanKietBranchFlow.Web.csproj" />
   </ItemGroup>
 
 </Project>

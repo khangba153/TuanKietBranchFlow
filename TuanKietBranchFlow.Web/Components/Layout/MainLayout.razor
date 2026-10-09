@@ -1,8 +1,4 @@
-﻿@using TuanKietBranchFlow.Web.Services
-@inject CustomAuthenticationStateProvider UserStateProvider
-@inject NavigationManager NavigationManager
-
-@inherits LayoutComponentBase
+﻿@inherits LayoutComponentBase
 
 <div class="bf-shell">
     <aside class="bf-sidebar">
@@ -27,11 +23,18 @@
                             <strong>@context.User.Identity?.Name</strong>
                         </div>
 
-                        <button type="button"
-                                class="btn btn-outline-danger btn-sm"
-                                @onclick="HandleLogoutAsync">
-                            Đăng xuất
-                        </button>
+                        @* Gửi HTTP POST để controller có thể xóa cookie trong response. *@
+                        <form method="post"
+                            action="/auth/logout"
+                            data-enhance="false"
+                            class="m-0">
+                            <AntiforgeryToken />
+
+                            <button type="submit"
+                                    class="btn btn-outline-danger btn-sm">
+                                Đăng xuất
+                            </button>
+                        </form>
                     </div>
                 </Authorized>
 
@@ -61,24 +64,3 @@
         ×
     </button>
 </div>
-
-@code {
-    // Khôi phục trạng thái đăng nhập sau khi trình duyệt đã render.
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (!firstRender)
-        {
-            return;
-        }
-
-        await UserStateProvider.RestoreAuthenticationStateAsync();
-    }
-
-    private async Task HandleLogoutAsync()
-    {
-        // Xóa token và đưa AuthenticationState về anonymous.
-        await UserStateProvider.LogoutAsync();
-
-        NavigationManager.NavigateTo("/login");
-    }
-}

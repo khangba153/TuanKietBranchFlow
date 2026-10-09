@@ -1,5 +1,4 @@
 @using System.Text.Json
-@using Microsoft.JSInterop
 @using TuanKietBranchFlow.Application.DTOs.MenuManagement
 @using TuanKietBranchFlow.Web.Services
 @using TuanKietBranchFlow.Web.Models
@@ -313,7 +312,7 @@
     private string? _deleteSizeErrorMessage;
     private MenuSizeDTO? _sizePendingDelete;
 
-    // Tải sau render đầu tiên để có thể đọc token từ localStorage
+    // Tải dữ liệu một lần sau khi component render lần đầu.
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -357,10 +356,6 @@
         catch (HttpRequestException)
         {
             _sizeErrorMessage = "Không thể kết nối đến API.";
-        }
-        catch (JSException)
-        {
-            _sizeErrorMessage = "Không thể đọc token đăng nhập.";
         }
         catch (JsonException)
         {
@@ -457,10 +452,6 @@
         catch (HttpRequestException)
         {
             _createSizeErrorMessage = "Không thể kết nối đến API.";
-        }
-        catch (JSException)
-        {
-            _createSizeErrorMessage = "Không thể đọc token đăng nhập.";
         }
         catch (JsonException)
         {
@@ -575,10 +566,6 @@
         {
             _updateSizeErrorMessage = "Không thể kết nối đến API.";
         }
-        catch (JSException)
-        {
-            _updateSizeErrorMessage = "Không thể đọc token đăng nhập.";
-        }
         catch (JsonException)
         {
             _updateSizeErrorMessage = "Dữ liệu size từ API không hợp lệ.";
@@ -680,10 +667,6 @@
         catch (HttpRequestException)
         {
             _deleteSizeErrorMessage = "Không thể kết nối đến API.";
-        }
-        catch (JSException)
-        {
-            _deleteSizeErrorMessage = "Không thể đọc token đăng nhập.";
         }
         catch (JsonException)
         {

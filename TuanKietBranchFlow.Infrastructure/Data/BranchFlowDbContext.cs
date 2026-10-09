@@ -14,6 +14,11 @@ public partial class BranchFlowDbContext : DbContext
 
     public virtual DbSet<AppUser> AppUsers { get; set; }
 
+    // Các phiên đăng nhập và lịch sử refresh token
+    public virtual DbSet<AuthSession> AuthSessions { get; set; }
+
+    public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
+
     public virtual DbSet<AuditLog> AuditLogs { get; set; }
 
     public virtual DbSet<Branch> Branches { get; set; }
@@ -757,6 +762,47 @@ public partial class BranchFlowDbContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_UserBranch_User");
+        });
+
+        // Ánh xạ phiên đăng nhập và quan hệ với tài khoản
+        modelBuilder.Entity<AuthSession>(entity =>
+        {
+            entity.ToTable("AuthSession");
+
+            entity.HasIndex(e => e.UserId, "IX_AuthSession_UserId");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+
+            entity.HasOne(d => d.User).WithMany(p => p.AuthSessions)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_AuthSession_AppUser");
+        });
+
+        // Ánh xạ refresh token và kiểm tra cập nhật đồng thời
+        modelBuilder.Entity<RefreshToken>(entity =>
+        {
+            entity.ToTable("RefreshToken");
+
+            entity.HasIndex(e => e.SessionId, "IX_RefreshToken_SessionId");
+
+            entity.HasIndex(e => e.TokenHash, "UQ_RefreshToken_TokenHash")
+                .IsUnique();
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+
+            entity.Property(e => e.RowVersion)
+                .IsRowVersion()
+                .IsConcurrencyToken();
+
+            entity.Property(e => e.TokenHash)
+                .HasMaxLength(64)
+                .IsUnicode(false);
+
+            entity.HasOne(d => d.Session).WithMany(p => p.RefreshTokens)
+                .HasForeignKey(d => d.SessionId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_RefreshToken_AuthSession");
         });
 
         OnModelCreatingPartial(modelBuilder);

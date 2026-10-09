@@ -155,7 +155,7 @@
     private bool _isLoading = true;
     private string? _errorMessage;
 
-    // LocalStorage chỉ có thể được đọc sau lần render đầu tiên.
+    // Tải dữ liệu một lần sau khi component render lần đầu.
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender)
@@ -194,10 +194,6 @@
         catch (HttpRequestException)
         {
             _errorMessage = "Không thể kết nối đến API.";
-        }
-        catch (JSException)
-        {
-            _errorMessage = "Không thể đọc thông tin đăng nhập.";
         }
         catch (JsonException)
         {

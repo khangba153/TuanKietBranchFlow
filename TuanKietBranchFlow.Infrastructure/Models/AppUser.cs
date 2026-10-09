@@ -27,6 +27,10 @@ public partial class AppUser
 
     public bool Deleted { get; set; }
 
+    // Các phiên đăng nhập thuộc tài khoản này
+    public virtual ICollection<AuthSession> AuthSessions { get; set; }
+        = new List<AuthSession>();
+
     public virtual ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
 
     public virtual EmployeeProfile? EmployeeProfile { get; set; }

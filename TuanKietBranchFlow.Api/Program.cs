@@ -11,6 +11,8 @@ using TuanKietBranchFlow.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Identity;
 using TuanKietBranchFlow.Infrastructure.Models;
 using System.Diagnostics;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,6 +47,12 @@ builder.Services.AddDbContext<BranchFlowDbContext>(options =>
 
 // Đăng ký repository phục vụ truy vấn tài khoản
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+
+// Repository quản lý các phiên đăng nhập
+builder.Services.AddScoped<IAuthSessionRepository, AuthSessionRepository>();
+
+// Repository quản lý refresh token
+builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 
 // Đăng ký repository để truy vấn chi nhánh
 builder.Services.AddScoped<IBranchRepository, BranchRepository>();
@@ -138,6 +146,59 @@ builder.Services.AddScoped<JwtTokenService>(servicePorvider =>
 // Đăng ký controller, model binding và chuyển đổi dữ liệu JSON
 builder.Services.AddControllers();
 
+// Giới hạn tổng request đăng nhập trên một instance API.
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode =
+        StatusCodes.Status429TooManyRequests;
+
+    // Trả lỗi chuẩn khi request đăng nhập vượt giới hạn.
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        HttpContext httpContext = context.HttpContext;
+
+        httpContext.Response.StatusCode =
+            StatusCodes.Status429TooManyRequests;
+
+        httpContext.Response.Headers.CacheControl = "no-store";
+
+        // Dùng dịch vụ lỗi đã đăng ký bằng AddProblemDetails.
+        IProblemDetailsService problemDetailsService =
+            httpContext.RequestServices
+                .GetRequiredService<IProblemDetailsService>();
+
+        bool isWritten = await problemDetailsService.TryWriteAsync(
+            new ProblemDetailsContext
+            {
+                HttpContext = httpContext,
+                ProblemDetails = new ProblemDetails
+                {
+                    Status = StatusCodes.Status429TooManyRequests,
+                    Title = "Quá nhiều yêu cầu đăng nhập",
+                    Detail = "Vui lòng chờ khoảng 1 phút rồi thử lại."
+                }
+            });
+
+        // Vẫn trả thông báo nếu client không nhận định dạng ProblemDetails.
+        if (!isWritten)
+        {
+            httpContext.Response.ContentType = "text/plain; charset=utf-8";
+
+            await httpContext.Response.WriteAsync(
+                "Quá nhiều yêu cầu đăng nhập. Vui lòng thử lại sau.",
+                cancellationToken);
+        }
+    };
+
+    options.AddFixedWindowLimiter("ApiLogin", limiterOptions =>
+    {
+        limiterOptions.PermitLimit = 30;
+        limiterOptions.Window = TimeSpan.FromMinutes(1);
+        limiterOptions.QueueLimit = 0;
+        limiterOptions.AutoReplenishment = true;
+    });
+});
+
 // Đăng ký health check cơ bản, chưa kiểm tra kết nối database
 builder.Services.AddHealthChecks();
 
@@ -191,6 +252,56 @@ builder.Services
         // Quy định claim đại diện tên và role
         NameClaimType = ClaimTypes.Name,
         RoleClaimType = ClaimTypes.Role
+    };
+
+    // Kiểm tra phiên sau khi JWT đã vượt qua xác thực cơ bản
+    options.Events = new JwtBearerEvents
+    {
+        OnTokenValidated = async context =>
+        {
+            // Đọc claim từ JWT đã được xác thực
+            string? sessionIdValue =
+                context.Principal?.FindFirstValue("sid")
+                ?? context.Principal?.FindFirstValue(ClaimTypes.Sid);
+
+            string? userIdValue =
+                context.Principal?.FindFirstValue(
+                    ClaimTypes.NameIdentifier);
+
+            string? roleCode =
+                context.Principal?.FindFirstValue(ClaimTypes.Role);
+
+            bool isValidSessionId =
+                Guid.TryParse(sessionIdValue, out Guid sessionId);
+
+            bool isValidUserId =
+                int.TryParse(userIdValue, out int userId);
+
+            if (!isValidSessionId ||
+                !isValidUserId ||
+                string.IsNullOrWhiteSpace(roleCode))
+            {
+                context.Fail("Token không chứa thông tin phiên hợp lệ.");
+                return;
+            }
+
+            // Lấy Service trong scope của request hiện tại
+            IAuthService authService =
+                context.HttpContext.RequestServices
+                    .GetRequiredService<IAuthService>();
+
+            bool isSessionValid =
+                await authService.IsSessionValidAsync(
+                    sessionId,
+                    userId,
+                    roleCode);
+
+            if (!isSessionValid)
+            {
+                context.Fail("Phiên đăng nhập không còn hợp lệ.");
+                return;
+            }
+        }
     };
 });
 
@@ -256,11 +367,17 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+// Xác định endpoint để đọc policy giới hạn request.
+app.UseRouting();
+
 // Đọc và xác thực JWT
 app.UseAuthentication();
 
 // Kiểm tra quyền
 app.UseAuthorization();
+
+// Áp dụng giới hạn request cho endpoint có gắn policy.
+app.UseRateLimiter();
 
 // Ánh xạ các route được khai báo bằng attribute trong controller.
 app.MapControllers();

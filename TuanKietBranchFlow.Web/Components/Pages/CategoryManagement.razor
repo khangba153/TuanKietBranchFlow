@@ -1,5 +1,4 @@
 @using System.Text.Json
-@using Microsoft.JSInterop
 @using TuanKietBranchFlow.Application.DTOs.MenuManagement
 @using TuanKietBranchFlow.Web.Services
 @using TuanKietBranchFlow.Web.Models
@@ -315,7 +314,7 @@
     private string? _deleteCategoryErrorMessage;
     private MenuCategoryDTO? _categoryPendingDelete;
 
-    // Tải sau render đầu tiên để có thể đọc token từ localStorage
+    // Tải dữ liệu một lần sau khi component render lần đầu.
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -359,10 +358,6 @@
         catch (HttpRequestException)
         {
             _errorMessage = "Không thể kết nối đến API.";
-        }
-        catch (JSException)
-        {
-            _errorMessage = "Không thể đọc token đăng nhập.";
         }
         catch (JsonException)
         {
@@ -445,10 +440,6 @@
         catch (HttpRequestException)
         {
             _createCategoryErrorMessage = "Không thể kết nối đến API.";
-        }
-        catch (JSException)
-        {
-            _createCategoryErrorMessage = "Không thể đọc token đăng nhập.";
         }
         catch (JsonException)
         {
@@ -564,10 +555,6 @@
         {
             _updateCategoryErrorMessage = "Không thể kết nối đến API.";
         }
-        catch (JSException)
-        {
-            _updateCategoryErrorMessage = "Không thể đọc token đăng nhập.";
-        }
         catch (JsonException)
         {
             _updateCategoryErrorMessage = "Dữ liệu danh mục từ API không hợp lệ.";
@@ -660,10 +647,6 @@
         catch (HttpRequestException)
         {
             _deleteCategoryErrorMessage = "Không thể kết nối đến API.";
-        }
-        catch (JSException)
-        {
-            _deleteCategoryErrorMessage = "Không thể đọc token đăng nhập.";
         }
         catch (JsonException)
         {

@@ -682,7 +682,7 @@
     private string? _orderSubmitErrorMessage;
     private CreateOrderResponseDTO? _createOrder;
 
-    // Chỉ đọc LocalStorage và tải dữ liệu lần render đầu tiên
+    // Tải dữ liệu một lần sau khi component render lần đầu.
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender)

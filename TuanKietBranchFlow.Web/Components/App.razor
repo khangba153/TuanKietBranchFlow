@@ -11,13 +11,33 @@
     <link rel="stylesheet" href="@Assets["TuanKietBranchFlow.Web.styles.css"]" />
     <ImportMap />
     <link rel="icon" type="image/png" href="favicon.png" />
-    <HeadOutlet @rendermode="InteractiveServer"/>
+    <HeadOutlet @rendermode="PageRenderMode" />
 </head>
 
 <body>
-    <Routes @rendermode="InteractiveServer"/>
+    <Routes @rendermode="PageRenderMode" />
     <ReconnectModal />
     <script src="@Assets["_framework/blazor.web.js"]"></script>
 </body>
 
 </html>
+
+@code {
+    // Request HTTP đang được dùng để render tài liệu gốc.
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    // Chọn chế độ render theo cấu hình của trang được truy cập.
+    private IComponentRenderMode? PageRenderMode
+    {
+        get
+        {
+            if (HttpContext.AcceptsInteractiveRouting())
+            {
+                return InteractiveServer;
+            }
+
+            return null;
+        }
+    }
+}

@@ -2,7 +2,6 @@
 
 @using TuanKietBranchFlow.Application.DTOs.Branches
 @using TuanKietBranchFlow.Web.Services
-@using Microsoft.JSInterop
 
 @inject BranchApiService BranchApiService
 
@@ -149,11 +148,6 @@
         {
             // Web không kết nối được đến API
             _errorMessage = "Không thể kết nối đến API.";
-        }
-        catch (JSException)
-        {
-            // Không đọc được token từ LocalStorage
-            _errorMessage = "Không thể đọc token đăng nhập.";
         }
         finally
         {

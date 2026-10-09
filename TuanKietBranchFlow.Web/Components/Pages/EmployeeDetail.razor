@@ -1,6 +1,5 @@
 @page "/employees/{EmployeeId:int}"
 
-@using Microsoft.JSInterop
 @using TuanKietBranchFlow.Application.DTOs.Employees
 @using TuanKietBranchFlow.Web.Services
 
@@ -214,7 +213,7 @@
     private bool _isLoading = true;
     private string? _errorMessage;
 
-    // LocalStorage chỉ sẵn sàng sau lần render đầu tiên.
+    // Tải dữ liệu một lần sau khi component render lần đầu.
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender)
@@ -254,10 +253,6 @@
         catch (HttpRequestException)
         {
             _errorMessage = "Không thể kết nối đến API.";
-        }
-        catch (JSException)
-        {
-            _errorMessage = "Không thể đọc token đăng nhập.";
         }
         finally
         {

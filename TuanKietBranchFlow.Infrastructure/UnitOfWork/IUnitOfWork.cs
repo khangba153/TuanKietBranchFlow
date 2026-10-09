@@ -13,4 +13,7 @@ public interface IUnitOfWork
 
     // Hủy toàn bộ thay đổi nghiệp vụ gặp lỗi
     Task RollbackTransactionAsync();
+
+    // Bỏ theo dõi các entity trước khi đọc lại sau thao tác lưu thất bại.
+    void ClearTracking();
 }

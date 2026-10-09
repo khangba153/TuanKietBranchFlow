@@ -70,4 +70,10 @@ public class UnitOfWork : IUnitOfWork
             await transaction.DisposeAsync();
         }
     }
+
+    // Bỏ trạng thái entity đang được EF theo dõi, không xóa dữ liệu database.
+    public void ClearTracking()
+    {
+        _context.ChangeTracker.Clear();
+    }
 }

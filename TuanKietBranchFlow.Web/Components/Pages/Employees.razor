@@ -2,7 +2,6 @@
 
 @using TuanKietBranchFlow.Application.DTOs.Employees
 @using TuanKietBranchFlow.Web.Services
-@using Microsoft.JSInterop
 
 @inject EmployeeApiService EmployeeApiService
 
@@ -244,7 +243,7 @@
             ? _branchName
             : $"chi nhánh #{BranchId}";
 
-    // Tải dữ liệu sau khi component render lần đầu để đọc được token LocalStorage.
+    // Tải dữ liệu một lần sau khi component render lần đầu.
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender)
@@ -313,10 +312,6 @@
         catch (HttpRequestException)
         {
             _errorMessage = "Không thể kết nối đến API.";
-        }
-        catch (JSException)
-        {
-            _errorMessage = "Không thể đọc token đăng nhập.";
         }
         finally
         {

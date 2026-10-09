@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using TuanKietBranchFlow.Application.DTOs.Auth;
 using TuanKietBranchFlow.Application.Services;
 using System.Security.Claims;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace TuanKietBranchFlow.Api.Controllers;
 
@@ -21,9 +22,11 @@ public class AuthController : ControllerBase
     // Nhận thông tin đăng nhập và trả JWT nếu hợp lệ
     [AllowAnonymous]
     [HttpPost("login")]
+    [EnableRateLimiting("ApiLogin")]
     [ProducesResponseType(typeof(LoginResponseDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status429TooManyRequests)]
     public async Task<ActionResult<LoginResponseDTO>> LoginAsync(
         [FromBody] LoginRequestDTO request)
     {
@@ -40,6 +43,65 @@ public class AuthController : ControllerBase
 
         return Ok(response);
 
+    }
+
+    /// <summary>
+    /// Cấp cặp token mới bằng refresh token hợp lệ.
+    /// </summary>
+    [AllowAnonymous]
+    [HttpPost("refresh")]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    [ProducesResponseType(typeof(LoginResponseDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<LoginResponseDTO>> RefreshAsync(
+        [FromBody] RefreshTokenRequestDTO request)
+    {
+        LoginResponseDTO? response =
+            await _authService.RefreshAsync(request);
+
+        // Không tiết lộ chi tiết trạng thái token hoặc tài khoản.
+        if (response == null)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status401Unauthorized,
+                title: "Làm mới phiên thất bại",
+                detail: "Refresh token không hợp lệ hoặc phiên không còn hiệu lực. Vui lòng đăng nhập lại.");
+        }
+
+        return Ok(response);
+    }
+
+    /// <summary>
+    /// Đăng xuất và thu hồi tất cả phiên hiện có của tài khoản đang đăng nhập.
+    /// </summary>
+    [Authorize]
+    [HttpPost("logout")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> LogoutAsync()
+    {
+        // Lấy tài khoản từ JWT đã được xác thực
+        string? userIdValue =
+            User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        bool isValidUserId =
+            int.TryParse(userIdValue, out int userId);
+
+        if (!isValidUserId || userId <= 0)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status401Unauthorized,
+                title: "Token không hợp lệ",
+                detail: "Token không chứa thông tin tài khoản hợp lệ.");
+        }
+
+        // Chỉ trả thành công sau khi việc thu hồi đã được lưu
+        await _authService.LogoutAllAsync(userId);
+
+        return NoContent();
     }
 
     // Đọc thông tin người dùng từ JWT
