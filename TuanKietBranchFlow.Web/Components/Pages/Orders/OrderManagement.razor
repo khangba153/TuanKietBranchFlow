@@ -1,0 +1,200 @@
+@page "/orders"
+@using System.Net
+@using System.Globalization
+@using System.Text.Json
+@using Microsoft.AspNetCore.Components.Authorization
+@using TuanKietBranchFlow.Application.DTOs.Branches
+@using TuanKietBranchFlow.Application.DTOs.Orders.Management
+@using TuanKietBranchFlow.Web.Services.Orders
+@inject OrderManagementApiService OrderApi
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>Quản lý đơn hàng</PageTitle>
+<div class="bf-page order-management">
+    <header class="d-flex justify-content-between align-items-start gap-2 mb-3">
+        <div><h1 class="h3 mb-1">Đơn hàng</h1><p class="text-body-secondary mb-0 small">Theo dõi đơn trong phạm vi chi nhánh được phép.</p></div>
+        <span class="badge text-bg-light border text-nowrap">Chỉ xem</span>
+    </header>
+    <AuthorizeView Roles="ADMIN,OWNER">
+        <Authorized>
+            <form @onsubmit="SearchAsync" @onsubmit:preventDefault class="order-filters mb-3">
+                <fieldset disabled="@_loading">
+                    <legend class="visually-hidden">Bộ lọc đơn hàng</legend>
+                    <div class="d-flex gap-2">
+                        <div class="flex-grow-1 min-width-0">
+                            <label for="order-keyword" class="visually-hidden">Mã đơn</label>
+                            <input id="order-keyword" class="form-control" maxlength="100" @bind="_keyword" @bind:event="oninput" placeholder="Tìm theo mã đơn..." />
+                        </div>
+                        <button type="submit" class="btn btn-primary">Tìm</button>
+                        <button type="button" class="btn btn-outline-secondary text-nowrap" aria-expanded="@_filtersOpen" aria-controls="order-advanced-filters" @onclick="() => _filtersOpen = !_filtersOpen">Bộ lọc@(_applied.BranchId.HasValue || _applied.BusinessDate.HasValue ? " •" : "")</button>
+                    </div>
+                    <div id="order-advanced-filters" class="@(_filtersOpen ? "row g-3 mt-1" : "d-none")">
+                        <div class="col-12 col-sm-6 col-lg-5">
+                            <label for="order-branch" class="form-label">Chi nhánh</label>
+                            <select id="order-branch" class="form-select" @bind="_branchId">
+                                <option value="">Tất cả chi nhánh được phép</option>
+                                @foreach (AccessibleBranchDTO branch in _branches)
+                                { <option value="@branch.Id">@branch.Code - @branch.Name</option> }
+                            </select>
+                        </div>
+                        <div class="col-12 col-sm-6 col-lg-4">
+                            <label for="order-date" class="form-label">Ngày nghiệp vụ</label>
+                            <input id="order-date" type="date" lang="vi-VN" class="form-control" @bind="_date" />
+                        </div>
+                        <div class="col-12 col-lg-3 d-flex align-items-end gap-2">
+                            <button type="submit" class="btn btn-primary flex-grow-1">Áp dụng</button>
+                            <button type="button" class="btn btn-outline-secondary flex-grow-1" @onclick="ResetAsync">Đặt lại</button>
+                        </div>
+                    </div>
+                </fieldset>
+            </form>
+            @if (_loading || !_initialized)
+            {
+                <div class="py-5 text-center" role="status"><span class="spinner-border spinner-border-sm me-2"></span>Đang tải đơn hàng...</div>
+            }
+            else if (_error != null)
+            {
+                <div class="alert alert-danger" role="alert"><p>@_error</p><button class="btn btn-outline-danger" @onclick="LoadAsync">Thử lại</button>
+                    @if (_needsLogin) { <a class="btn btn-link" href="/login">Đăng nhập lại</a> }
+                </div>
+            }
+            else
+            {
+                <p class="small text-body-secondary mb-2 text-break">@ScopeLabel</p>
+                <section class="row g-2 mb-2" aria-label="Tổng hợp đơn hàng">
+                    <div class="col-6 col-xl-3"><div class="order-metric"><span>Tổng số đơn</span><strong>@_data.Summary.TotalOrders</strong></div></div>
+                    <div class="col-6 col-xl-3"><div class="order-metric"><span>Giá trị đơn hoàn tất</span><strong>@Money(_data.Summary.CompletedOrderValue)</strong></div></div>
+                    <div class="col-6 col-xl-3"><div class="order-metric order-metric-warning"><span>Chờ xem lại</span><strong>@_data.Summary.NeedsReviewOrders</strong></div></div>
+                    <div class="col-6 col-xl-3"><div class="order-metric"><span>Đã hủy</span><strong>@_data.Summary.CancelledOrders</strong></div></div>
+                </section>
+                <p class="small text-body-secondary mb-3">Giá trị đơn hoàn tất gồm đơn hoàn tất và đã điều chỉnh, không phải tiền thực thu.</p>
+                <div class="d-flex flex-wrap gap-2 mb-3 order-status-filters" role="group" aria-label="Lọc theo trạng thái">
+                    @foreach (string status in Statuses)
+                    {
+                        <button type="button" class="btn @(_applied.Status == status ? "btn-primary" : "btn-outline-secondary")" aria-pressed="@(_applied.Status == status)" @onclick="() => SelectStatusAsync(status)">@StatusText(status) <span class="ms-1">@StatusCount(status)</span></button>
+                    }
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2"><h2 class="h6 mb-0">Danh sách đơn</h2><span class="small text-body-secondary" aria-live="polite">@_data.TotalCount kết quả</span></div>
+                @if (_data.Items.Count == 0)
+                {
+                    <div class="alert alert-info" role="status">Không có đơn phù hợp. Hãy đổi trạng thái hoặc bộ lọc.</div>
+                }
+                else
+                {
+                    <div class="d-lg-none order-cards">
+                        @foreach (OrderManagementListItemDTO order in _data.Items)
+                        {
+                            <article class="card mb-2" @key="order.Id">
+                                <div class="card-body p-3">
+                                    <div class="d-flex justify-content-between align-items-start gap-2 mb-2"><h3 class="h6 mb-0 order-code">@order.Code</h3><OrderManagementStatus Status="@order.Status" /></div>
+                                    <p class="small text-body-secondary mb-1 text-break">@order.BranchName · @order.BusinessDate.ToString("dd/MM/yyyy")</p>
+                                    <p class="small text-body-secondary mb-2 text-break">@order.CreatedByFullName · @order.TotalQuantity món · @order.CreatedAt.ToString("HH:mm")</p>
+                                    <div class="d-flex justify-content-between align-items-center gap-2 border-top pt-2"><strong>@Money(order.TotalAmount)</strong><a class="btn btn-outline-primary" href="@($"/orders/{order.Id}")" aria-label="Xem đơn @order.Code">Xem chi tiết →</a></div>
+                                </div>
+                            </article>
+                        }
+                    </div>
+                    <div class="d-none d-lg-block table-responsive order-table">
+                        <table class="table table-hover align-middle mb-0">
+                            <caption class="visually-hidden">Danh sách đơn hàng trong phạm vi được phép</caption>
+                            <thead><tr><th scope="col">Mã đơn</th><th scope="col">Chi nhánh / người tạo</th><th scope="col">Ngày nghiệp vụ / tạo lúc</th><th scope="col">Số món</th><th scope="col" class="text-end">Tổng tiền</th><th scope="col">Trạng thái</th><th scope="col"><span class="visually-hidden">Chi tiết</span></th></tr></thead>
+                            <tbody>
+                                @foreach (OrderManagementListItemDTO order in _data.Items)
+                                {
+                                    <tr @key="order.Id"><td class="order-code">@order.Code</td><td>@order.BranchName<br /><small class="text-body-secondary">@order.CreatedByFullName</small></td><td>@order.BusinessDate.ToString("dd/MM/yyyy")<br /><small class="text-body-secondary">@order.CreatedAt.ToString("dd/MM/yyyy HH:mm")</small></td><td>@order.TotalQuantity</td><td class="text-end text-nowrap fw-semibold">@Money(order.TotalAmount)</td><td><OrderManagementStatus Status="@order.Status" /></td><td><a class="btn btn-outline-primary text-nowrap" href="@($"/orders/{order.Id}")" aria-label="Xem đơn @order.Code">Xem</a></td></tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                @if (_data.TotalCount > 0)
+                {
+                    <nav class="d-flex align-items-center justify-content-between gap-2 mt-3" aria-label="Phân trang đơn hàng">
+                        <button class="btn btn-outline-secondary" disabled="@(_page <= 1)" @onclick="PreviousAsync">← Trước</button><span class="small">Trang @_page / @TotalPages</span><button class="btn btn-outline-secondary" disabled="@(_page >= TotalPages)" @onclick="NextAsync">Sau →</button>
+                    </nav>
+                }
+            }
+        </Authorized>
+        <NotAuthorized><div class="alert alert-warning">Bạn cần đăng nhập bằng ADMIN hoặc OWNER để xem trang này.</div></NotAuthorized>
+    </AuthorizeView>
+</div>
+
+@code {
+    private List<AccessibleBranchDTO> _branches = new();
+    private OrderManagementPageDTO _data = new();
+    private int? _branchId;
+    private DateOnly? _date;
+    private string _keyword = "";
+    private OrderManagementQueryDTO _applied = new() { Status = "" };
+    private int _page = 1;
+    private bool _loading;
+    private bool _initialized;
+    private bool _filtersOpen;
+    private bool _needsLogin;
+    private string? _error;
+    private static readonly string[] Statuses = { "", "NEEDS_REVIEW", "COMPLETED", "ADJUSTED", "CANCELLED" };
+    private static readonly CultureInfo Vietnamese = CultureInfo.GetCultureInfo("vi-VN");
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(_data.TotalCount / 20.0));
+    private static string Money(decimal value) => value.ToString("N0", Vietnamese) + " đ";
+    private string ScopeLabel => (_branches.FirstOrDefault(branch => branch.Id == _applied.BranchId)?.Name ?? "Tất cả chi nhánh được phép")
+        + " · " + (_applied.BusinessDate?.ToString("dd/MM/yyyy") ?? "Toàn bộ thời gian")
+        + (string.IsNullOrWhiteSpace(_applied.Keyword) ? "" : " · Mã: " + _applied.Keyword);
+    private static string StatusText(string status) => status switch
+    { "NEEDS_REVIEW" => "Chờ xem lại", "COMPLETED" => "Hoàn tất", "ADJUSTED" => "Đã điều chỉnh", "CANCELLED" => "Đã hủy", _ => "Tất cả" };
+    private int StatusCount(string status) => status switch
+    { "NEEDS_REVIEW" => _data.Summary.NeedsReviewOrders, "COMPLETED" => _data.Summary.CompletedOrders, "ADJUSTED" => _data.Summary.AdjustedOrders, "CANCELLED" => _data.Summary.CancelledOrders, _ => _data.Summary.TotalOrders };
+
+    // Chờ cookie/circuit có danh tính trước khi gọi API.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        var state = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        if (!state.User.IsInRole("ADMIN") && !state.User.IsInRole("OWNER")) return;
+        await LoadAsync();
+        StateHasChanged();
+    }
+
+    // Cùng response chứa tổng hợp toàn phạm vi và danh sách đã phân trang.
+    private async Task LoadAsync()
+    {
+        if (_loading) return;
+        _loading = true; _error = null; _needsLogin = false;
+        try
+        {
+            _branches = await OrderApi.GetBranchesAsync();
+            _data = await OrderApi.GetOrdersAsync(new OrderManagementQueryDTO
+            { BranchId = _applied.BranchId, BusinessDate = _applied.BusinessDate, Keyword = _applied.Keyword, Status = _applied.Status, Page = _page, PageSize = 20 });
+        }
+        catch (HttpRequestException ex)
+        {
+            _needsLogin = ex.StatusCode == HttpStatusCode.Unauthorized;
+            _error = ex.StatusCode switch
+            {
+                HttpStatusCode.Unauthorized => "Phiên đăng nhập đã kết thúc. Vui lòng đăng nhập lại.",
+                HttpStatusCode.Forbidden => "Bạn không có quyền truy cập chi nhánh đã chọn.",
+                HttpStatusCode.NotFound => "Chi nhánh đã chọn không còn tồn tại.",
+                HttpStatusCode.BadRequest => "Bộ lọc không hợp lệ. Hãy đặt lại và thử lại.",
+                _ => "Không thể tải đơn hàng. Kiểm tra kết nối và thử lại."
+            };
+        }
+        catch (Exception ex) when (ex is JsonException || ex is InvalidOperationException)
+        { _error = "Dữ liệu API trả về không hợp lệ. Vui lòng thử lại."; }
+        finally { _loading = false; _initialized = true; }
+    }
+
+    // Chỉ áp dụng giá trị đang nhập khi người dùng chủ động tìm kiếm.
+    private async Task SearchAsync()
+    {
+        if (_loading) return;
+        _applied = new() { BranchId = _branchId, BusinessDate = _date, Keyword = _keyword.Trim(), Status = _applied.Status };
+        _page = 1; _filtersOpen = false;
+        await LoadAsync();
+    }
+    private async Task ResetAsync()
+    { if (_loading) return; _branchId = null; _date = null; _keyword = ""; _applied.Status = ""; await SearchAsync(); }
+    // Chọn trạng thái không lấy các bộ lọc đang sửa dở và luôn quay về trang đầu.
+    private async Task SelectStatusAsync(string status)
+    { if (_loading) return; _applied.Status = status; _page = 1; await LoadAsync(); }
+    private async Task PreviousAsync() { if (_loading || _page <= 1) return; _page--; await LoadAsync(); }
+    private async Task NextAsync() { if (_loading || _page >= TotalPages) return; _page++; await LoadAsync(); }
+}

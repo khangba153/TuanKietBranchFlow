@@ -16,6 +16,9 @@ using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Client đọc danh sách/chi tiết đơn cho ADMIN và OWNER.
+builder.Services.AddScoped<OrderManagementApiService>();
+
 // Đăng ký Blazor Interactive Server.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();

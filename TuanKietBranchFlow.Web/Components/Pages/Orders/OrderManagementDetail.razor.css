@@ -1,0 +1,4 @@
+.order-detail { max-width: 960px; margin-inline: auto; }
+.order-detail .btn { min-height: 44px; display: inline-flex; align-items: center; }
+.order-detail .card { border-color: var(--bf-border); border-radius: .75rem; }
+.order-detail h1 { overflow-wrap: anywhere; }

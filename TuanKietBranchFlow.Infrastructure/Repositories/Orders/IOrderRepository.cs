@@ -5,6 +5,14 @@ namespace TuanKietBranchFlow.Infrastructure.Repositories.Orders;
 
 public interface IOrderRepository : IRepositoryBase<SalesOrder>
 {
+    // Chỉ đọc các đơn nằm trong tập chi nhánh Service đã cho phép.
+    Task<OrderManagementPage> GetOrdersForManagementAsync(
+        List<int> branchIds, string keyword, DateOnly? businessDate,
+        string status, int skip, int take);
+
+    // Lọc phạm vi ngay trong SQL, không đọc đơn ngoài quyền rồi mới trả về.
+    Task<SalesOrder?> GetOrderDetailForManagementAsync(int orderId, List<int> branchIds);
+
     // Lấy các món-size hợp lệ và đang bán tại chi nhánh
     Task<List<ProductSize>> GetAvailableProductSizesAsync(
         int branchId, List<int> productSizeIds);

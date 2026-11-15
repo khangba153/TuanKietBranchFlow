@@ -159,6 +159,11 @@
         padding: 0.625rem 1rem;
     }
 
+    /* Tài khoản quản lý đã nằm trong menu mobile; giữ nguyên topbar EMPLOYEE. */
+    .bf-shell:not(:has(.bf-employee-mobile-navigation)):has(.bf-user-area) .bf-topbar {
+        display: none;
+    }
+
     /* ADMIN/OWNER đã có logo ở menu; EMPLOYEE dùng thanh điều hướng dưới nên giữ logo ở topbar. */
     .bf-topbar-brand {
         display: none;

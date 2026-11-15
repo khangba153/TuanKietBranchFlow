@@ -1,0 +1,20 @@
+.order-filters, .order-table { background: #fff; border: 1px solid var(--bf-border); border-radius: .75rem; }
+.order-filters { padding: .875rem; }
+.order-filters fieldset { min-width: 0; }
+.min-width-0 { min-width: 0; }
+.order-management .btn, .order-management .form-control, .order-management .form-select { min-height: 44px; }
+.order-metric { height: 100%; padding: .9rem; background: #fff; border: 1px solid var(--bf-border); border-radius: .75rem; }
+.order-metric > span { display: block; font-size: .8rem; color: var(--bf-muted); margin-bottom: .35rem; }
+.order-metric > strong { display: block; font-size: clamp(1.1rem, 2vw, 1.5rem); overflow-wrap: anywhere; }
+.order-metric-warning { background: #fff9e9; border-color: #f3dea0; }
+.order-code { overflow-wrap: anywhere; }
+.order-cards .card { border-color: var(--bf-border); border-radius: .75rem; }
+.order-status-filters .btn { font-size: .8rem; }
+.order-table th { font-size: .8rem; background: #f5f8f7; }
+.order-table td { padding: .85rem .5rem; }
+@media (max-width: 575.98px) {
+    .order-filters { padding: .65rem; }
+    .order-metric { padding: .75rem; }
+    .order-status-filters { gap: .35rem !important; }
+    .order-status-filters .btn { padding: .375rem .55rem; }
+}

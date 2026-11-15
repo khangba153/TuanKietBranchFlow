@@ -50,19 +50,23 @@ Files within each layer are grouped by feature. See the [folder organization gui
 
 ## Current Status
 
-**Updated: 2026-10-09**
+**Updated: 2026-11-15**
 
 Menu management and employee ordering have been deployed to the Azure demo and manually smoke-tested by the author.
 
 The auth update is deployed to Azure. Web uses a Secure, HttpOnly session cookie and keeps API tokens on the server, not in browser storage. API access tokens last 15 minutes; refresh tokens rotate within a fixed seven-day session, with only their hashes stored in SQL. Logout revokes all existing sessions of the same account; detected refresh-token reuse also triggers account-wide revocation.
 
-The author manually smoke-tested login, F5/new tabs, cookie flags, WebSocket connectivity, refresh rotation, account-wide logout, and login rate limiting on Azure. The current Release test suite has 30 passing tests.
+The author manually smoke-tested login, F5/new tabs, cookie flags, WebSocket connectivity, refresh rotation, account-wide logout, and login rate limiting on Azure at the auth milestone. The current local Release test suite has 69 passing tests.
 
 **Demo limits:** Web token storage and rate-limit counters are in process memory. The deployment uses one instance; Web restart/deploy requires signing in again. There is no distributed session store, and backup restoration has not yet been rehearsed.
 
 Deployment is manual. GitHub Actions performs restore, Release build, and automated tests; automatic deployment is not enabled.
 
-Next work: administrator/owner order workflows. Inventory, payroll, reporting, and audit logging remain planned.
+B4.1 is implemented locally: read-only administrator/owner order lists with branch/date/code/status filters, pagination, server-side summary metrics, mobile order cards, and snapshot-based details. ADMIN is limited to currently assigned branches; OWNER can read all non-deleted branches. OWNER/ADMIN browser smoke tests at 320/390/768/1440px and local SQL summary checks passed. This update has not been deployed; remaining acceptance cases are tracked in the [B4.1 implementation and acceptance checklist](docs/features/order-management-b4.1.md).
+
+Closeout checks include SQL pagination with 25 temporary orders (rolled back), EMPLOYEE browser regression, HTTP role-boundary checks, and a [dependency security patch and audit](docs/security/package-audit-20261115.md). The current UI is accepted provisionally, not a finalized design.
+
+Order adjustment/cancellation requires a separate approved scope. Inventory, payroll, reporting, and audit logging remain planned.
 
 ## Running Locally
 

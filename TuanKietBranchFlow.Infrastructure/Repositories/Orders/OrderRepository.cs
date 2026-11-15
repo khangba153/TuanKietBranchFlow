@@ -14,6 +14,61 @@ public class OrderRepository : RepositoryBase<SalesOrder>, IOrderRepository
     {
     }
 
+    // Tính tổng và phân trang trên SQL; mọi bộ lọc đều đi cùng phạm vi chi nhánh.
+    public async Task<OrderManagementPage> GetOrdersForManagementAsync(
+        List<int> branchIds, string keyword, DateOnly? businessDate,
+        string status, int skip, int take)
+    {
+        IQueryable<SalesOrder> query = Context.SalesOrders.AsNoTracking()
+            .Where(order => branchIds.Contains(order.BranchId));
+
+        if (!string.IsNullOrWhiteSpace(keyword))
+            query = query.Where(order => order.Code.Contains(keyword));
+        if (businessDate.HasValue)
+            query = query.Where(order => order.BusinessDate == businessDate.Value);
+
+        // Đếm/tính tiền tại SQL trên toàn bộ phạm vi; không cộng từ trang hiện tại.
+        // Không áp dụng status ở đây để các nút trạng thái luôn giữ số đếm toàn cảnh.
+        OrderManagementSummary summary = await query.GroupBy(order => 1)
+            .Select(group => new OrderManagementSummary
+            {
+                TotalOrders = group.Count(),
+                CompletedOrders = group.Count(order => order.Status == "COMPLETED"),
+                AdjustedOrders = group.Count(order => order.Status == "ADJUSTED"),
+                NeedsReviewOrders = group.Count(order => order.Status == "NEEDS_REVIEW"),
+                CancelledOrders = group.Count(order => order.Status == "CANCELLED"),
+                CompletedOrderValue = group.Sum(order =>
+                    order.Status == "COMPLETED" || order.Status == "ADJUSTED" ? order.TotalAmount : 0m)
+            }).FirstOrDefaultAsync() ?? new OrderManagementSummary();
+
+        if (!string.IsNullOrWhiteSpace(status))
+            query = query.Where(order => order.Status == status);
+
+        int count = await query.CountAsync();
+        List<SalesOrder> items = await query
+            .OrderByDescending(order => order.CreatedAt).ThenByDescending(order => order.Id)
+            .Skip(skip).Take(take)
+            .Include(order => order.Branch)
+            .Include(order => order.CreatedByUser)
+            .Include(order => order.OrderItems)
+            .ToListAsync();
+
+        return new OrderManagementPage { Items = items, TotalCount = count, Summary = summary };
+    }
+
+    // Đọc snapshot và thông tin báo sai; service chỉ ánh xạ trường cần thiết ra DTO.
+    public async Task<SalesOrder?> GetOrderDetailForManagementAsync(int orderId, List<int> branchIds)
+    {
+        return await Context.SalesOrders.AsNoTracking()
+            .Where(order => order.Id == orderId && branchIds.Contains(order.BranchId))
+            .Include(order => order.Branch)
+            .Include(order => order.CreatedByUser)
+            .Include(order => order.ReportedByUser)
+            .Include(order => order.OrderItems).ThenInclude(item => item.OrderItemToppings)
+            .Include(order => order.OrderItems).ThenInclude(item => item.OrderItemNotes)
+            .FirstOrDefaultAsync();
+    }
+
     // Lấy danh sách các món-size hợp lệ và đang được bán tại chi nhánh
     public async Task<List<ProductSize>> GetAvailableProductSizesAsync(
         int branchId, List<int> productSizeIds)

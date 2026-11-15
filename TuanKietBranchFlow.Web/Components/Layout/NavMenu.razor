@@ -113,13 +113,10 @@
                 </div>
 
                 <div class="bf-navigation-item">
-                    <span class="bf-navigation-link-disabled" aria-disabled="true">
-                        <span class="bf-navigation-dot" aria-hidden="true">
-                        </span>
-
-                        <span class="bf-navigation-link-text">Đơn hàng</span>
-                        <span class="bf-navigation-coming-soon">Sắp có</span>
-                    </span>
+                    <NavLink class="bf-navigation-link" href="orders">
+                        <span class="bf-navigation-dot" aria-hidden="true"></span>
+                        <span>Đơn hàng</span>
+                    </NavLink>
                 </div>
 
                 <div class="bf-navigation-item">
@@ -164,13 +161,10 @@
                 </div>
 
                 <div class="bf-navigation-item">
-                    <span class="bf-navigation-link-disabled" aria-disabled="true">
-                        <span class="bf-navigation-dot" aria-hidden="true">
-                        </span>
-
-                        <span class="bf-navigation-link-text">Đơn hàng</span>
-                        <span class="bf-navigation-coming-soon">Sắp có</span>
-                    </span>
+                    <NavLink class="bf-navigation-link" href="orders">
+                        <span class="bf-navigation-dot" aria-hidden="true"></span>
+                        <span>Đơn hàng</span>
+                    </NavLink>
                 </div>
 
                 <div class="bf-navigation-item">
@@ -191,6 +185,17 @@
                         <span class="bf-navigation-link-text">Báo cáo</span>
                         <span class="bf-navigation-coming-soon">Sắp có</span>
                     </span>
+                </div>
+            </Authorized>
+        </AuthorizeView>
+        <AuthorizeView Roles="ADMIN,OWNER">
+            <Authorized Context="account">
+                <div class="d-md-none border-top border-secondary mt-3 pt-3 px-2">
+                    <p class="small text-white mb-2 text-break">Tài khoản: @account.User.Identity?.Name</p>
+                    <form method="post" action="/auth/logout" data-enhance="false" class="m-0">
+                        <AntiforgeryToken />
+                        <button type="submit" class="btn btn-outline-light w-100" style="min-height:44px">Đăng xuất</button>
+                    </form>
                 </div>
             </Authorized>
         </AuthorizeView>

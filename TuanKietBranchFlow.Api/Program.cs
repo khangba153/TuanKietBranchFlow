@@ -36,6 +36,9 @@ using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Luồng đọc quản lý đơn tách khỏi quyền tạo/báo sai của EMPLOYEE.
+builder.Services.AddScoped<IOrderManagementService, OrderManagementService>();
+
 // Đọc cấu hình dùng để kiểm tra JWT
 string jwtKey = builder.Configuration["Jwt:Key"]
     ?? throw new InvalidOperationException("Chưa cấu hình Jwt:Key trong User Secrets.");

@@ -1,0 +1,138 @@
+@page "/orders/{OrderId:int}"
+@using System.Net
+@using System.Globalization
+@using System.Text.Json
+@using Microsoft.AspNetCore.Components.Authorization
+@using TuanKietBranchFlow.Application.DTOs.Orders.Management
+@using TuanKietBranchFlow.Web.Services.Orders
+@inject OrderManagementApiService OrderApi
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>Chi tiết đơn hàng</PageTitle>
+<div class="bf-page order-detail">
+    <a class="btn btn-outline-secondary mb-3" href="/orders">← Danh sách đơn</a>
+    <AuthorizeView Roles="ADMIN,OWNER">
+        <Authorized>
+            @if (_loading)
+            { <div class="py-5 text-center" role="status">Đang tải chi tiết đơn...</div> }
+            else if (_error != null)
+            {
+                <div class="alert alert-danger" role="alert"><p>@_error</p><button class="btn btn-outline-danger" @onclick="LoadAsync">Thử lại</button>
+                    @if (_needsLogin) { <a class="btn btn-link" href="/login">Đăng nhập lại</a> }
+                </div>
+            }
+            else if (_order != null)
+            {
+                <header class="d-flex flex-wrap gap-3 align-items-center justify-content-between mb-4">
+                    <div><h1 class="h3">Đơn @_order.Code</h1><p class="mb-0 text-body-secondary">@_order.BranchCode - @_order.BranchName</p></div>
+                    <OrderManagementStatus Status="@_order.Status" />
+                </header>
+                <section class="card mb-3" aria-label="Tổng tiền đơn">
+                    <div class="card-body d-flex justify-content-between align-items-center gap-2">
+                        <div><span class="small text-body-secondary">Tổng tiền đơn · @_order.TotalQuantity món</span><strong class="d-block fs-3">@Money(_order.TotalAmount)</strong></div>
+                        <span class="badge text-bg-light border">Chỉ xem</span>
+                    </div>
+                </section>
+                @if (!string.IsNullOrWhiteSpace(_order.ReportReason) || _order.ReportedAt.HasValue)
+                {
+                    <section class="alert alert-warning text-break" aria-labelledby="report-title">
+                        <h2 id="report-title" class="h5">Thông tin báo sai</h2>
+                        <p class="text-break">@_order.ReportReason</p>
+                        <p class="mb-0">Người báo: @(_order.ReportedByFullName ?? "Không có thông tin") — @_order.ReportedAt?.ToString("dd/MM/yyyy HH:mm")</p>
+                    </section>
+                }
+                <h2 class="h5">Chi tiết món</h2>
+                <p class="small text-body-secondary">Tên và giá được lưu tại thời điểm bán.</p>
+                @if (_order.Items.Count == 0) { <p role="status">Đơn không có dòng món.</p> }
+                @foreach (OrderManagementItemDTO item in _order.Items)
+                {
+                    <article class="card mb-3" @key="item.Id">
+                        <div class="card-body">
+                            <div class="d-flex flex-wrap justify-content-between gap-2"><h3 class="h6 text-break">@item.ProductName — @item.SizeName</h3><strong>@Money(item.SubtotalAmount)</strong></div>
+                            <p class="small text-body-secondary">@item.Quantity món × @Money(item.UnitPrice) / size</p>
+                            @if (item.Toppings.Count > 0)
+                            {
+                                <ul class="mb-2">@foreach (OrderManagementToppingDTO topping in item.Toppings)
+                                    { <li class="text-break">@topping.Name × @topping.Quantity — @Money(topping.UnitPrice)/phần</li> }</ul>
+                            }
+                            @if (item.Notes.Count > 0) { <p class="mb-0 text-break">Ghi chú: @string.Join(", ", item.Notes)</p> }
+                        </div>
+                    </article>
+                }
+                <section class="card mt-4" aria-labelledby="order-information-title">
+                    <div class="card-body">
+                        <h2 id="order-information-title" class="h6 mb-3">Thông tin bổ sung</h2>
+                        <dl class="row small mb-0">
+                            <dt class="col-5">Người tạo</dt><dd class="col-7 text-break">@_order.CreatedByFullName</dd>
+                            <dt class="col-5">Ngày nghiệp vụ</dt><dd class="col-7">@_order.BusinessDate.ToString("dd/MM/yyyy")</dd>
+                            <dt class="col-5">Thời gian tạo</dt><dd class="col-7">@_order.CreatedAt.ToString("dd/MM/yyyy HH:mm")</dd>
+                        </dl>
+                    </div>
+                </section>
+            }
+        </Authorized>
+        <NotAuthorized><div class="alert alert-warning">Bạn cần đăng nhập bằng ADMIN hoặc OWNER để xem trang này.</div></NotAuthorized>
+    </AuthorizeView>
+</div>
+
+@code {
+    [Parameter] public int OrderId { get; set; }
+    private OrderManagementDetailDTO? _order;
+    private string? _error;
+    private bool _loading = true;
+    private bool _needsLogin;
+    private int? _loadedId;
+    private int _requestVersion;
+    private static string Money(decimal value) => value.ToString("N0", CultureInfo.GetCultureInfo("vi-VN")) + " đ";
+
+    // Không render dữ liệu đơn trước trong lần render đầu của route mới.
+    protected override void OnParametersSet()
+    {
+        if (_loadedId != OrderId)
+        {
+            _requestVersion++;
+            _order = null;
+            _error = null;
+            _loading = true;
+        }
+    }
+
+    // Đọc lại khi đổi orderId trong cùng circuit, không hiển thị response cũ về muộn.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_loadedId == OrderId) return;
+        _loadedId = OrderId;
+        var state = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        if (!state.User.IsInRole("ADMIN") && !state.User.IsInRole("OWNER")) return;
+        await LoadAsync();
+        StateHasChanged();
+    }
+
+    // Xóa dữ liệu đơn trước đó khi tải; API 404 bao gồm cả đơn ngoài quyền.
+    private async Task LoadAsync()
+    {
+        int version = ++_requestVersion;
+        int requestedId = OrderId;
+        _loading = true; _order = null; _error = null; _needsLogin = false;
+        try
+        {
+            OrderManagementDetailDTO detail = await OrderApi.GetDetailAsync(requestedId);
+            if (version == _requestVersion && requestedId == OrderId) _order = detail;
+        }
+        catch (HttpRequestException ex)
+        {
+            if (version != _requestVersion || requestedId != OrderId) return;
+            _needsLogin = ex.StatusCode == HttpStatusCode.Unauthorized;
+            _error = ex.StatusCode switch
+            {
+                HttpStatusCode.Unauthorized => "Phiên đăng nhập đã kết thúc. Vui lòng đăng nhập lại.",
+                HttpStatusCode.Forbidden => "Bạn không có quyền xem đơn hàng.",
+                HttpStatusCode.NotFound => "Không tìm thấy đơn trong phạm vi truy cập của bạn.",
+                _ => "Không thể tải chi tiết đơn. Kiểm tra kết nối và thử lại."
+            };
+        }
+        catch (Exception ex) when (ex is JsonException || ex is InvalidOperationException)
+        { if (version == _requestVersion && requestedId == OrderId) _error = "Dữ liệu API trả về không hợp lệ."; }
+        finally { if (version == _requestVersion) _loading = false; }
+    }
+}
