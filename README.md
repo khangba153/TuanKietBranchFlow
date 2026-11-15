@@ -40,6 +40,8 @@ Blazor component → Web API client → API controller
 | `TuanKietBranchFlow.Infrastructure` | Database First models, DbContext, repositories, and Unit of Work |
 | `TuanKietBranchFlow.Tests` | xUnit and Moq tests |
 
+Files within each layer are grouped by feature. See the [folder organization guide](docs/architecture/folder-structure.md).
+
 **Backend:** C#, .NET 10, ASP.NET Core Web API, EF Core Database First, SQL Server.
 
 **Web:** Blazor Web App Interactive Server and Bootstrap.
