@@ -14,6 +14,27 @@ public class OrderRepository : RepositoryBase<SalesOrder>, IOrderRepository
     {
     }
 
+    // SQL chỉ cho một request thắng; kiểm tra lại cả quyền và phiên báo sai tại thời điểm ghi.
+    public async Task<int> TryResolveReviewAsync(int orderId, int adminId, DateOnly assignmentDate,
+        DateTime expectedReportedAt, int expectedHistoryId, string status, DateTime updatedAt)
+    {
+        return await Context.SalesOrders
+            .Where(order => order.Id == orderId && order.Status == "NEEDS_REVIEW" &&
+                order.ReportedAt == expectedReportedAt && !order.Branch.Deleted &&
+                !order.OrderAdjustments.Any(history => history.Id > expectedHistoryId) &&
+                order.Branch.UserBranches.Any(assignment => assignment.UserId == adminId &&
+                    assignment.ActiveFrom <= assignmentDate &&
+                    (assignment.ActiveTo == null || assignment.ActiveTo >= assignmentDate)))
+            .ExecuteUpdateAsync(setters => setters.SetProperty(order => order.Status, status)
+                .SetProperty(order => order.UpdatedAt, updatedAt));
+    }
+
+    // Chỉ stage lịch sử; UnitOfWork lưu và commit cùng cập nhật trạng thái.
+    public async Task AddReviewHistoryAsync(OrderAdjustment history)
+    {
+        await Context.OrderAdjustments.AddAsync(history);
+    }
+
     // Tính tổng và phân trang trên SQL; mọi bộ lọc đều đi cùng phạm vi chi nhánh.
     public async Task<OrderManagementPage> GetOrdersForManagementAsync(
         List<int> branchIds, string keyword, DateOnly? businessDate,
@@ -64,6 +85,7 @@ public class OrderRepository : RepositoryBase<SalesOrder>, IOrderRepository
             .Include(order => order.Branch)
             .Include(order => order.CreatedByUser)
             .Include(order => order.ReportedByUser)
+            .Include(order => order.OrderAdjustments).ThenInclude(history => history.AdjustedByUser)
             .Include(order => order.OrderItems).ThenInclude(item => item.OrderItemToppings)
             .Include(order => order.OrderItems).ThenInclude(item => item.OrderItemNotes)
             .FirstOrDefaultAsync();

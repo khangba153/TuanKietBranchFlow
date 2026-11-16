@@ -17,5 +17,8 @@ public class OrderManagementDetailDTO
     public string? ReportReason { get; set; }
     public DateTime? ReportedAt { get; set; }
     public string? ReportedByFullName { get; set; }
+    public int? ReportedByUserId { get; set; }
     public List<OrderManagementItemDTO> Items { get; set; } = new();
+    public int LatestHistoryId { get; set; }
+    public List<OrderReviewHistoryDTO> History { get; set; } = new();
 }

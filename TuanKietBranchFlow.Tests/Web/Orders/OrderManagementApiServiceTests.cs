@@ -104,6 +104,27 @@ public class OrderManagementApiServiceTests
         return new(new AuthorizedApiService(factory.Object, auth.Object, tokens.Object));
     }
 
+    [Theory]
+    [InlineData(HttpStatusCode.OK)]
+    [InlineData(HttpStatusCode.Conflict)]
+    [InlineData(HttpStatusCode.Forbidden)]
+    public async Task ResolveReview_PostsOnceAndDoesNotRetry(HttpStatusCode status)
+    {
+        using TestHandler handler = new(status);
+        using HttpClient client = new(handler) { BaseAddress = new Uri("https://unit.test/") };
+        var data = new ResolveOrderReviewRequestDTO { Action = "KEEP", Reason = "Checked", ExpectedReportedAt = DateTime.UtcNow };
+        if (status == HttpStatusCode.OK) await CreateService(client).ResolveReviewAsync(9, data);
+        else
+        {
+            var error = await Assert.ThrowsAsync<HttpRequestException>(() => CreateService(client).ResolveReviewAsync(9, data));
+            Assert.Equal(status, error.StatusCode);
+        }
+        Assert.Equal(HttpMethod.Post, handler.Method);
+        Assert.EndsWith("/api/order-management/9/review", handler.Url);
+        Assert.Equal(1, handler.Calls);
+        Assert.Equal("Bearer unit-test-token", handler.Authorization);
+    }
+
     private sealed class TestHandler : HttpMessageHandler
     {
         private readonly HttpStatusCode _status;

@@ -56,7 +56,7 @@ Menu management and employee ordering have been deployed to the Azure demo and m
 
 The auth update is deployed to Azure. Web uses a Secure, HttpOnly session cookie and keeps API tokens on the server, not in browser storage. API access tokens last 15 minutes; refresh tokens rotate within a fixed seven-day session, with only their hashes stored in SQL. Logout revokes all existing sessions of the same account; detected refresh-token reuse also triggers account-wide revocation.
 
-The author manually smoke-tested login, F5/new tabs, cookie flags, WebSocket connectivity, refresh rotation, account-wide logout, and login rate limiting on Azure at the auth milestone. The current local Release test suite has 69 passing tests.
+The author manually smoke-tested login, F5/new tabs, cookie flags, WebSocket connectivity, refresh rotation, account-wide logout, and login rate limiting on Azure at the auth milestone. The current local Release test suite has 89 passing tests.
 
 **Demo limits:** Web token storage and rate-limit counters are in process memory. The deployment uses one instance; Web restart/deploy requires signing in again. There is no distributed session store, and backup restoration has not yet been rehearsed.
 
@@ -66,7 +66,7 @@ B4.1 is implemented locally: read-only administrator/owner order lists with bran
 
 Closeout checks include SQL pagination with 25 temporary orders (rolled back), EMPLOYEE browser regression, HTTP role-boundary checks, and a [dependency security patch and audit](docs/security/package-audit-20261115.md). The current UI is accepted provisionally, not a finalized design.
 
-Order adjustment/cancellation requires a separate approved scope. Inventory, payroll, reporting, and audit logging remain planned.
+B4.2a is implemented locally: assigned ADMINs can keep or cancel a NEEDS_REVIEW order with a required reason and atomic before/after history. SQL concurrency/rollback and real HTTP role checks passed; the author accepted the UI on 2026-11-16. It has not been deployed. See the [B4.2a report](docs/features/order-review-b4.2a.md). Item/price adjustments (B4.2b), inventory, payroll, reporting, and system-wide audit logging remain planned.
 
 ## Running Locally
 

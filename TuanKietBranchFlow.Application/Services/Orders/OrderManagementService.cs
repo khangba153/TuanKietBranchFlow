@@ -2,6 +2,7 @@ using TuanKietBranchFlow.Application.DTOs.Orders.Management;
 using TuanKietBranchFlow.Infrastructure.Models;
 using TuanKietBranchFlow.Infrastructure.Repositories.Branches;
 using TuanKietBranchFlow.Infrastructure.Repositories.Orders;
+using System.Text.Json;
 
 namespace TuanKietBranchFlow.Application.Services.Orders;
 
@@ -96,7 +97,8 @@ public class OrderManagementService : IOrderManagementService
             BusinessDate = order.BusinessDate, CreatedAt = order.CreatedAt,
             TotalAmount = order.TotalAmount, Status = order.Status,
             TotalQuantity = order.OrderItems.Sum(item => item.Quantity), ReportReason = order.ReportReason,
-            ReportedAt = order.ReportedAt, ReportedByFullName = order.ReportedByUser?.FullName
+            ReportedAt = order.ReportedAt, ReportedByFullName = order.ReportedByUser?.FullName,
+            ReportedByUserId = order.ReportedByUserId
         };
         // Luôn dùng snapshot đã lưu, không đọc lại tên/giá hiện tại từ menu.
         foreach (OrderItem item in order.OrderItems.OrderBy(item => item.Id))
@@ -112,7 +114,30 @@ public class OrderManagementService : IOrderManagementService
             foreach (OrderItemNote note in item.OrderItemNotes) row.Notes.Add(note.NoteNameSnapshot);
             detail.Items.Add(row);
         }
+        detail.LatestHistoryId = order.OrderAdjustments.Select(history => history.Id).DefaultIfEmpty(0).Max();
+        foreach (OrderAdjustment history in order.OrderAdjustments.OrderByDescending(history => history.CreatedAt).ThenByDescending(history => history.Id))
+        {
+            detail.History.Add(new OrderReviewHistoryDTO
+            {
+                Id = history.Id, ProcessedByFullName = history.AdjustedByUser.FullName,
+                Reason = history.Reason, CreatedAt = history.CreatedAt,
+                BeforeStatus = ReadHistoryStatus(history.BeforeData), AfterStatus = ReadHistoryStatus(history.AfterData)
+            });
+        }
         return detail;
+    }
+
+    // Lịch sử cũ có thể khác cấu trúc; không đưa JSON nội bộ hoặc lỗi parser ra client.
+    private static string? ReadHistoryStatus(string data)
+    {
+        try
+        {
+            using JsonDocument json = JsonDocument.Parse(data);
+            return json.RootElement.ValueKind == JsonValueKind.Object &&
+                json.RootElement.TryGetProperty("Status", out JsonElement status) && status.ValueKind == JsonValueKind.String
+                ? status.GetString() : null;
+        }
+        catch (JsonException) { return null; }
     }
 
     // OWNER đọc tất cả chi nhánh chưa xóa; ADMIN chỉ phân công đang có hiệu lực.

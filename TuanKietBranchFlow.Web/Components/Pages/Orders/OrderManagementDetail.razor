@@ -30,7 +30,7 @@
                 <section class="card mb-3" aria-label="Tổng tiền đơn">
                     <div class="card-body d-flex justify-content-between align-items-center gap-2">
                         <div><span class="small text-body-secondary">Tổng tiền đơn · @_order.TotalQuantity món</span><strong class="d-block fs-3">@Money(_order.TotalAmount)</strong></div>
-                        <span class="badge text-bg-light border">Chỉ xem</span>
+                        <span class="badge text-bg-light border">@(_order.Status == "NEEDS_REVIEW" ? "Cần kiểm tra" : "Đã ghi nhận")</span>
                     </div>
                 </section>
                 @if (!string.IsNullOrWhiteSpace(_order.ReportReason) || _order.ReportedAt.HasValue)
@@ -40,6 +40,12 @@
                         <p class="text-break">@_order.ReportReason</p>
                         <p class="mb-0">Người báo: @(_order.ReportedByFullName ?? "Không có thông tin") — @_order.ReportedAt?.ToString("dd/MM/yyyy HH:mm")</p>
                     </section>
+                }
+                @if (_order.Status == "NEEDS_REVIEW")
+                {
+                    <AuthorizeView Roles="ADMIN" Context="reviewAdmin">
+                        <Authorized><OrderReviewPanel @key="@($"{_order.Id}-{_order.LatestHistoryId}-{_order.ReportedAt}")" Order="_order" OnResolved="ReloadAfterReviewAsync" /></Authorized>
+                    </AuthorizeView>
                 }
                 <h2 class="h5">Chi tiết món</h2>
                 <p class="small text-body-secondary">Tên và giá được lưu tại thời điểm bán.</p>
@@ -58,6 +64,24 @@
                             @if (item.Notes.Count > 0) { <p class="mb-0 text-break">Ghi chú: @string.Join(", ", item.Notes)</p> }
                         </div>
                     </article>
+                }
+                @if (_order.History.Count > 0)
+                {
+                    <section class="card mt-4" aria-labelledby="order-history-title">
+                        <div class="card-body">
+                            <h2 id="order-history-title" class="h5">Lịch sử xử lý</h2>
+                            @foreach (OrderReviewHistoryDTO history in _order.History)
+                            {
+                                <article class="border-top pt-3 mt-3" @key="history.Id">
+                                    <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
+                                        <OrderManagementStatus Status="@(history.BeforeStatus ?? "Không rõ")" /><span>→</span><OrderManagementStatus Status="@(history.AfterStatus ?? "Không rõ")" />
+                                    </div>
+                                    <p class="text-break mb-1">@history.Reason</p>
+                                    <p class="small text-body-secondary mb-0">@history.ProcessedByFullName · @history.CreatedAt.ToString("dd/MM/yyyy HH:mm") UTC</p>
+                                </article>
+                            }
+                        </div>
+                    </section>
                 }
                 <section class="card mt-4" aria-labelledby="order-information-title">
                     <div class="card-body">
@@ -84,6 +108,9 @@
     private int? _loadedId;
     private int _requestVersion;
     private static string Money(decimal value) => value.ToString("N0", CultureInfo.GetCultureInfo("vi-VN")) + " đ";
+
+    // Luôn đọc lại từ API sau xử lý để quyền, trạng thái và lịch sử đồng nhất.
+    private async Task ReloadAfterReviewAsync() { await LoadAsync(); }
 
     // Không render dữ liệu đơn trước trong lần render đầu của route mới.
     protected override void OnParametersSet()

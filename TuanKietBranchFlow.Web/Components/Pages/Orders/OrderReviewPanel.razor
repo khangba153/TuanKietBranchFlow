@@ -1,0 +1,93 @@
+@using System.Net
+@using TuanKietBranchFlow.Application.DTOs.Orders.Management
+@using TuanKietBranchFlow.Web.Services.Orders
+@inject OrderManagementApiService Api
+
+<section class="card mb-3 border-warning" aria-labelledby="resolve-review-title">
+    <div class="card-body">
+        <h2 id="resolve-review-title" class="h5">Xử lý báo sai</h2>
+        <p class="small text-body-secondary">Kiểm tra đơn trước khi xử lý. Món, giá và nội dung báo sai sẽ được giữ trong lịch sử.</p>
+        @if (_error != null)
+        {
+            <div class="alert alert-danger" role="alert">@_error</div>
+            @if (_mustReload)
+            { <button class="btn btn-outline-primary" disabled="@_saving" @onclick="ReloadAsync">Tải lại đơn</button> }
+        }
+        @if (!_mustReload)
+        {
+            <fieldset disabled="@_saving">
+                <legend class="visually-hidden">Quyết định xử lý báo sai</legend>
+                <label class="form-label" for="review-reason">Lý do xử lý <span class="text-danger">*</span></label>
+                <textarea id="review-reason" class="form-control mb-2" rows="3" maxlength="500" @bind="_reason" @bind:event="oninput" placeholder="Mô tả kết quả kiểm tra và lý do quyết định..."></textarea>
+                <small class="text-body-secondary d-block mb-3">@_reason.Length/500 ký tự</small>
+                @if (_action == "")
+                {
+                    <div class="d-flex flex-wrap gap-2">
+                        <button class="btn btn-primary flex-grow-1" @onclick='() => Prepare("KEEP")'>Giữ nguyên đơn</button>
+                        <button class="btn btn-outline-danger flex-grow-1" @onclick='() => Prepare("CANCEL")'>Hủy đơn</button>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert @(_action == "CANCEL" ? "alert-danger" : "alert-info")" role="status">
+                        @if (_action == "CANCEL")
+                        { <p class="mb-0">Xác nhận hủy đơn <strong>@Order.Code</strong>? Đơn sẽ không được tính vào giá trị hoàn tất và chưa hỗ trợ mở lại.</p> }
+                        else
+                        { <p class="mb-0">Xác nhận giữ nguyên đơn <strong>@Order.Code</strong>? Đơn trở về Hoàn tất, không thay đổi món hoặc giá.</p> }
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn @(_action == "CANCEL" ? "btn-danger" : "btn-primary") flex-grow-1" @onclick="SubmitAsync">@(_saving ? "Đang lưu..." : "Xác nhận xử lý")</button>
+                        <button class="btn btn-outline-secondary" @onclick='() => _action = ""'>Quay lại</button>
+                    </div>
+                }
+            </fieldset>
+        }
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public OrderManagementDetailDTO Order { get; set; } = default!;
+    [Parameter] public EventCallback OnResolved { get; set; }
+    private string _reason = "";
+    private string _action = "";
+    private string? _error;
+    private bool _saving;
+    private bool _mustReload;
+
+    // Hai bước để tránh chạm nhầm nút hủy trên điện thoại.
+    private void Prepare(string action)
+    {
+        _error = null;
+        if (string.IsNullOrWhiteSpace(_reason)) { _error = "Vui lòng nhập lý do xử lý."; return; }
+        _action = action;
+    }
+
+    // Chỉ gửi một lần; sau lỗi bất định yêu cầu đọc lại, không gửi lặp mù quáng.
+    private async Task SubmitAsync()
+    {
+        if (_saving || _mustReload) return;
+        if (string.IsNullOrWhiteSpace(_reason)) { _error = "Vui lòng nhập lý do xử lý."; return; }
+        _saving = true; _error = null;
+        try
+        {
+            await Api.ResolveReviewAsync(Order.Id, new()
+            { Action = _action, Reason = _reason.Trim(), ExpectedReportedAt = Order.ReportedAt, ExpectedHistoryId = Order.LatestHistoryId });
+            await OnResolved.InvokeAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            _mustReload = ex.StatusCode != HttpStatusCode.BadRequest;
+            _error = ex.StatusCode switch
+            {
+                HttpStatusCode.BadRequest => "Thao tác hoặc lý do không hợp lệ. Hãy kiểm tra lại.",
+                HttpStatusCode.Unauthorized => "Phiên đăng nhập đã kết thúc. Vui lòng đăng nhập lại.",
+                HttpStatusCode.Forbidden => "Bạn không có quyền xử lý đơn này.",
+                HttpStatusCode.NotFound => "Không tìm thấy đơn trong phạm vi truy cập.",
+                HttpStatusCode.Conflict => "Đơn đã được xử lý, báo lại hoặc quyền đã thay đổi. Hãy tải lại đơn.",
+                _ => "Chưa xác định được kết quả lưu. Hãy tải lại đơn trước khi thao tác tiếp."
+            };
+        }
+        finally { _saving = false; }
+    }
+    private async Task ReloadAsync() { await OnResolved.InvokeAsync(); }
+}

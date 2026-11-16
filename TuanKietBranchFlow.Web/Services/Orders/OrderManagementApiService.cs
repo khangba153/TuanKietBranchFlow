@@ -35,7 +35,7 @@ public class OrderManagementApiService
             ?? throw new InvalidOperationException("API không trả dữ liệu danh sách đơn.");
     }
 
-    // Luồng này chỉ GET, không cung cấp thao tác sửa hoặc hủy đơn.
+    // Đọc chi tiết và lịch sử xử lý trong phạm vi quản lý.
     public async Task<OrderManagementDetailDTO> GetDetailAsync(int orderId)
     {
         using HttpRequestMessage request = new(HttpMethod.Get, $"api/order-management/{orderId}");
@@ -43,5 +43,14 @@ public class OrderManagementApiService
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<OrderManagementDetailDTO>()
             ?? throw new InvalidOperationException("API không trả dữ liệu chi tiết đơn.");
+    }
+
+    // Không tự retry thao tác ghi: mất response cần tải lại trạng thái đơn trước.
+    public async Task ResolveReviewAsync(int orderId, ResolveOrderReviewRequestDTO data)
+    {
+        using HttpRequestMessage request = new(HttpMethod.Post, $"api/order-management/{orderId}/review")
+        { Content = JsonContent.Create(data) };
+        using HttpResponseMessage response = await _api.SendAsync(request);
+        response.EnsureSuccessStatusCode();
     }
 }

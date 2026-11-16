@@ -38,6 +38,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Luồng đọc quản lý đơn tách khỏi quyền tạo/báo sai của EMPLOYEE.
 builder.Services.AddScoped<IOrderManagementService, OrderManagementService>();
+builder.Services.AddScoped<IOrderReviewService, OrderReviewService>();
 
 // Đọc cấu hình dùng để kiểm tra JWT
 string jwtKey = builder.Configuration["Jwt:Key"]

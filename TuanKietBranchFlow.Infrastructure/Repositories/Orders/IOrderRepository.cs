@@ -5,6 +5,11 @@ namespace TuanKietBranchFlow.Infrastructure.Repositories.Orders;
 
 public interface IOrderRepository : IRepositoryBase<SalesOrder>
 {
+    // Cập nhật có điều kiện trong transaction do service quản lý; 0 nghĩa là dữ liệu/quyền đã đổi.
+    Task<int> TryResolveReviewAsync(int orderId, int adminId, DateOnly assignmentDate,
+        DateTime expectedReportedAt, int expectedHistoryId, string status, DateTime updatedAt);
+    Task AddReviewHistoryAsync(OrderAdjustment history);
+
     // Chỉ đọc các đơn nằm trong tập chi nhánh Service đã cho phép.
     Task<OrderManagementPage> GetOrdersForManagementAsync(
         List<int> branchIds, string keyword, DateOnly? businessDate,

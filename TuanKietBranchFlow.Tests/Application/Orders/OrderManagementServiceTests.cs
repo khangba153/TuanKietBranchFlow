@@ -202,6 +202,33 @@ public class OrderManagementServiceTests
         _branches.VerifyAll();
     }
 
+    [Fact]
+    public async Task Detail_MapsHistoryAndVersionWithoutExposingRawJson()
+    {
+        var order = MakeOrder();
+        order.OrderAdjustments.Add(new OrderAdjustment
+        {
+            Id = 4, AdjustedByUser = new AppUser { FullName = "Quản lý" }, Reason = "Đã kiểm tra",
+            CreatedAt = new DateTime(2026, 11, 15), BeforeData = "{\"Status\":\"NEEDS_REVIEW\"}", AfterData = "{\"Status\":\"COMPLETED\"}"
+        });
+        order.OrderAdjustments.Add(new OrderAdjustment
+        {
+            Id = 2, AdjustedByUser = new AppUser { FullName = "Quản lý cũ" }, Reason = "Lịch sử cũ",
+            CreatedAt = new DateTime(2026, 11, 14), BeforeData = "[]", AfterData = "{\"Status\":123}"
+        });
+        _branches.Setup(x => x.GetAllNotDeletedAsync()).ReturnsAsync(new List<Branch> { new() { Id = 2 } });
+        _orders.Setup(x => x.GetOrderDetailForManagementAsync(5, It.IsAny<List<int>>())).ReturnsAsync(order);
+        var detail = await CreateService().GetDetailAsync(1, "OWNER", 5);
+        Assert.NotNull(detail);
+        Assert.Equal(4, detail.LatestHistoryId);
+        Assert.Equal(2, detail.History.Count);
+        Assert.Equal("Quản lý", detail.History[0].ProcessedByFullName);
+        Assert.Equal("NEEDS_REVIEW", detail.History[0].BeforeStatus);
+        Assert.Equal("COMPLETED", detail.History[0].AfterStatus);
+        Assert.Null(detail.History[1].BeforeStatus);
+        Assert.Null(detail.History[1].AfterStatus);
+    }
+
     // Navigation menu cố ý không gắn: đọc lịch sử phải dựa trên snapshot đã lưu.
     private static SalesOrder MakeOrder() => new()
     {
