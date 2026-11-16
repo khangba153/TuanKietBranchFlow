@@ -53,4 +53,36 @@ public class OrderManagementApiService
         using HttpResponseMessage response = await _api.SendAsync(request);
         response.EnsureSuccessStatusCode();
     }
+
+    // Options và preview dùng cùng Bearer đúng phiên; không tự retry POST ghi.
+    public async Task<OrderAdjustmentResultDTO> GetAdjustmentOptionsAsync(int orderId)
+    {
+        using HttpRequestMessage request = new(HttpMethod.Get, $"api/order-management/{orderId}/adjustment/options");
+        using HttpResponseMessage response = await _api.SendAsync(request);
+        await EnsureAdjustmentSuccessAsync(response);
+        return await response.Content.ReadFromJsonAsync<OrderAdjustmentResultDTO>() ?? throw new InvalidOperationException("Thiếu dữ liệu điều chỉnh.");
+    }
+
+    public async Task<OrderAdjustmentResultDTO> AdjustAsync(int orderId, AdjustOrderRequestDTO data, bool preview)
+    {
+        using HttpRequestMessage request = new(HttpMethod.Post, $"api/order-management/{orderId}/adjustment" + (preview ? "/preview" : ""))
+        { Content = JsonContent.Create(data) };
+        using HttpResponseMessage response = await _api.SendAsync(request);
+        await EnsureAdjustmentSuccessAsync(response);
+        return await response.Content.ReadFromJsonAsync<OrderAdjustmentResultDTO>() ?? throw new InvalidOperationException("Thiếu dữ liệu điều chỉnh.");
+    }
+
+    // Chỉ lấy thông báo ProblemDetails đã được API kiểm soát, không hiển thị body/stack trace tùy ý.
+    private static async Task EnsureAdjustmentSuccessAsync(HttpResponseMessage response)
+    {
+        if (response.IsSuccessStatusCode) return;
+        string message = "Không thể xử lý điều chỉnh.";
+        try
+        {
+            var problem = await response.Content.ReadFromJsonAsync<Microsoft.AspNetCore.Mvc.ProblemDetails>();
+            message = problem?.Detail ?? problem?.Title ?? message;
+        }
+        catch (System.Text.Json.JsonException) { }
+        throw new HttpRequestException(message, null, response.StatusCode);
+    }
 }

@@ -35,6 +35,31 @@ public class OrderRepository : RepositoryBase<SalesOrder>, IOrderRepository
         await Context.OrderAdjustments.AddAsync(history);
     }
 
+    // Giữ ID dòng còn lại, xóa dòng bỏ khỏi bản hiện hành; snapshot gốc nằm trong history.
+    public async Task ApplyAdjustedItemsAsync(int orderId, List<OrderItem> items, decimal totalAmount)
+    {
+        SalesOrder order = await Context.SalesOrders
+            .Include(order => order.OrderItems).ThenInclude(item => item.OrderItemToppings)
+            .Include(order => order.OrderItems).ThenInclude(item => item.OrderItemNotes)
+            .SingleAsync(order => order.Id == orderId);
+        foreach (OrderItem existing in order.OrderItems.ToList())
+        {
+            Context.OrderItemToppings.RemoveRange(existing.OrderItemToppings);
+            Context.OrderItemNotes.RemoveRange(existing.OrderItemNotes);
+            existing.OrderItemToppings.Clear(); existing.OrderItemNotes.Clear();
+            OrderItem? changed = items.FirstOrDefault(item => item.Id == existing.Id);
+            if (changed == null) { Context.OrderItems.Remove(existing); continue; }
+            existing.ProductSizeId = changed.ProductSizeId;
+            existing.SizeNameSnapshot = changed.SizeNameSnapshot;
+            existing.Quantity = changed.Quantity;
+            existing.UnitPriceSnapshot = changed.UnitPriceSnapshot;
+            existing.SubtotalAmount = changed.SubtotalAmount;
+            foreach (OrderItemTopping topping in changed.OrderItemToppings) existing.OrderItemToppings.Add(topping);
+            foreach (OrderItemNote note in changed.OrderItemNotes) existing.OrderItemNotes.Add(note);
+        }
+        order.TotalAmount = totalAmount;
+    }
+
     // Tính tổng và phân trang trên SQL; mọi bộ lọc đều đi cùng phạm vi chi nhánh.
     public async Task<OrderManagementPage> GetOrdersForManagementAsync(
         List<int> branchIds, string keyword, DateOnly? businessDate,
@@ -86,6 +111,7 @@ public class OrderRepository : RepositoryBase<SalesOrder>, IOrderRepository
             .Include(order => order.CreatedByUser)
             .Include(order => order.ReportedByUser)
             .Include(order => order.OrderAdjustments).ThenInclude(history => history.AdjustedByUser)
+            .Include(order => order.OrderItems).ThenInclude(item => item.ProductSize)
             .Include(order => order.OrderItems).ThenInclude(item => item.OrderItemToppings)
             .Include(order => order.OrderItems).ThenInclude(item => item.OrderItemNotes)
             .FirstOrDefaultAsync();

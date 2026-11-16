@@ -1,0 +1,14 @@
+.adjustment-quantity {
+    width: 5rem;
+    flex-shrink: 0;
+}
+
+fieldset {
+    min-width: 0;
+}
+
+.btn,
+.form-select,
+.form-control {
+    min-height: 44px;
+}

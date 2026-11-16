@@ -9,6 +9,8 @@ public interface IOrderRepository : IRepositoryBase<SalesOrder>
     Task<int> TryResolveReviewAsync(int orderId, int adminId, DateOnly assignmentDate,
         DateTime expectedReportedAt, int expectedHistoryId, string status, DateTime updatedAt);
     Task AddReviewHistoryAsync(OrderAdjustment history);
+    // Chỉ gọi sau UPDATE giành quyền xử lý trong cùng transaction.
+    Task ApplyAdjustedItemsAsync(int orderId, List<OrderItem> items, decimal totalAmount);
 
     // Chỉ đọc các đơn nằm trong tập chi nhánh Service đã cho phép.
     Task<OrderManagementPage> GetOrdersForManagementAsync(

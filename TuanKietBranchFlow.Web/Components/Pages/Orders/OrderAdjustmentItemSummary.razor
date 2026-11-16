@@ -1,0 +1,21 @@
+@using System.Globalization
+@using TuanKietBranchFlow.Application.DTOs.Orders.Management
+<p class="small mb-1 text-break">Size @Item.SizeName · @Item.Quantity món · @Money(Item.UnitPrice)/size</p>
+@foreach (var top in Item.Toppings)
+{
+    <p class="small mb-1 text-break">Topping: @top.Name × @top.Quantity · @Money(top.UnitPrice)/phần</p>
+}
+
+@if (Item.Notes.Count > 0)
+{
+    <p class="small mb-1 text-break">@string.Join(", ", Item.Notes)</p>
+}
+
+<strong class="small">@Money(Item.SubtotalAmount)</strong>
+
+@code {
+    [Parameter, EditorRequired]
+    public OrderManagementItemDTO Item { get; set; } = default!;
+
+    private static string Money(decimal value) => value.ToString("N0", CultureInfo.GetCultureInfo("vi-VN")) + " đ";
+}

@@ -90,11 +90,6 @@
     line-height: 1.5;
 }
 
-.bf-dashboard-action-arrow {
-    flex: 0 0 auto;
-    font-size: 1.25rem;
-}
-
 .bf-dashboard-coming-card {
     padding: 1.25rem;
 }
@@ -166,19 +161,6 @@
 
 .bf-dashboard-error {
     border-color: rgba(183, 28, 28, 0.24);
-}
-
-.bf-dashboard-state-icon {
-    display: inline-flex;
-    width: 3rem;
-    height: 3rem;
-    align-items: center;
-    justify-content: center;
-    color: var(--bf-danger);
-    font-size: 1.35rem;
-    font-weight: 800;
-    background-color: #fdecec;
-    border-radius: 50%;
 }
 
 .bf-dashboard-action-card-disabled {

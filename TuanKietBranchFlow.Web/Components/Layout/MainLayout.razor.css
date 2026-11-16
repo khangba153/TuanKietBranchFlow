@@ -110,7 +110,7 @@
     display: none;
     max-width: 42rem;
     margin-left: auto;
-    padding: 1rem 3rem 1rem 1rem;
+    padding: 1rem 4.5rem 1rem 1rem;
     color: #ffffff;
     background-color: var(--bf-danger);
     border-radius: var(--bf-radius-md);
@@ -129,7 +129,7 @@
     right: 0.75rem;
     padding: 0.25rem 0.5rem;
     color: #ffffff;
-    font-size: 1.25rem;
+    font-size: 0.875rem;
     line-height: 1;
     background: transparent;
     border: 0;

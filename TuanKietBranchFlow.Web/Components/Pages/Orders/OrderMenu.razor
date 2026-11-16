@@ -9,7 +9,6 @@
 @using System.Text
 @using TuanKietBranchFlow.Application.DTOs.Orders
 
-
 @inject UserApiService UserApiService
 @inject OrderMenuApiService OrderMenuApiService
 @inject OrderApiService OrderApiService
@@ -20,7 +19,6 @@
     @if (_createOrder is not null)
     {
         <div class="order-menu-success" role="status">
-            <span class="order-menu-success-icon" aria-hidden="true">✓</span>
 
             <div>
                 <strong>Tạo đơn thành công</strong>
@@ -51,7 +49,6 @@
     else if (!string.IsNullOrWhiteSpace(_errorMessage))
     {
         <div class="order-menu-state order-menu-state-error bf-surface-card" role="alert">
-            <span class="order-menu-state-icon" aria-hidden="true">!</span>
             <strong>Không thể tải menu</strong>
             <span class="bf-muted">@_errorMessage</span>
 
@@ -63,7 +60,6 @@
     else if (_menu is null || _menu.Categories.Count == 0)
     {
         <div class="order-menu-state bf-surface-card" role="status">
-            <span class="order-menu-state-icon" aria-hidden="true">☕</span>
             <strong>Menu đang được cập nhật</strong>
             <span class="bf-muted">Chi nhánh hiện chưa có món đang bán.</span>
         </div>
@@ -82,7 +78,6 @@
 
             <button type="button" class="order-menu-cart-button" aria-label="Mở giỏ hàng, có @GetCartTotalQuantity() món"
                     @onclick="OpenCart">
-                <span class="order-menu-cart-icon" aria-hidden="true">🛒</span>
                 <span class="order-menu-cart-label">Giỏ hàng</span>
                 <span class="order-menu-cart-count">@GetCartTotalQuantity()</span>
             </button>
@@ -127,7 +122,6 @@
             @if (_visibleProducts.Count == 0)
             {
                 <div class="bf-empty-state" role="status">
-                    <span class="order-menu-empty-icon" aria-hidden="true">⌕</span>
                     <strong>Không tìm thấy món phù hợp</strong>
                     <span>Hãy thử từ khóa hoặc danh mục khác.</span>
                 </div>
@@ -146,7 +140,7 @@
                                 else
                                 {
                                     <div class="order-menu-image-placeholder">
-                                        <span aria-hidden="true">☕</span>
+
                                         <small>Chưa có ảnh</small>
                                     </div>
                                 }
@@ -165,7 +159,7 @@
                                 <button type="button" class="btn btn-primary order-menu-select-button"
                                         @onclick="() => OpenProductOptions(product)">
                                     <span>Chọn món</span>
-                                    <span aria-hidden="true">＋</span>
+
                                 </button>
                             </div>
                         </article>
@@ -198,7 +192,6 @@
                             </button>
                         </div>
 
-                        
                         <div class="modal-body order-menu-modal-body">
                             @if (!string.IsNullOrWhiteSpace(_orderSubmitErrorMessage))
                             {
@@ -206,11 +199,11 @@
                                     @_orderSubmitErrorMessage
                                 </div>
                             }
-                            
+
                             @if (_cartItems.Count == 0)
                             {
                                 <div class="order-menu-cart-empty" role="status">
-                                    <span aria-hidden="true">🛒</span>
+
                                     <strong>Giỏ hàng chưa có món</strong>
                                     <small>Chọn một món trong menu để bắt đầu.</small>
                                 </div>
@@ -354,7 +347,7 @@
                                     }
                                     else
                                     {
-                                        <span aria-hidden="true">☕</span>
+
                                     }
                                 </div>
 

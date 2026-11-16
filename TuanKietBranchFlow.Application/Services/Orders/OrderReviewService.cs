@@ -1,4 +1,3 @@
-using System.Text.Json;
 using TuanKietBranchFlow.Application.DTOs.Orders.Management;
 using TuanKietBranchFlow.Infrastructure.Models;
 using TuanKietBranchFlow.Infrastructure.Repositories.Orders;
@@ -29,7 +28,7 @@ public class OrderReviewService : IOrderReviewService
         if (detail.Status != "NEEDS_REVIEW" || detail.ReportedAt != request.ExpectedReportedAt ||
             detail.LatestHistoryId != request.ExpectedHistoryId) return new() { IsConflict = true };
 
-        string beforeData = SerializeSnapshot(detail);
+        string beforeData = OrderSnapshot.Serialize(detail);
         string targetStatus = request.Action == "KEEP" ? "COMPLETED" : "CANCELLED";
         DateTime now = DateTime.UtcNow;
         await _work.BeginTransactionAsync();
@@ -46,7 +45,7 @@ public class OrderReviewService : IOrderReviewService
             await _orders.AddReviewHistoryAsync(new OrderAdjustment
             {
                 SalesOrderId = orderId, AdjustedByUserId = userId, Reason = reason,
-                BeforeData = beforeData, AfterData = SerializeSnapshot(detail), CreatedAt = now
+                BeforeData = beforeData, AfterData = OrderSnapshot.Serialize(detail), CreatedAt = now
             });
             await _work.SaveChangesAsync();
             await _work.CommitTransactionAsync();
@@ -60,11 +59,4 @@ public class OrderReviewService : IOrderReviewService
         }
     }
 
-    // Chỉ lưu trạng thái nghiệp vụ và snapshot món; không lồng toàn bộ lịch sử cũ vào lịch sử mới.
-    private static string SerializeSnapshot(OrderManagementDetailDTO detail) => JsonSerializer.Serialize(new
-    {
-        detail.Id, detail.Code, detail.BranchId, detail.CreatedByUserId,
-        detail.BusinessDate, detail.CreatedAt, detail.Status, detail.TotalAmount,
-        detail.ReportReason, detail.ReportedAt, detail.ReportedByUserId, detail.ReportedByFullName, detail.Items
-    });
 }

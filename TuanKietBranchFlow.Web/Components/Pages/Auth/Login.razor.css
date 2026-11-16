@@ -27,20 +27,6 @@
     background: linear-gradient(145deg, #103f3a 0%, #0f766e 72%, #138477 100%);
 }
 
-.login-intro::after {
-    position: absolute;
-    right: -8rem;
-    bottom: -10rem;
-    width: 24rem;
-    height: 24rem;
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: 50%;
-    box-shadow: 0 0 0 4rem rgba(255, 255, 255, 0.035),
-        0 0 0 8rem rgba(255, 255, 255, 0.025);
-    content: "";
-    pointer-events: none;
-}
-
 .login-brand {
     position: relative;
     z-index: 1;
@@ -148,11 +134,6 @@
     min-height: 3.1rem;
     margin-top: 1.75rem;
     font-size: 0.95rem;
-}
-
-.login-submit-arrow {
-    font-size: 1.2rem;
-    line-height: 1;
 }
 
 .login-help {

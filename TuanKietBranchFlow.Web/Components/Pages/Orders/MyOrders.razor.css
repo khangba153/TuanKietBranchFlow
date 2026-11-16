@@ -127,23 +127,6 @@
     color: var(--bf-muted);
 }
 
-.my-orders-state-icon {
-    display: inline-flex;
-    width: 3.5rem;
-    height: 3.5rem;
-    align-items: center;
-    justify-content: center;
-    color: var(--bf-primary);
-    font-size: 1.4rem;
-    font-weight: var(--bf-heading-weight);
-    background-color: var(--bf-primary-soft);
-    border-radius: 50%;
-}
-
-.my-orders-state-error .my-orders-state-icon {
-    color: var(--bf-danger);
-    background-color: #fdecec;
-}
 
 .my-orders-results-header {
     margin-bottom: 1rem;

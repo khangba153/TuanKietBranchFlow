@@ -105,37 +105,40 @@ public class OrderManagementService : IOrderManagementService
         {
             OrderManagementItemDTO row = new()
             {
-                Id = item.Id, ProductName = item.ProductNameSnapshot, SizeName = item.SizeNameSnapshot,
+                Id = item.Id, ProductSizeId = item.ProductSizeId, ProductId = item.ProductSize?.ProductId ?? 0,
+                ProductName = item.ProductNameSnapshot, SizeName = item.SizeNameSnapshot,
                 Quantity = item.Quantity, UnitPrice = item.UnitPriceSnapshot, SubtotalAmount = item.SubtotalAmount
             };
-            foreach (OrderItemTopping topping in item.OrderItemToppings)
+            foreach (OrderItemTopping topping in item.OrderItemToppings.OrderBy(top => top.ToppingId))
                 row.Toppings.Add(new OrderManagementToppingDTO
-                { Name = topping.ToppingNameSnapshot, Quantity = topping.Quantity, UnitPrice = topping.UnitPriceSnapshot });
-            foreach (OrderItemNote note in item.OrderItemNotes) row.Notes.Add(note.NoteNameSnapshot);
+                { ToppingId = topping.ToppingId, Name = topping.ToppingNameSnapshot, Quantity = topping.Quantity, UnitPrice = topping.UnitPriceSnapshot });
+            foreach (OrderItemNote note in item.OrderItemNotes.OrderBy(note => note.NoteOptionId))
+            { row.Notes.Add(note.NoteNameSnapshot); row.NoteOptionIds.Add(note.NoteOptionId); }
             detail.Items.Add(row);
         }
         detail.LatestHistoryId = order.OrderAdjustments.Select(history => history.Id).DefaultIfEmpty(0).Max();
         foreach (OrderAdjustment history in order.OrderAdjustments.OrderByDescending(history => history.CreatedAt).ThenByDescending(history => history.Id))
         {
+            OrderHistorySnapshotDTO? before = ReadHistorySnapshot(history.BeforeData);
+            OrderHistorySnapshotDTO? after = ReadHistorySnapshot(history.AfterData);
             detail.History.Add(new OrderReviewHistoryDTO
             {
                 Id = history.Id, ProcessedByFullName = history.AdjustedByUser.FullName,
                 Reason = history.Reason, CreatedAt = history.CreatedAt,
-                BeforeStatus = ReadHistoryStatus(history.BeforeData), AfterStatus = ReadHistoryStatus(history.AfterData)
+                BeforeStatus = before?.Status, AfterStatus = after?.Status,
+                BeforeTotalAmount = before?.TotalAmount, AfterTotalAmount = after?.TotalAmount,
+                BeforeItems = before?.Items ?? new(), AfterItems = after?.Items ?? new()
             });
         }
         return detail;
     }
 
     // Lịch sử cũ có thể khác cấu trúc; không đưa JSON nội bộ hoặc lỗi parser ra client.
-    private static string? ReadHistoryStatus(string data)
+    private static OrderHistorySnapshotDTO? ReadHistorySnapshot(string data)
     {
         try
         {
-            using JsonDocument json = JsonDocument.Parse(data);
-            return json.RootElement.ValueKind == JsonValueKind.Object &&
-                json.RootElement.TryGetProperty("Status", out JsonElement status) && status.ValueKind == JsonValueKind.String
-                ? status.GetString() : null;
+            return JsonSerializer.Deserialize<OrderHistorySnapshotDTO>(data);
         }
         catch (JsonException) { return null; }
     }

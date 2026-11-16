@@ -14,7 +14,7 @@
             <a href="/order-menu"
                class="my-orders-back-button"
                aria-label="Quay lại trang gọi món">
-                <span aria-hidden="true">←</span>
+
             </a>
 
             <div>
@@ -87,7 +87,6 @@
     {
         <section class="my-orders-state my-orders-state-error bf-surface-card"
                  role="alert">
-            <span class="my-orders-state-icon" aria-hidden="true">!</span>
             <strong>Không thể tải danh sách đơn</strong>
             <p>@_errorMessage</p>
 
@@ -101,7 +100,6 @@
     else if (_orders.Count == 0)
     {
         <section class="my-orders-state bf-surface-card" aria-live="polite">
-            <span class="my-orders-state-icon" aria-hidden="true">▤</span>
             <strong>Chưa tìm thấy đơn phù hợp</strong>
             <p>Thử đổi mã đơn hoặc tắt bộ lọc hôm nay.</p>
 
@@ -138,7 +136,7 @@
 
                         <time class="my-orders-created-at"
                               datetime="@order.CreatedAt.ToString("O")">
-                            <span aria-hidden="true">◷</span>
+
                             @order.CreatedAt.ToString("dd/MM/yyyy · HH:mm")
                         </time>
 
@@ -160,7 +158,7 @@
                            class="my-orders-detail-link"
                            aria-label="Xem chi tiết đơn @order.Code">
                             <span>Xem chi tiết</span>
-                            <span aria-hidden="true">→</span>
+
                         </a>
                     </article>
                 }

@@ -105,6 +105,31 @@ public class OrderManagementApiServiceTests
     }
 
     [Theory]
+    [InlineData(true, HttpStatusCode.Conflict)]
+    [InlineData(false, HttpStatusCode.Forbidden)]
+    [InlineData(false, HttpStatusCode.BadRequest)]
+    public async Task Adjustment_PostsOncePreservesHttpFailure(bool preview, HttpStatusCode status)
+    {
+        using TestHandler handler = new(status);
+        using HttpClient client = new(handler) { BaseAddress = new Uri("https://unit.test/") };
+        var error = await Assert.ThrowsAsync<HttpRequestException>(() => CreateService(client).AdjustAsync(9, new(), preview));
+        Assert.Equal(status, error.StatusCode); Assert.Equal(HttpMethod.Post, handler.Method);
+        Assert.EndsWith("/api/order-management/9/adjustment" + (preview ? "/preview" : ""), handler.Url);
+        Assert.Equal(1, handler.Calls); Assert.Equal("Bearer unit-test-token", handler.Authorization);
+    }
+
+    [Fact]
+    public async Task AdjustmentOptions_UsesAuthenticatedGet()
+    {
+        using TestHandler handler = new(HttpStatusCode.OK);
+        using HttpClient client = new(handler) { BaseAddress = new Uri("https://unit.test/") };
+        await CreateService(client).GetAdjustmentOptionsAsync(9);
+        Assert.Equal(HttpMethod.Get, handler.Method);
+        Assert.EndsWith("/api/order-management/9/adjustment/options", handler.Url);
+        Assert.Equal("Bearer unit-test-token", handler.Authorization);
+    }
+
+    [Theory]
     [InlineData(HttpStatusCode.OK)]
     [InlineData(HttpStatusCode.Conflict)]
     [InlineData(HttpStatusCode.Forbidden)]

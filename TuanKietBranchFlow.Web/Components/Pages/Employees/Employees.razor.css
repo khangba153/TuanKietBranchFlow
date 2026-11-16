@@ -290,16 +290,6 @@
     color: var(--bf-muted);
 }
 
-.employees-state-icon {
-    width: 3.5rem;
-    height: 3.5rem;
-    font-size: 1.35rem;
-}
-
-.employees-state-error .employees-state-icon {
-    color: var(--bf-danger);
-    background-color: #fdecec;
-}
 
 @media (max-width: 767.98px) {
     .employees-page {

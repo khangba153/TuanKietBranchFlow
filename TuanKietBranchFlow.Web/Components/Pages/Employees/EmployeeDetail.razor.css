@@ -320,16 +320,6 @@
     color: var(--bf-muted);
 }
 
-.employee-detail-state-icon {
-    width: 3.5rem;
-    height: 3.5rem;
-    font-size: 1.35rem;
-}
-
-.employee-detail-state-error .employee-detail-state-icon {
-    color: var(--bf-danger);
-    background-color: #fdecec;
-}
 
 @media (max-width: 991.98px) {
     .employee-detail-content {

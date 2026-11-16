@@ -17,7 +17,7 @@
     <header class="employee-create-hero">
         <div>
             <a class="employee-create-back-link" href="@(BranchId > 0 ? $"/employees?branchId={BranchId}" : "/branches")">
-                <span aria-hidden="true">←</span> @(BranchId > 0 ? "Danh sách nhân viên" : "Chọn chi nhánh")
+                 @(BranchId > 0 ? "Danh sách nhân viên" : "Chọn chi nhánh")
             </a>
             <h1>Thêm nhân viên</h1>
             @if (BranchId > 0)
