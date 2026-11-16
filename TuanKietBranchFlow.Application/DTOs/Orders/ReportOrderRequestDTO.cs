@@ -9,4 +9,10 @@ public class ReportOrderRequestDTO
     [StringLength(500, MinimumLength = 1,
         ErrorMessage = "Lý do báo sai không được vượt quá 500 ký tự.")]
     public string Reason { get; set; } = string.Empty;
+
+    // Phiên bản kết quả xử lý mà employee đã đọc trước khi báo lại.
+    [Range(0, int.MaxValue)]
+    public int ExpectedHistoryId { get; set; }
+
+    public bool HasReviewedResolution { get; set; }
 }

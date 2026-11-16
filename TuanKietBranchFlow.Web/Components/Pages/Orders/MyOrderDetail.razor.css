@@ -21,17 +21,17 @@
 
 .my-order-detail-back-button {
     display: inline-flex;
-    width: 2.75rem;
-    height: 2.75rem;
+    min-height: 2.75rem;
+    padding: 0.5rem 0.75rem;
     flex: 0 0 auto;
     align-items: center;
     justify-content: center;
     color: var(--bf-primary-dark);
-    font-size: 1.25rem;
+    font-size: 0.875rem;
     text-decoration: none;
     background-color: var(--bf-primary-soft);
     border: 1px solid var(--bf-border);
-    border-radius: 50%;
+    border-radius: var(--bf-radius-md);
 }
 
 .my-order-detail-back-button:hover,
@@ -64,6 +64,10 @@
 }
 
 .my-order-detail-hero-summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
     flex: 0 0 auto;
 }
 
@@ -373,18 +377,20 @@
     }
 
     .my-order-detail-hero {
+        flex-direction: column;
         align-items: flex-start;
         gap: 0.75rem;
         padding: 0 0 0.85rem;
     }
 
     .my-order-detail-hero-main {
+        flex-direction: column;
         gap: 0.75rem;
     }
 
     .my-order-detail-back-button {
-        width: 2.5rem;
-        height: 2.5rem;
+        width: auto;
+        min-height: 2.75rem;
     }
 
     .my-order-detail-hero h1 {

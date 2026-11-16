@@ -173,7 +173,7 @@ public class OrdersController : ControllerBase
     }
 
     /// <summary>
-    /// Employee báo sai một đơn do chính mình tạo
+    /// Employee báo sai đơn của mình; báo lại phải xác nhận đã đọc đúng phiên bản xử lý mới nhất.
     /// </summary>
     [HttpPatch("{orderId:int}/report")]
     [ProducesResponseType(typeof(ReportOrderResponseDTO), StatusCodes.Status200OK)]
@@ -217,7 +217,7 @@ public class OrdersController : ControllerBase
         {
             return Problem(
                 statusCode: StatusCodes.Status400BadRequest,
-                title: "Lý do báo sai không hợp lệ",
+                title: "Thông tin báo sai không hợp lệ",
                 detail: result.ErrorMessage);
         }
 

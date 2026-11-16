@@ -17,6 +17,11 @@ public class MyOrderDetailDTO
     public DateTime? ReportedAt { get; set; }
     public DateTime CreatedAt { get; set; }
 
+    public int LatestHistoryId { get; set; }
+
+    public List<MyOrderResolutionDTO> History { get; set; } =
+        new List<MyOrderResolutionDTO>();
+
     public List<MyOrderDetailItemDTO> Items { get; set; } =
         new List<MyOrderDetailItemDTO>();
 }

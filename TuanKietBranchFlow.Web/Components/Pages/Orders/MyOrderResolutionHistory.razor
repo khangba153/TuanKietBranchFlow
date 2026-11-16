@@ -1,0 +1,66 @@
+@using TuanKietBranchFlow.Application.DTOs.Orders
+
+@if (History.Count > 0)
+{
+    <section class="bf-surface p-3 mb-3" aria-labelledby="employee-resolution-title">
+        <h2 id="employee-resolution-title" class="h5">Kết quả xử lý từ quản lý</h2>
+        <p class="small text-body-secondary">
+            Xem kết quả gần nhất và đối chiếu nội dung trước/sau trước khi báo sai lại.
+        </p>
+
+        @foreach (MyOrderResolutionDTO history in History)
+        {
+            <details class="border-top pt-2 mt-2" open="@(history.Id == LatestHistoryId)" @key="history.Id">
+                <summary class="py-2 fw-semibold">
+                    @GetResolutionText(history.AfterStatus)
+                    @(history.Id == LatestHistoryId ? "(gần nhất)" : string.Empty)
+                </summary>
+                <p class="small mb-2">
+                    @history.ProcessedByFullName;
+                    @history.CreatedAt.ToString("dd/MM/yyyy HH:mm") UTC
+                </p>
+                <p class="text-break"><strong>Lý do xử lý:</strong> @history.Reason</p>
+
+                @if (history.BeforeItems.Count > 0 || history.AfterItems.Count > 0)
+                {
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <h3 class="h6">Trước xử lý</h3>
+                            <MyOrderResolutionItems Items="history.BeforeItems" />
+                            <p class="small fw-semibold">Tổng: @history.BeforeTotalAmount?.ToString("N0") đ</p>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <h3 class="h6">Sau xử lý</h3>
+                            <MyOrderResolutionItems Items="history.AfterItems" />
+                            <p class="small fw-semibold">Tổng: @history.AfterTotalAmount?.ToString("N0") đ</p>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <p class="small text-body-secondary">Lịch sử cũ không có nội dung đối chiếu chi tiết.</p>
+                }
+            </details>
+        }
+    </section>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public List<MyOrderResolutionDTO> History { get; set; } =
+        new List<MyOrderResolutionDTO>();
+
+    [Parameter]
+    public int LatestHistoryId { get; set; }
+
+    private static string GetResolutionText(string? status)
+    {
+        return status switch
+        {
+            "COMPLETED" => "Đã kiểm tra và giữ nguyên đơn",
+            "ADJUSTED" => "Đã điều chỉnh đơn",
+            "CANCELLED" => "Đã hủy đơn",
+            _ => "Đã xử lý báo sai"
+        };
+    }
+}

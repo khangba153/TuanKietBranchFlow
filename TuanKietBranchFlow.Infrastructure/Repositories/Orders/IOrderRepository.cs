@@ -51,4 +51,12 @@ public interface IOrderRepository : IRepositoryBase<SalesOrder>
     Task<SalesOrder?> GetOrderForReportAsync(
         int orderId,
         int currentUserId);
+
+    // Cập nhật nguyên tử; chỉ nhận báo sai trên đúng phiên bản employee đã xem.
+    Task<int> TryReportOrderAsync(
+        int orderId,
+        int currentUserId,
+        int expectedHistoryId,
+        string reason,
+        DateTime reportedAt);
 }

@@ -3,6 +3,8 @@ using TuanKietBranchFlow.Infrastructure.Repositories.Orders;
 using TuanKietBranchFlow.Application.DTOs.Orders;
 using TuanKietBranchFlow.Infrastructure.Models;
 using TuanKietBranchFlow.Infrastructure.UnitOfWork;
+using System.Text.Json;
+using TuanKietBranchFlow.Application.DTOs.Orders.Management;
 
 namespace TuanKietBranchFlow.Application.Services.Orders;
 
@@ -10,6 +12,7 @@ public class OrderService : IOrderService
 {
     private const string UpSizeGroupName = "Up size";
     private const string CompletedStatus = "COMPLETED";
+    private const string AdjustedStatus = "ADJUSTED";
     private const string NeedsReviewStatus = "NEEDS_REVIEW";
 
     private readonly IBranchRepository _branchRepository;
@@ -411,7 +414,97 @@ public class OrderService : IOrderService
             result.Items.Add(itemDTO);
         }
 
+        // Chỉ đưa dữ liệu hiển thị ra employee, không trả JSON snapshot nội bộ.
+        foreach (OrderAdjustment history in order.OrderAdjustments
+            .OrderByDescending(history => history.Id))
+        {
+            OrderHistorySnapshotDTO? before = ReadResolutionSnapshot(history.BeforeData);
+            OrderHistorySnapshotDTO? after = ReadResolutionSnapshot(history.AfterData);
+
+            result.History.Add(new MyOrderResolutionDTO
+            {
+                Id = history.Id,
+                ProcessedByFullName = history.AdjustedByUser?.FullName ?? "Quản lý",
+                Reason = history.Reason,
+                CreatedAt = history.CreatedAt,
+                AfterStatus = after?.Status,
+                BeforeTotalAmount = before?.TotalAmount,
+                AfterTotalAmount = after?.TotalAmount,
+                BeforeItems = MapResolutionItems(before),
+                AfterItems = MapResolutionItems(after)
+            });
+        }
+
+        result.LatestHistoryId = order.OrderAdjustments
+            .Select(history => history.Id)
+            .DefaultIfEmpty(0)
+            .Max();
+
         return result;
+    }
+
+    // Lịch sử cũ không đọc được vẫn hiển thị lý do và thời gian xử lý.
+    private static OrderHistorySnapshotDTO? ReadResolutionSnapshot(string data)
+    {
+        if (string.IsNullOrWhiteSpace(data))
+        {
+            return null;
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<OrderHistorySnapshotDTO>(data);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    // Employee chỉ cần nội dung món, không cần ID menu hoặc thông tin tài khoản nội bộ.
+    private static List<MyOrderDetailItemDTO> MapResolutionItems(
+        OrderHistorySnapshotDTO? snapshot)
+    {
+        List<MyOrderDetailItemDTO> items = new List<MyOrderDetailItemDTO>();
+
+        if (snapshot is null || snapshot.Items is null)
+        {
+            return items;
+        }
+
+        foreach (OrderManagementItemDTO original in snapshot.Items)
+        {
+            MyOrderDetailItemDTO item = new MyOrderDetailItemDTO
+            {
+                ProductName = original.ProductName,
+                SizeName = original.SizeName,
+                Quantity = original.Quantity,
+                UnitPrice = original.UnitPrice,
+                SubtotalAmount = original.SubtotalAmount
+            };
+
+            foreach (OrderManagementToppingDTO topping in original.Toppings)
+            {
+                item.Toppings.Add(new MyOrderDetailToppingDTO
+                {
+                    Name = topping.Name,
+                    Quantity = topping.Quantity,
+                    UnitPrice = topping.UnitPrice
+                });
+            }
+
+            foreach (string note in original.Notes)
+            {
+                item.Notes.Add(new MyOrderDetailNoteDTO
+                {
+                    Name = note
+                });
+            }
+
+            items.Add(item);
+        }
+
+        return items;
     }
 
     // Kiểm tra quyền sở hữu, trạng thái và cập nhật thông tin báo sai
@@ -420,7 +513,7 @@ public class OrderService : IOrderService
         int orderId,
         ReportOrderRequestDTO request)
     {
-        string normalizedReason = request.Reason.Trim();
+        string normalizedReason = request.Reason?.Trim() ?? string.Empty;
 
         // Service tự bảo vệ nếu được gọi ngoài Controller
         if (string.IsNullOrWhiteSpace(normalizedReason))
@@ -456,30 +549,61 @@ public class OrderService : IOrderService
             };
         }
 
-        // Chỉ đơn hàng hoàn thành mới chuyển sang xem lại
-        if (!string.Equals(
-            order.Status,
-            CompletedStatus,
-            StringComparison.OrdinalIgnoreCase))
+        // Cả đơn hoàn tất và đã điều chỉnh đều có thể cần kiểm tra lại.
+        if (order.Status != CompletedStatus && order.Status != AdjustedStatus)
         {
             return new ReportOrderResult
             {
                 IsReportValid = true,
                 IsOrderFound = true,
                 CanReport = false,
-                ErrorMessage = "Chỉ đơn đã hoàn thành mới có thể báo sai."
+                ErrorMessage = "Chỉ đơn hoàn tất hoặc đã điều chỉnh mới có thể báo sai. Hãy tải lại đơn."
+            };
+        }
+
+        int latestHistoryId = order.OrderAdjustments
+            .Select(history => history.Id)
+            .DefaultIfEmpty(0)
+            .Max();
+
+        if (request.ExpectedHistoryId != latestHistoryId)
+        {
+            return new ReportOrderResult
+            {
+                IsReportValid = true,
+                IsOrderFound = true,
+                ErrorMessage = "Quản lý đã có kết quả xử lý mới. Hãy tải lại và đọc kết quả trước khi báo sai lại."
+            };
+        }
+
+        if (latestHistoryId > 0 && !request.HasReviewedResolution)
+        {
+            return new ReportOrderResult
+            {
+                IsOrderFound = true,
+                ErrorMessage = "Vui lòng xác nhận đã xem kết quả xử lý trước khi báo sai lại."
             };
         }
 
         DateTime reportedAt = DateTime.UtcNow;
 
-        order.Status = NeedsReviewStatus;
-        order.ReportReason = normalizedReason;
-        order.ReportedByUserId = currentUserId;
-        order.ReportedAt = reportedAt;
-        order.UpdatedAt = reportedAt;
+        // UPDATE có điều kiện ngăn hai lần gửi hoặc xử lý admin chen giữa bước đọc và ghi.
+        int changedRows = await _orderRepository.TryReportOrderAsync(
+            orderId,
+            currentUserId,
+            latestHistoryId,
+            normalizedReason,
+            reportedAt);
 
-        await _unitOfWork.SaveChangesAsync();
+        if (changedRows != 1)
+        {
+            return new ReportOrderResult
+            {
+                IsReportValid = true,
+                IsOrderFound = true,
+                ErrorMessage = "Đơn đã thay đổi hoặc đã được báo sai. Hãy tải lại trước khi tiếp tục."
+            };
+        }
 
         return new ReportOrderResult
         {
@@ -490,8 +614,8 @@ public class OrderService : IOrderService
             {
                 Id = order.Id,
                 Code = order.Code,
-                Status = order.Status,
-                ReportReason = order.ReportReason,
+                Status = NeedsReviewStatus,
+                ReportReason = normalizedReason,
                 ReportedAt = reportedAt
             }
         };

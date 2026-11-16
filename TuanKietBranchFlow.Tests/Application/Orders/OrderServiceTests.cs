@@ -1833,7 +1833,7 @@ public class OrderServiceTests
 
     // Test báo sai đơn thành công
     [Fact]
-    public async Task ReportOrderAsync_CompletedOrder_UpdatesReportAndSaves()
+    public async Task ReportOrderAsync_CompletedOrder_UsesConditionalUpdate()
     {
         // Arrange
         Mock<IBranchRepository> branchRepositoryMock =
@@ -1868,9 +1868,9 @@ public class OrderServiceTests
                     currentUserId))
             .ReturnsAsync(order);
 
-        unitOfWorkMock
-            .Setup(unitOfWork =>
-                unitOfWork.SaveChangesAsync())
+        orderRepositoryMock
+            .Setup(repository => repository.TryReportOrderAsync(
+                orderId, currentUserId, 0, "Sai size của món", It.IsAny<DateTime>()))
             .ReturnsAsync(1);
 
         ReportOrderRequestDTO request = new ReportOrderRequestDTO
@@ -1891,11 +1891,8 @@ public class OrderServiceTests
         Assert.True(result.CanReport);
         Assert.NotNull(result.Order);
 
-        Assert.Equal("NEEDS_REVIEW", order.Status);
-        Assert.Equal("Sai size của món", order.ReportReason);
-        Assert.Equal(currentUserId, order.ReportedByUserId);
-        Assert.NotNull(order.ReportedAt);
-        Assert.Equal(order.ReportedAt, order.UpdatedAt);
+        // Dữ liệu đọc không bị sửa tracking; SQL chỉ cập nhật nếu điều kiện còn đúng.
+        Assert.Equal("COMPLETED", order.Status);
 
         Assert.Equal(order.Id, result.Order.Id);
         Assert.Equal(order.Code, result.Order.Code);
@@ -1904,7 +1901,10 @@ public class OrderServiceTests
 
         unitOfWorkMock.Verify(
             unitOfWork => unitOfWork.SaveChangesAsync(),
-            Times.Once);
+            Times.Never);
+
+        orderRepositoryMock.Verify(repository => repository.TryReportOrderAsync(
+            orderId, currentUserId, 0, "Sai size của món", It.IsAny<DateTime>()), Times.Once);
 
         unitOfWorkMock.Verify(
             unitOfWork => unitOfWork.BeginTransactionAsync(),

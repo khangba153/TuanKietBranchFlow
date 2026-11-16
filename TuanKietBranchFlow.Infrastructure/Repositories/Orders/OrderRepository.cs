@@ -279,10 +279,13 @@ public class OrderRepository : RepositoryBase<SalesOrder>, IOrderRepository
     {
         return await Context.SalesOrders
             .AsNoTracking()
+            .AsSingleQuery()
             .Where(salesOrder =>
                 salesOrder.Id == orderId
                 && salesOrder.CreatedByUserId == currentUserId)
             .Include(salesOrder => salesOrder.Branch)
+            .Include(salesOrder => salesOrder.OrderAdjustments)
+                .ThenInclude(history => history.AdjustedByUser)
             .Include(salesOrder => salesOrder.OrderItems)
                 .ThenInclude(orderItem => orderItem.OrderItemToppings)
             .Include(salesOrder => salesOrder.OrderItems)
@@ -290,15 +293,39 @@ public class OrderRepository : RepositoryBase<SalesOrder>, IOrderRepository
             .FirstOrDefaultAsync();
     }
 
-    // Lấy entity có tracking để Service cập nhật thông tin báo sai
+    // Chỉ đọc trạng thái và phiên bản trước khi thử cập nhật có điều kiện.
     public async Task<SalesOrder?> GetOrderForReportAsync(
         int orderId,
         int currentUserId)
     {
         return await Context.SalesOrders
+            .AsNoTracking()
             .Where(salesOrder =>
                 salesOrder.Id == orderId
                 && salesOrder.CreatedByUserId == currentUserId)
+            .Include(salesOrder => salesOrder.OrderAdjustments)
             .FirstOrDefaultAsync();
+    }
+
+    // SQL kiểm tra đồng thời quyền sở hữu, trạng thái và lịch sử mới nhất.
+    public async Task<int> TryReportOrderAsync(
+        int orderId,
+        int currentUserId,
+        int expectedHistoryId,
+        string reason,
+        DateTime reportedAt)
+    {
+        return await Context.SalesOrders
+            .Where(order => order.Id == orderId
+                && order.CreatedByUserId == currentUserId
+                && (order.Status == "COMPLETED" || order.Status == "ADJUSTED")
+                && (order.OrderAdjustments.Select(history => (int?)history.Id).Max() ?? 0)
+                    == expectedHistoryId)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(order => order.Status, "NEEDS_REVIEW")
+                .SetProperty(order => order.ReportReason, reason)
+                .SetProperty(order => order.ReportedByUserId, currentUserId)
+                .SetProperty(order => order.ReportedAt, reportedAt)
+                .SetProperty(order => order.UpdatedAt, reportedAt));
     }
 }

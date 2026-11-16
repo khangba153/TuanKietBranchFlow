@@ -5,7 +5,7 @@ public class ReportOrderResult
     // Không tìm thấy đơn thuộc employee hiện tại
     public bool IsOrderFound { get; set; }
 
-    // Chỉ đơn COMPLETED mới được báo sai
+    // Đơn COMPLETED hoặc ADJUSTED, đúng phiên bản đã xem, mới được báo sai.
     public bool CanReport { get; set; }
 
     // Giải thích lỗi nghiệp vụ để Controller tạo ProblemDetails
