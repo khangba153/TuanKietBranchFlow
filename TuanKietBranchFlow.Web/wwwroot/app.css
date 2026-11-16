@@ -1,4 +1,8 @@
 :root {
+    --bf-font-family: "Be Vietnam Pro", "Segoe UI", Arial, sans-serif;
+    --bs-font-sans-serif: var(--bf-font-family);
+    --bs-body-font-family: var(--bf-font-family);
+
     --bf-primary: #0f766e;
     --bf-primary-dark: #103f3a;
     --bf-primary-soft: #e5f3f0;
@@ -27,12 +31,7 @@
 html,
 body {
     min-height: 100%;
-    font-family:
-        "Segoe UI",
-        Roboto,
-        Helvetica,
-        Arial,
-        sans-serif;
+    font-family: var(--bf-font-family);
     line-height: 1.5;
     color: var(--bf-text);
     background-color: var(--bf-background);
