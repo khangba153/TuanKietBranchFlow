@@ -2,6 +2,7 @@ namespace TuanKietBranchFlow.Application.DTOs.Employees;
 
 public class EmployeeStatusUpdateResultDTO
 {
+    public bool IsBranchInactive { get; set; }
     // Cho biết chi nhánh có tồn tại hay không.
     public bool IsBranchFound { get; set; }
 

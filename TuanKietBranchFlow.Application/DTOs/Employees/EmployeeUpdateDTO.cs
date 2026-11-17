@@ -38,23 +38,6 @@ public class EmployeeUpdateDTO : IValidatableObject
     // Dùng chung kiểm tra ngày cho API và form sửa hồ sơ.
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
-        List<ValidationResult> errors = new List<ValidationResult>();
-        DateOnly today = DateOnly.FromDateTime(DateTime.Today);
-
-        if (HireDate == default || HireDate > today)
-        {
-            errors.Add(new ValidationResult(
-                "Ngày vào làm không được để trống hoặc lớn hơn ngày hiện tại.",
-                new[] { nameof(HireDate) }));
-        }
-
-        if (DateOfBirth.HasValue && DateOfBirth.Value > today)
-        {
-            errors.Add(new ValidationResult(
-                "Ngày sinh không được lớn hơn ngày hiện tại.",
-                new[] { nameof(DateOfBirth) }));
-        }
-
-        return errors;
+        return EmployeeProfileValidation.ValidateDates(HireDate, DateOfBirth);
     }
 }

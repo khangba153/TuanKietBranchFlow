@@ -56,7 +56,7 @@ Menu management and employee ordering have been deployed to the Azure demo and m
 
 The auth update is deployed to Azure. Web uses a Secure, HttpOnly session cookie and keeps API tokens on the server, not in browser storage. API access tokens last 15 minutes; refresh tokens rotate within a fixed seven-day session, with only their hashes stored in SQL. Logout revokes all existing sessions of the same account; detected refresh-token reuse also triggers account-wide revocation.
 
-The author manually smoke-tested login, F5/new tabs, cookie flags, WebSocket connectivity, refresh rotation, account-wide logout, and login rate limiting on Azure at the auth milestone. The current local Release test suite has 181 passing tests.
+The author manually smoke-tested login, F5/new tabs, cookie flags, WebSocket connectivity, refresh rotation, account-wide logout, and login rate limiting on Azure at the auth milestone. The current local Release test suite has 191 passing tests.
 
 **Demo limits:** Web token storage and rate-limit counters are in process memory. The deployment uses one instance; Web restart/deploy requires signing in again. There is no distributed session store, and backup restoration has not yet been rehearsed.
 
@@ -75,6 +75,8 @@ Employee profile editing is implemented and checked locally: ADMIN-only editing 
 Employee work-status changes are implemented and checked locally: explicit confirmation, effective-date explanations, preserved assignment history, transactional session/token revocation and serialized status/login operations. Concurrent SQL, rollback, HTTP authorization and responsive browser checks passed; see the [work-status report](docs/features/employee-work-status.md). This update has not been deployed.
 
 Employee branch transfers are implemented and checked locally: direct transfer for an ADMIN managing both branches, otherwise a pending request for destination acceptance, with rejection/withdrawal history. SQL concurrency/rollback, status-transfer races, order branch rechecks, HTTP scope and mobile/desktop browser checks passed; see the [transfer workflow and report](docs/features/employee-transfer-workflow.md). Apply SQL scripts 006/007 before deploying this version; cloud schema and deployment have not been changed.
+
+Employee closeout hardening is implemented locally: profile editing shares the account transaction lock with status/transfers, tracks only edited properties, create/edit validation is aligned, duplicate writes return conflict, and inactive branches cannot create/reactivate employees. SQL/HTTP regression checks passed; create-form interaction/mobile re-verification remains pending because browser access was unavailable. See the [audit and remediation report](docs/features/employee-module-closeout-audit.md).
 
 ## Running Locally
 

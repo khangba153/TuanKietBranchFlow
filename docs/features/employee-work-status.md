@@ -48,6 +48,6 @@
 ## Giới hạn
 
 - Thu hồi có hiệu lực khi API kiểm tra yêu cầu tiếp theo; không chủ động đẩy trình duyệt đang mở về trang đăng nhập ngay tức thì.
-- Khóa mới bảo vệ luồng đổi trạng thái và login; không tuyên bố đã chống mọi xung đột với các luồng legacy sửa hồ sơ/chuyển chi nhánh. Các luồng đó chưa dùng rowversion/ETag hoặc cùng cơ chế khóa.
+- Sau mốc hardening 2026-11-17, sửa hồ sơ cũng dùng chung khóa với status/transfer/login/order; xem employee-module-closeout-audit.md. Chưa có ETag/rowversion để báo hai form cùng sửa thông tin theo kiểu optimistic concurrency, chưa tuyên bố bảo vệ mọi thay đổi quản trị ngoài các luồng này.
 - Quy tắc hôm nay vẫn dùng DateTime.Today theo môi trường chạy hiện có; chuẩn hóa múi giờ nghiệp vụ là thay đổi riêng cần chốt trước.
 - Người dùng đã nghiệm thu local và duyệt commit/push ngày 2026-11-17. Chưa deploy; host Debug đang mở trước đó phải khởi động lại để nạp code mới.

@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace TuanKietBranchFlow.Application.DTOs.Employees;
 
-public class EmployeeCreateDTO
+public class EmployeeCreateDTO : IValidatableObject
 {
     // Thông tin dùng để tạo tài khoản đăng nhập
     [Required(ErrorMessage = "Username không được để trống.")]
@@ -35,7 +35,9 @@ public class EmployeeCreateDTO
     [StringLength(100, ErrorMessage = "Chức vụ không được vượt quá 100 ký tự.")]
     public string? Position { get; set; }
 
-    [Range(0, double.MaxValue, ErrorMessage = "Lương cơ bản không được nhỏ hơn 0.")]
+    [Range(typeof(decimal), "0", "9999999999999999.99",
+        ParseLimitsInInvariantCulture = true,
+        ErrorMessage = "Lương cơ bản phải từ 0 đến 9.999.999.999.999.999,99.")]
     public decimal BaseSalary { get; set; }
     
     [StringLength(500, ErrorMessage = "Địa chỉ không được vượt quá 500 ký tự.")]
@@ -44,4 +46,9 @@ public class EmployeeCreateDTO
     // Chi nhánh mà ADMIN đang chọn để phân công nhân viên
     [Range(1, int.MaxValue, ErrorMessage = "BranchId phải lớn hơn 0.")]
     public int BranchId { get; set; } 
-} 
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        return EmployeeProfileValidation.ValidateDates(HireDate, DateOfBirth);
+    }
+}

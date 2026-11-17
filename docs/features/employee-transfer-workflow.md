@@ -123,6 +123,6 @@ không còn đường ghi bỏ qua quy tắc mới.
 - Chưa có thông báo realtime/email: admin vào Cần tiếp nhận và bấm tải lại; không thêm dịch vụ thông báo ngoài phạm vi.
 - Chưa đặt lịch tương lai, admin tổng hay chính sách duyệt cấu hình theo đơn vị.
 - Hôm nay vẫn theo DateTime.Today của host như mốc trạng thái nhân viên; cần chốt riêng chuẩn múi giờ nghiệp vụ trước khi đổi đồng bộ toàn hệ thống.
-- Khóa bảo vệ các luồng status/transfer/login/create-order đã nối ở mốc này. Các luồng legacy sửa hồ sơ hoặc thay quyền phân công admin chưa được tuyên bố có bảo đảm chống mọi xung đột ghi đồng thời.
+- Khóa bảo vệ status/transfer/login/create-order và, sau mốc hardening 2026-11-17, cả sửa hồ sơ. Chưa có bảo đảm chống mọi xung đột với thay quyền phân công admin hoặc ETag cho hai form sửa cùng trường; xem employee-module-closeout-audit.md.
 - Các request đã bắt đầu xác thực trước lúc thu hồi không phải cơ chế hủy request tức thì. Kiểm tra chi nhánh trong transaction bảo vệ việc ghi đơn vào nguồn sau chuyển; API từ chối phiên cũ ở các request tiếp theo.
 - Cần áp dụng 006/007 có kiểm tra môi trường trước khi deploy bản này. Database đã có schema nhưng tiến trình Debug cũ vẫn phải khởi động lại để dùng code mới.

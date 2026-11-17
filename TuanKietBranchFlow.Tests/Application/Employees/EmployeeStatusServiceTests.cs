@@ -15,6 +15,35 @@ namespace TuanKietBranchFlow.Tests.Application.Employees;
 public class EmployeeStatusServiceTests
 {
     [Fact]
+    public async Task Reactivate_InactiveBranch_IsRejectedWithoutCreatingAssignment()
+    {
+        StatusFixture fixture = new StatusFixture();
+        fixture.Employee.User.IsActive = false;
+        fixture.Employee.LeaveDate = fixture.Today.AddDays(-5);
+        UserBranch assignment = Assert.Single(fixture.Employee.User.UserBranches);
+        assignment.ActiveTo = fixture.Today.AddDays(-6);
+        assignment.Branch.IsActive = false;
+
+        EmployeeStatusUpdateResultDTO result = await fixture.UpdateAsync(true);
+
+        Assert.True(result.IsBranchInactive);
+        fixture.VerifyRejected();
+    }
+
+    [Fact]
+    public async Task Deactivate_InactiveBranch_IsStillAllowed()
+    {
+        StatusFixture fixture = new StatusFixture();
+        Assert.Single(fixture.Employee.User.UserBranches).Branch.IsActive = false;
+
+        EmployeeStatusUpdateResultDTO result = await fixture.UpdateAsync(false);
+
+        Assert.NotNull(result.Employee);
+        Assert.False(result.Employee.IsActive);
+        Assert.False(result.IsBranchInactive);
+    }
+
+    [Fact]
     public async Task Deactivate_ClosesAssignmentAndRevokesSessionsBeforeCommit()
     {
         StatusFixture fixture = new StatusFixture();
@@ -159,7 +188,7 @@ public class EmployeeStatusServiceTests
 
         public StatusFixture()
         {
-            Branch branch = new Branch { Id = 2, Code = "TEST", Name = "Chi nhánh thử", Address = "Địa chỉ thử" };
+            Branch branch = new Branch { Id = 2, Code = "TEST", Name = "Chi nhánh thử", Address = "Địa chỉ thử", IsActive = true };
             Employee = new EmployeeProfile
             {
                 Id = 10,

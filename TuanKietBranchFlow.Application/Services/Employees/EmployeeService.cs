@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Identity;
 using TuanKietBranchFlow.Infrastructure.UnitOfWork;
 using TuanKietBranchFlow.Infrastructure.Repositories.Auth;
 using TuanKietBranchFlow.Application.DTOs.Employees.Transfers;
+using Microsoft.EntityFrameworkCore;
+using TuanKietBranchFlow.Infrastructure.Repositories.Common;
 
 namespace TuanKietBranchFlow.Application.Services.Employees;
 
@@ -385,6 +387,17 @@ public class EmployeeService : IEmployeeService
             };
         }
 
+        if (!branch.IsActive)
+        {
+            return new EmployeeCreateResultDTO
+            {
+                IsBranchFound = true,
+                HasAccess = true,
+                IsEmployeeRoleFound = true,
+                IsBranchInactive = true
+            };
+        }
+
         // Bước 6: tạo tài khoản đăng nhập cho nhân viên
         AppUser appUser = new AppUser
         {
@@ -428,8 +441,31 @@ public class EmployeeService : IEmployeeService
         await _employeeRepository.AddAsync(employeeProfile);
         await _userBranchRepository.AddAsync(userBranch);
 
-        // Lưu toàn bộ thay đổi
-        await _unitOfWork.SaveChangesAsync();
+        // Unique index là lớp bảo vệ cuối khi hai request vượt qua kiểm tra Exists cùng lúc.
+        try
+        {
+            await _unitOfWork.SaveChangesAsync();
+        }
+        catch (DbUpdateException exception) when (DatabaseConflict.IsUniqueViolation(exception))
+        {
+            _unitOfWork.ClearTracking();
+            bool usernameDuplicated = await _userRepository.UsernameExistsAsync(username);
+            bool emailDuplicated = email != null && await _userRepository.EmailExistsAsync(email);
+            bool codeDuplicated = await _employeeRepository.EmployeeCodeExistsAsync(employeeCode);
+            if (!usernameDuplicated && !emailDuplicated && !codeDuplicated)
+            {
+                throw;
+            }
+            return new EmployeeCreateResultDTO
+            {
+                IsBranchFound = true,
+                HasAccess = true,
+                IsEmployeeRoleFound = true,
+                IsUsernameDuplicated = usernameDuplicated,
+                IsEmailDuplicated = emailDuplicated,
+                IsEmployeeCodeDuplicated = codeDuplicated
+            };
+        }
 
         // Bước 9: tạo DTO trả về sau khi db đã sinh Id
         EmployeeDetailDTO employeeDTO = new EmployeeDetailDTO
@@ -497,6 +533,75 @@ public class EmployeeService : IEmployeeService
                 currentDate);
 
         if (!hasAccess)
+        {
+            return new EmployeeUpdateResultDTO
+            {
+                IsBranchFound = true,
+                HasAccess = false
+            };
+        }
+
+        // Cùng khóa với nghỉ/chuyển: chỉ đọc hồ sơ sau khi giành quyền ghi tài khoản.
+        await _unitOfWork.BeginTransactionAsync();
+        try
+        {
+            int lockedRows = await _employeeRepository.LockAccountForStatusChangeAsync(employeeId);
+            if (lockedRows != 1)
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                _unitOfWork.ClearTracking();
+                return new EmployeeUpdateResultDTO
+                {
+                    IsBranchFound = true,
+                    HasAccess = true
+                };
+            }
+
+            EmployeeUpdateResultDTO result = await ApplyEmployeeUpdateAsync(
+                currentAdminId, employeeId, branchId, currentDate, request);
+            if (result.Employee == null)
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                _unitOfWork.ClearTracking();
+                return result;
+            }
+            await _unitOfWork.CommitTransactionAsync();
+            return result;
+        }
+        catch (DbUpdateException exception) when (DatabaseConflict.IsUniqueViolation(exception))
+        {
+            await _unitOfWork.RollbackTransactionAsync();
+            _unitOfWork.ClearTracking();
+            EmployeeProfile? employee = await _employeeRepository.GetByIdWithUserAndBranchesAsync(employeeId);
+            bool emailDuplicated = employee != null && !string.IsNullOrWhiteSpace(request.Email)
+                && await _userRepository.EmailExistsForOtherUserAsync(request.Email.Trim(), employee.UserId);
+            bool codeDuplicated = await _employeeRepository.EmployeeCodeExistsForOtherEmployeeAsync(request.EmployeeCode.Trim(), employeeId);
+            if (!emailDuplicated && !codeDuplicated)
+            {
+                throw;
+            }
+            return new EmployeeUpdateResultDTO
+            {
+                IsBranchFound = true,
+                HasAccess = true,
+                IsEmployeeFound = true,
+                IsEmailDuplicated = emailDuplicated,
+                IsEmployeeCodeDuplicated = codeDuplicated
+            };
+        }
+        catch
+        {
+            await _unitOfWork.RollbackTransactionAsync();
+            _unitOfWork.ClearTracking();
+            throw;
+        }
+    }
+
+    private async Task<EmployeeUpdateResultDTO> ApplyEmployeeUpdateAsync(
+        int currentAdminId, int employeeId, int branchId, DateOnly currentDate, EmployeeUpdateDTO request)
+    {
+        // Phạm vi được kiểm tra lại trong transaction, không dùng kết quả từ trước khi chờ khóa.
+        if (!await _branchRepository.HasActiveAssignmentAsync(currentAdminId, branchId, currentDate))
         {
             return new EmployeeUpdateResultDTO
             {
@@ -599,9 +704,7 @@ public class EmployeeService : IEmployeeService
         employeeProfile.Address = address;
         employeeProfile.UpdatedAt = DateTime.UtcNow;
 
-        // Bước 8: đánh dấu 2 entity cần được cập nhật
-        _userRepository.Update(employeeProfile.User);
-        _employeeRepository.Update(employeeProfile);
+        // Entity đang được theo dõi; chỉ lưu các trường đã đổi, không Update toàn bộ graph.
 
         // Bước 9: lưu các thay đổi xuống db 1 lần
         await _unitOfWork.SaveChangesAsync();
@@ -862,6 +965,18 @@ public class EmployeeService : IEmployeeService
         bool newStatus = request.IsActive!.Value;
         UserBranch? newAssignment = null;
 
+        if (newStatus && !branch.IsActive)
+        {
+            return new EmployeeStatusUpdateResultDTO
+            {
+                IsBranchFound = true,
+                HasAccess = true,
+                IsEmployeeFound = true,
+                IsEffectiveDateValid = true,
+                IsBranchInactive = true
+            };
+        }
+
         // Bước 5: không cập nhật khi trạng thái mới giống trạng thái hiện tại
         if (newStatus == employeeProfile.User.IsActive)
         {
@@ -940,9 +1055,7 @@ public class EmployeeService : IEmployeeService
         employeeProfile.User.UpdatedAt = DateTime.UtcNow;
         employeeProfile.UpdatedAt = DateTime.UtcNow;
 
-        // Bước 8: đánh dấu tài khoản và hồ sơ cần cập nhật
-        _userRepository.Update(employeeProfile.User);
-        _employeeRepository.Update(employeeProfile);
+        // Entity đã được đọc có tracking trong transaction; chỉ lưu thuộc tính đã thay đổi.
 
         // Cả nghỉ và quay lại đều không khôi phục phiên cũ; token đã dùng vẫn giữ UsedAt.
         await _transferRepository.InvalidatePendingAsync(employeeProfile.Id,

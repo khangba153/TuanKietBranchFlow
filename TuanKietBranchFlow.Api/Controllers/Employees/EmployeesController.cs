@@ -232,6 +232,12 @@ public class EmployeesController : ControllerBase
                 detail: "Không tìm thấy Role EMPLOYEE.");
         }
 
+        if (result.IsBranchInactive)
+        {
+            return Problem(statusCode: 409, title: "Chi nhánh ngừng hoạt động",
+                detail: "Không thể tạo nhân viên mới tại chi nhánh ngừng hoạt động.");
+        }
+
         if (result.IsUsernameDuplicated)
         {
             return Problem(
@@ -624,6 +630,12 @@ public class EmployeesController : ControllerBase
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Ngày hiệu lực không hợp lệ",
                 detail: "Ngày hiệu lực phải là ngày hiện tại và phải sau ngày bắt đầu phân công.");
+        }
+
+        if (result.IsBranchInactive)
+        {
+            return Problem(statusCode: 409, title: "Chi nhánh ngừng hoạt động",
+                detail: "Không thể cho nhân viên quay lại làm tại chi nhánh ngừng hoạt động.");
         }
 
         // Không cập nhật khi trạng thái mới giống trạng thái trong db
