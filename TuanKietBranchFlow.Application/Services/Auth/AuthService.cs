@@ -112,10 +112,31 @@ public class AuthService : IAuthService
             session.Id,
             accessTokenExpiresAt);
 
-        // Chuẩn bị hai entity và lưu cùng một lần
-        await _authSessionRepository.AddAsync(session);
-        await _refreshTokenRepository.AddAsync(refreshTokenEntity);
-        await _unitOfWork.SaveChangesAsync();
+        // Giữ cùng khóa tài khoản với nghiệp vụ nghỉ việc để không tạo phiên lọt qua lúc thu hồi.
+        await _unitOfWork.BeginTransactionAsync();
+
+        try
+        {
+            int lockedRows = await _userRepository.LockActiveAccountForLoginAsync(user.Id, user.UpdatedAt);
+
+            if (lockedRows != 1)
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                _unitOfWork.ClearTracking();
+                return null;
+            }
+
+            await _authSessionRepository.AddAsync(session);
+            await _refreshTokenRepository.AddAsync(refreshTokenEntity);
+            await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.CommitTransactionAsync();
+        }
+        catch
+        {
+            await _unitOfWork.RollbackTransactionAsync();
+            _unitOfWork.ClearTracking();
+            throw;
+        }
 
         // Chỉ trả cặp token khi dữ liệu đã lưu thành công
         return new LoginResponseDTO

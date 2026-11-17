@@ -28,4 +28,7 @@ public interface IEmployeeRepository : IRepositoryBase<EmployeeProfile>
 
     // Lấy nhân viên cùng tài khoản và lịch sử phân công, kể cả nhân viên đã nghỉ.
     Task<EmployeeProfile?> GetByIdWithUserAndBranchesAsync(int employeeId);
+
+    // Giữ khóa ghi tài khoản đến cuối transaction để tuần tự hóa đổi trạng thái.
+    Task<int> LockAccountForStatusChangeAsync(int employeeId);
 }

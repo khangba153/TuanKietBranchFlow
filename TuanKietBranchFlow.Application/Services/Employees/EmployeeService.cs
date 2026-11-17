@@ -6,6 +6,7 @@ using TuanKietBranchFlow.Application.DTOs.Employees;
 using TuanKietBranchFlow.Infrastructure.Models;
 using Microsoft.AspNetCore.Identity;
 using TuanKietBranchFlow.Infrastructure.UnitOfWork;
+using TuanKietBranchFlow.Infrastructure.Repositories.Auth;
 
 namespace TuanKietBranchFlow.Application.Services.Employees;
 
@@ -18,6 +19,7 @@ public class EmployeeService : IEmployeeService
     private readonly IUserBranchRepository _userBranchRepository;
     private readonly IPasswordHasher<AppUser> _passwordHasher;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IAuthSessionRepository _authSessionRepository;
 
     // Nhận các dependency cần dùng từ DI
     public EmployeeService(
@@ -27,7 +29,8 @@ public class EmployeeService : IEmployeeService
         IRoleRepository roleRepository,
         IUserBranchRepository userBranchRepository,
         IPasswordHasher<AppUser> passwordHasher,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IAuthSessionRepository authSessionRepository)
     {
         _employeeRepository = employeeRepository;
         _branchRepository = branchRepository;
@@ -36,6 +39,7 @@ public class EmployeeService : IEmployeeService
         _userBranchRepository = userBranchRepository;
         _passwordHasher = passwordHasher;
         _unitOfWork = unitOfWork;
+        _authSessionRepository = authSessionRepository;
     }
 
     // Lấy danh sách nhân viên sau khi kiểm tra tra nhánh và quyền truy cập
@@ -887,6 +891,53 @@ public class EmployeeService : IEmployeeService
             };
         }
 
+        // Khóa tài khoản trước khi đọc trạng thái để request sau thấy dữ liệu đã commit.
+        await _unitOfWork.BeginTransactionAsync();
+
+        try
+        {
+            int lockedRows = await _employeeRepository.LockAccountForStatusChangeAsync(employeeId);
+
+            if (lockedRows != 1)
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                return new EmployeeStatusUpdateResultDTO
+                {
+                    IsBranchFound = true,
+                    HasAccess = true,
+                    IsEmployeeFound = false
+                };
+            }
+
+            EmployeeStatusUpdateResultDTO result = await ApplyEmployeeStatusAsync(
+                employeeId, branchId, branch, currentDate, request);
+
+            if (result.Employee is null)
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                _unitOfWork.ClearTracking();
+                return result;
+            }
+
+            await _unitOfWork.CommitTransactionAsync();
+            return result;
+        }
+        catch
+        {
+            await _unitOfWork.RollbackTransactionAsync();
+            _unitOfWork.ClearTracking();
+            throw;
+        }
+    }
+
+    // Chỉ gọi sau khi đã giành khóa tài khoản trong cùng transaction.
+    private async Task<EmployeeStatusUpdateResultDTO> ApplyEmployeeStatusAsync(
+        int employeeId,
+        int branchId,
+        Branch branch,
+        DateOnly currentDate,
+        EmployeeStatusUpdateDTO request)
+    {
         // Bước 3: lấy nhân viên cùng tài khoản và lịch sử phân công
         EmployeeProfile? employeeProfile =
             await _employeeRepository.GetByIdWithUserAndBranchesAsync(employeeId);
@@ -940,7 +991,7 @@ public class EmployeeService : IEmployeeService
         }
 
         // Bước 4: ngày hiệu lực phải là ngày hiện tại
-        if (request.EffectiveDate != currentDate)
+        if (!request.IsActive.HasValue || request.EffectiveDate != currentDate)
         {
             return new EmployeeStatusUpdateResultDTO
             {
@@ -971,16 +1022,16 @@ public class EmployeeService : IEmployeeService
         // Bổ sung: ngày nghỉ phải sau ngày bắt đầu phân công hiện tại
         if (!newStatus
             && request.EffectiveDate <= employeeBranchAssignment.ActiveFrom)
+        {
+            return new EmployeeStatusUpdateResultDTO
             {
-                return new EmployeeStatusUpdateResultDTO
-                {
-                    IsBranchFound = true,
-                    HasAccess = true,
-                    IsEmployeeFound = true,
-                    IsEffectiveDateValid = false,
-                    IsSameStatus = false
-                };
-            }
+                IsBranchFound = true,
+                HasAccess = true,
+                IsEmployeeFound = true,
+                IsEffectiveDateValid = false,
+                IsSameStatus = false
+            };
+        }
 
         // Bước 6: không thay đổi trạng thái khi còn phân công tương lai
         bool hasFutureAssignment =
@@ -1037,7 +1088,11 @@ public class EmployeeService : IEmployeeService
         _userRepository.Update(employeeProfile.User);
         _employeeRepository.Update(employeeProfile);
 
-        // Lưu các thay đổi xuống db 1 lần
+        // Cả nghỉ và quay lại đều không khôi phục phiên cũ; token đã dùng vẫn giữ UsedAt.
+        await _authSessionRepository.RevokeAllForEmployeeStatusAsync(
+            employeeProfile.UserId, DateTime.UtcNow);
+
+        // Tài khoản, phân công và thu hồi phiên cùng commit hoặc cùng rollback.
         await _unitOfWork.SaveChangesAsync();
 
         // Bước 9: chuyển lịch sử phân công cũ thành DTO
@@ -1046,7 +1101,7 @@ public class EmployeeService : IEmployeeService
 
         foreach (UserBranch userBranch in employeeProfile.User.UserBranches)
         {
-            if (userBranch.Branch.Deleted)
+            if (ReferenceEquals(userBranch, newAssignment) || userBranch.Branch.Deleted)
             {
                 continue;
             }
@@ -1063,7 +1118,7 @@ public class EmployeeService : IEmployeeService
             branchHistory.Add(historyDTO);
         }
 
-        // Phân công hoạt động lại chưa nằm trong collection nên cần thêm vào DTO
+        // Thêm phân công mới đúng một lần, kể cả khi EF đã cập nhật collection.
         if (newAssignment != null)
         {
             branchHistory.Add(new EmployeeBranchHistoryDTO

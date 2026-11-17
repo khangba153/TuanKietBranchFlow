@@ -1,0 +1,171 @@
+@using TuanKietBranchFlow.Application.DTOs.Employees
+@using TuanKietBranchFlow.Web.Models.Employees
+@using TuanKietBranchFlow.Web.Services.Employees
+@inject EmployeeApiService EmployeeApiService
+
+<section class="employee-status-panel bf-surface-card" aria-labelledby="employee-status-title">
+    <div>
+        <h2 id="employee-status-title">Trạng thái làm việc</h2>
+        <p>@(Employee.IsActive ? "Cho nghỉ việc sẽ khóa tài khoản và thu hồi các phiên đăng nhập cũ." : "Quay lại làm sẽ tạo phân công mới tại chi nhánh này, không sửa lịch sử cũ.")</p>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(_message))
+    {
+        <div class="alert @(_isSuccess ? "alert-success" : "alert-warning") mb-0" role="status">
+            @_message
+        </div>
+    }
+
+    @if (_mustReload)
+    {
+        <button type="button" class="btn btn-outline-primary" @onclick="ReloadAsync">Tải lại hồ sơ</button>
+    }
+    else if (!string.IsNullOrWhiteSpace(GetBlockedReason()))
+    {
+        <p class="employee-status-note">@GetBlockedReason()</p>
+    }
+    else if (_isConfirming)
+    {
+        <div class="employee-status-confirm">
+            <h3>@(_targetIsActive ? "Xác nhận quay lại làm việc?" : "Xác nhận cho nhân viên nghỉ việc?")</h3>
+            <p><strong>@Employee.FullName</strong> · Hiệu lực ngày @_effectiveDate.ToString("dd/MM/yyyy")</p>
+            @if (_targetIsActive)
+            {
+                <p>Nhân viên cần đăng nhập lại. Các phiên và token cũ không được khôi phục.</p>
+            }
+            else
+            {
+                <p>Hôm nay là ngày đầu tiên không làm việc. Phân công kết thúc ngày @_effectiveDate.AddDays(-1).ToString("dd/MM/yyyy"). Các yêu cầu dùng phiên cũ sẽ bị từ chối sau khi cập nhật.</p>
+            }
+            <div class="employee-status-actions">
+                <button type="button" class="btn @(_targetIsActive ? "btn-primary" : "btn-danger")"
+                        disabled="@_isSaving" @onclick="SaveAsync">
+                    @(_isSaving ? "Đang cập nhật…" : "Xác nhận cập nhật")
+                </button>
+                <button type="button" class="btn btn-outline-secondary" disabled="@_isSaving" @onclick="Cancel">
+                    Hủy
+                </button>
+            </div>
+        </div>
+    }
+    else
+    {
+        <button type="button" class="btn @(Employee.IsActive ? "btn-outline-danger" : "btn-outline-primary")"
+                @onclick="PrepareConfirmation">
+            @(Employee.IsActive ? "Cho nghỉ việc" : "Cho quay lại làm")
+        </button>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired]
+    public EmployeeDetailDTO Employee { get; set; } = default!;
+
+    [Parameter]
+    public int BranchId { get; set; }
+
+    [Parameter]
+    public EventCallback<EmployeeDetailDTO> OnChanged { get; set; }
+
+    [Parameter]
+    public EventCallback OnReload { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> OnBusyChanged { get; set; }
+
+    private bool _isConfirming;
+    private bool _isSaving;
+    private bool _targetIsActive;
+    private bool _mustReload;
+    private bool _isSuccess;
+    private string? _message;
+    private DateOnly _effectiveDate;
+
+    // Giải thích sớm các giới hạn; API vẫn kiểm tra lại bằng dữ liệu hiện tại.
+    private string? GetBlockedReason()
+    {
+        DateOnly today = DateOnly.FromDateTime(DateTime.Today);
+
+        if (Employee.BranchHistory.Any(history => history.ActiveFrom > today))
+        {
+            return "Chưa thể đổi trạng thái vì nhân viên còn lịch phân công tương lai. Cần xử lý lịch phân công trước.";
+        }
+
+        if (Employee.IsActive && Employee.BranchHistory.Any(history =>
+            history.BranchId == BranchId && history.ActiveFrom == today
+            && (!history.ActiveTo.HasValue || history.ActiveTo >= today)))
+        {
+            return "Nhân viên mới bắt đầu phân công hôm nay. Theo quy tắc hiện tại, ngày bắt đầu nghỉ phải sau ngày bắt đầu phân công; chưa thể cho nghỉ hôm nay.";
+        }
+
+        return null;
+    }
+
+    private void PrepareConfirmation()
+    {
+        _message = null;
+        _isSuccess = false;
+        _targetIsActive = !Employee.IsActive;
+        _effectiveDate = DateOnly.FromDateTime(DateTime.Today);
+        _isConfirming = true;
+    }
+
+    private void Cancel()
+    {
+        _isConfirming = false;
+    }
+
+    // Không tự gửi lại PATCH nếu chưa biết thao tác trước đã được lưu hay chưa.
+    private async Task SaveAsync()
+    {
+        if (_isSaving || !_isConfirming)
+        {
+            return;
+        }
+
+        _isSaving = true;
+        await OnBusyChanged.InvokeAsync(true);
+
+        try
+        {
+            EmployeeDetailApiResult result = await EmployeeApiService.UpdateEmployeeStatusAsync(
+                Employee.Id, BranchId, new EmployeeStatusUpdateDTO
+                {
+                    IsActive = _targetIsActive,
+                    EffectiveDate = _effectiveDate
+                });
+
+            if (!result.IsSuccess || result.Employee is null)
+            {
+                _message = result.StatusCode == 409
+                    ? "Trạng thái hoặc phân công đã thay đổi. Hãy tải lại hồ sơ trước khi tiếp tục."
+                    : result.ErrorMessage + " Hãy tải lại hồ sơ để kiểm tra trước khi thao tác tiếp.";
+                _mustReload = true;
+                return;
+            }
+
+            _isSuccess = true;
+            _message = _targetIsActive
+                ? "Đã cho nhân viên quay lại làm. Nhân viên cần đăng nhập lại bằng tài khoản của mình."
+                : "Đã ghi nhận nghỉ việc, khóa tài khoản và thu hồi các phiên đăng nhập cũ.";
+            await OnChanged.InvokeAsync(result.Employee);
+        }
+        catch (Exception exception) when (exception is HttpRequestException
+            or OperationCanceledException or System.Text.Json.JsonException)
+        {
+            _message = "Chưa xác định được kết quả cập nhật. Không gửi lại ngay; hãy tải lại hồ sơ để kiểm tra.";
+            _mustReload = true;
+        }
+        finally
+        {
+            _isSaving = false;
+            _isConfirming = false;
+            await OnBusyChanged.InvokeAsync(false);
+        }
+    }
+
+    private async Task ReloadAsync()
+    {
+        await OnReload.InvokeAsync();
+    }
+}

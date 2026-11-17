@@ -14,6 +14,16 @@ public class UserRepository : RepositoryBase<AppUser>, IUserRepository
 
     }
 
+    // UPDATE không đổi dữ liệu để giữ khóa tài khoản đến khi transaction kết thúc.
+    public async Task<int> LockActiveAccountForLoginAsync(int userId, DateTime? expectedUpdatedAt)
+    {
+        return await Context.AppUsers
+            .Where(user => user.Id == userId && !user.Deleted && user.IsActive
+                && user.UpdatedAt == expectedUpdatedAt)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(user => user.UpdatedAt, user => user.UpdatedAt));
+    }
+
     // Lấy tài khoản và role trong cùng 1 truy vấn db
     public async Task<AppUser?> GetByUsernameWithRoleAsync(string username)
     {

@@ -19,4 +19,7 @@ public interface IUserRepository : IRepositoryBase<AppUser>
 
     // Kiểm tra email có được tài khoản nào khác sử dụng hay không
     Task<bool> EmailExistsForOtherUserAsync(string email, int currentUserId);
+
+    // Đăng nhập chỉ tạo phiên nếu tài khoản vẫn hoạt động và không đổi từ lúc kiểm tra mật khẩu.
+    Task<int> LockActiveAccountForLoginAsync(int userId, DateTime? expectedUpdatedAt);
 }

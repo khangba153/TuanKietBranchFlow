@@ -5,6 +5,7 @@ using TuanKietBranchFlow.Infrastructure.Repositories.Roles;
 using TuanKietBranchFlow.Infrastructure.Repositories.Users;
 using Microsoft.AspNetCore.Identity;
 using Moq;
+using TuanKietBranchFlow.Infrastructure.Repositories.Auth;
 using TuanKietBranchFlow.Application.DTOs.Employees;
 using TuanKietBranchFlow.Infrastructure.Models;
 using TuanKietBranchFlow.Infrastructure.UnitOfWork;
@@ -46,7 +47,8 @@ public class EmployeeServiceTests
             roleRepositoryMock.Object,
             userBranchRepositoryMock.Object,
             passwordHasherMock.Object,
-            unitOfWorkMock.Object);
+            unitOfWorkMock.Object,
+            Mock.Of<IAuthSessionRepository>());
 
         // Dữ liệu giả chỉ phục vụ test; ngày vào làm nằm trong tương lai.
         EmployeeCreateDTO request = new EmployeeCreateDTO
@@ -113,7 +115,8 @@ public class EmployeeServiceTests
             roleRepositoryMock.Object,
             userBranchRepositoryMock.Object,
             passwordHasherMock.Object,
-            unitOfWorkMock.Object);
+            unitOfWorkMock.Object,
+            Mock.Of<IAuthSessionRepository>());
 
         int currentAdminId = 1;
         int branchId = 2;

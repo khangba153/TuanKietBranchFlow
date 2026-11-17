@@ -16,6 +16,31 @@ namespace TuanKietBranchFlow.Tests.Web.Employees;
 
 public class EmployeeApiServiceTests
 {
+    [Theory]
+    [InlineData(HttpStatusCode.OK)]
+    [InlineData(HttpStatusCode.BadRequest)]
+    [InlineData(HttpStatusCode.Conflict)]
+    [InlineData(HttpStatusCode.Forbidden)]
+    public async Task Status_SendsOnePatchWithBranchBearerAndEffectiveDate(HttpStatusCode statusCode)
+    {
+        using EmployeeHandler handler = new EmployeeHandler(statusCode);
+        using HttpClient client = new HttpClient(handler) { BaseAddress = new Uri("https://unit.test/") };
+        DateOnly today = DateOnly.FromDateTime(DateTime.Today);
+
+        EmployeeDetailApiResult result = await CreateService(client).UpdateEmployeeStatusAsync(12, 2,
+            new EmployeeStatusUpdateDTO { IsActive = false, EffectiveDate = today });
+
+        Assert.Equal(HttpMethod.Patch, handler.Method);
+        Assert.EndsWith("/api/employees/12/status?branchId=2", handler.Url);
+        Assert.Equal("Bearer employee-unit-test-token", handler.Authorization);
+        Assert.Equal(1, handler.Calls);
+        Assert.Equal((int)statusCode, result.StatusCode);
+        Assert.Equal(statusCode == HttpStatusCode.OK, result.IsSuccess);
+        using JsonDocument body = JsonDocument.Parse(handler.Body!);
+        Assert.False(body.RootElement.GetProperty("isActive").GetBoolean());
+        Assert.Equal(today.ToString("yyyy-MM-dd"), body.RootElement.GetProperty("effectiveDate").GetString());
+    }
+
     [Fact]
     public async Task GetForEdit_SendsEmployeeBranchAndSessionBearer()
     {

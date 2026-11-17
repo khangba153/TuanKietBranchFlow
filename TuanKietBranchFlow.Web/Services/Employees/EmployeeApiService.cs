@@ -121,6 +121,24 @@ public class EmployeeApiService
         return await ReadEmployeeResultAsync(response);
     }
 
+    // Thay đổi trạng thái một lần; khi mất phản hồi phải đọc lại trước khi thao tác tiếp.
+    public async Task<EmployeeDetailApiResult> UpdateEmployeeStatusAsync(
+        int employeeId,
+        int branchId,
+        EmployeeStatusUpdateDTO employeeStatusUpdateDTO)
+    {
+        string requestUrl = $"api/employees/{employeeId}/status?branchId={branchId}";
+
+        using HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Patch, requestUrl)
+        {
+            Content = JsonContent.Create(employeeStatusUpdateDTO)
+        };
+
+        using HttpResponseMessage response = await _authorizedApiService.SendAsync(request);
+
+        return await ReadEmployeeResultAsync(response);
+    }
+
     // Không đưa nội dung HTML hoặc lỗi parser từ máy chủ vào giao diện.
     private static async Task<EmployeeDetailApiResult> ReadEmployeeResultAsync(
         HttpResponseMessage response)

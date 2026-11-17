@@ -10,4 +10,7 @@ public interface IAuthSessionRepository : IRepositoryBase<AuthSession>
 
     // Lấy các phiên chưa thu hồi của tài khoản để đăng xuất tất cả
     Task<List<AuthSession>> GetNotRevokedByUserIdAsync(int userId);
+
+    // Thu hồi cả phiên và token trong transaction của nghiệp vụ nhân viên.
+    Task RevokeAllForEmployeeStatusAsync(int userId, DateTime revokedAt);
 }

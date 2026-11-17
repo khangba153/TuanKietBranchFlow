@@ -13,6 +13,18 @@ public class AuthSessionRepository
     {
     }
 
+    // Thu hồi cả phiên và token trong transaction đổi trạng thái nhân viên.
+    public async Task RevokeAllForEmployeeStatusAsync(int userId, DateTime revokedAt)
+    {
+        await Context.AuthSessions
+            .Where(session => session.UserId == userId && session.RevokedAt == null)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(session => session.RevokedAt, revokedAt));
+
+        await Context.RefreshTokens
+            .Where(token => token.Session.UserId == userId && token.RevokedAt == null)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(token => token.RevokedAt, revokedAt));
+    }
+
     // Đọc phiên, tài khoản và role để Service kiểm tra tính hợp lệ
     public async Task<AuthSession?> GetByIdWithUserAsync(Guid sessionId)
     {

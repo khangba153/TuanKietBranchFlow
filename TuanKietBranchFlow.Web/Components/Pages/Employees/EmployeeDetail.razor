@@ -6,6 +6,7 @@
 @inject EmployeeApiService EmployeeApiService
 
 <PageTitle>@(_employee?.FullName ?? "Hồ sơ nhân viên")</PageTitle>
+<NavigationLock ConfirmExternalNavigation="@_isStatusSaving" OnBeforeInternalNavigation="PreventNavigationWhileSaving" />
 
 <div class="employee-detail-page bf-page">
     @if (_isLoading)
@@ -57,13 +58,24 @@
             </div>
             <AuthorizeView Roles="ADMIN">
                 <Authorized>
-                    <a class="btn btn-primary employee-detail-edit-button"
-                       href="@($"/employees/{EmployeeId}/edit?branchId={BranchId}")">
-                        Sửa thông tin
-                    </a>
+                    @if (!_isStatusSaving)
+                    {
+                        <a class="btn btn-primary employee-detail-edit-button"
+                           href="@($"/employees/{EmployeeId}/edit?branchId={BranchId}")">
+                            Sửa thông tin
+                        </a>
+                    }
                 </Authorized>
             </AuthorizeView>
         </header>
+
+        <AuthorizeView Roles="ADMIN">
+            <Authorized>
+                <EmployeeStatusPanel @key="EmployeeId" Employee="_employee" BranchId="BranchId"
+                                     OnChanged="HandleStatusChanged" OnReload="LoadEmployeeAsync"
+                                     OnBusyChanged="HandleStatusBusyChanged" />
+            </Authorized>
+        </AuthorizeView>
 
         <div class="employee-detail-content">
             <aside class="employee-detail-profile bf-surface-card" aria-label="Tóm tắt nhân viên">
@@ -189,7 +201,11 @@
                             <div class="employee-detail-timeline-body">
                                 <div class="employee-detail-timeline-heading">
                                     <h3>@history.BranchName</h3>
-                                    @if (history.ActiveTo is null)
+                                    @if (history.ActiveFrom > DateOnly.FromDateTime(DateTime.Today))
+                                    {
+                                        <span class="employee-detail-current">Sắp tới</span>
+                                    }
+                                    else if (!history.ActiveTo.HasValue || history.ActiveTo >= DateOnly.FromDateTime(DateTime.Today))
                                     {
                                         <span class="employee-detail-current">Hiện tại</span>
                                     }
@@ -197,7 +213,7 @@
                                 <p>
                                     @history.ActiveFrom.ToString("dd/MM/yyyy")
                                     <span aria-hidden="true">–</span>
-                                    @(history.ActiveTo?.ToString("dd/MM/yyyy") ?? "Hiện tại")
+                                    @(history.ActiveTo?.ToString("dd/MM/yyyy") ?? "Chưa kết thúc")
                                 </p>
                             </div>
                         </li>
@@ -221,6 +237,25 @@
     private string? _errorMessage;
     private int _loadedEmployeeId;
     private int _loadedBranchId;
+    private bool _isStatusSaving;
+
+    private void HandleStatusChanged(EmployeeDetailDTO employee)
+    {
+        _employee = employee;
+    }
+
+    private void HandleStatusBusyChanged(bool isSaving)
+    {
+        _isStatusSaving = isSaving;
+    }
+
+    private void PreventNavigationWhileSaving(Microsoft.AspNetCore.Components.Routing.LocationChangingContext context)
+    {
+        if (_isStatusSaving)
+        {
+            context.PreventNavigation();
+        }
+    }
 
     // Tải dữ liệu một lần sau khi component render lần đầu.
     protected override async Task OnAfterRenderAsync(bool firstRender)

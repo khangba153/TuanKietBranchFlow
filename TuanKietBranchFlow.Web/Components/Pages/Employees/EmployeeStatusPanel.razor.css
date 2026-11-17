@@ -1,0 +1,60 @@
+.employee-status-panel {
+    display: grid;
+    gap: 1rem;
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+}
+
+.employee-status-panel h2 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0 0 .5rem;
+}
+
+.employee-status-panel h3 {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.employee-status-panel p {
+    margin: 0;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
+.employee-status-panel > button {
+    justify-self: start;
+}
+
+.employee-status-confirm {
+    display: grid;
+    gap: .75rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--bs-border-color);
+}
+
+.employee-status-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .75rem;
+}
+
+.employee-status-panel .btn {
+    min-height: 44px;
+    white-space: normal;
+}
+
+.employee-status-note {
+    color: var(--bs-secondary-color);
+}
+
+@media (max-width: 575.98px) {
+    .employee-status-panel {
+        padding: 1rem;
+    }
+
+    .employee-status-panel > button,
+    .employee-status-actions .btn {
+        width: 100%;
+    }
+}

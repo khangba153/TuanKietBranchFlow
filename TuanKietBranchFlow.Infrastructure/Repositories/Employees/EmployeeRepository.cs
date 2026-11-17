@@ -11,6 +11,27 @@ public class EmployeeRepository : RepositoryBase<EmployeeProfile>, IEmployeeRepo
     public EmployeeRepository(BranchFlowDbContext context) : base(context)
     {
     }
+
+    // UPDATE không đổi giá trị nhưng giữ khóa tài khoản trong transaction của service.
+    public async Task<int> LockAccountForStatusChangeAsync(int employeeId)
+    {
+        // Đọc khóa ngoại riêng để UPDATE chỉ khóa AppUser, không giữ khóa join trên hồ sơ.
+        int? userId = await Context.EmployeeProfiles
+            .AsNoTracking()
+            .Where(profile => profile.Id == employeeId && !profile.Deleted)
+            .Select(profile => (int?)profile.UserId)
+            .SingleOrDefaultAsync();
+
+        if (!userId.HasValue)
+        {
+            return 0;
+        }
+
+        return await Context.AppUsers
+            .Where(user => user.Id == userId.Value && !user.Deleted)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(user => user.UpdatedAt, user => user.UpdatedAt));
+    }
     // Lấy danh sách nhân viên theo chi nhánh, trạng thái và từ khóa tìm kiếm
     public async Task<List<EmployeeProfile>> GetByBranchAsync(
         int branchId,
