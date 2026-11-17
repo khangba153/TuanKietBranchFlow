@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using TuanKietBranchFlow.Application.DTOs.Employees;
+using TuanKietBranchFlow.Application.DTOs.Employees.Transfers;
 using TuanKietBranchFlow.Web.Models.Employees;
 using TuanKietBranchFlow.Web.Services.Auth;
 using TuanKietBranchFlow.Web.Services.Common;
@@ -16,6 +17,60 @@ namespace TuanKietBranchFlow.Tests.Web.Employees;
 
 public class EmployeeApiServiceTests
 {
+    [Theory]
+    [InlineData(HttpStatusCode.OK)]
+    [InlineData(HttpStatusCode.Conflict)]
+    [InlineData(HttpStatusCode.Forbidden)]
+    public async Task TransferDecision_SendsOnePostAndNeverRetries(HttpStatusCode statusCode)
+    {
+        using EmployeeHandler handler = new EmployeeHandler(statusCode)
+        {
+            Content = statusCode == HttpStatusCode.OK
+                ? JsonContent.Create(new EmployeeTransferDTO { Id = 7, Status = "REJECTED" })
+                : JsonContent.Create(new ProblemDetails { Detail = "Yêu cầu không còn hợp lệ." })
+        };
+        using HttpClient client = new HttpClient(handler) { BaseAddress = new Uri("https://unit.test/") };
+        EmployeeTransferApiService service = new EmployeeTransferApiService(CreateAuthorizedService(client));
+
+        if (statusCode == HttpStatusCode.OK)
+        {
+            Assert.Equal("REJECTED", (await service.DecideAsync(7, "reject", "Không tiếp nhận")).Status);
+        }
+        else
+        {
+            HttpRequestException exception = await Assert.ThrowsAsync<HttpRequestException>(() =>
+                service.DecideAsync(7, "reject", "Không tiếp nhận"));
+            Assert.Equal(statusCode, exception.StatusCode);
+        }
+
+        Assert.Equal(1, handler.Calls);
+        Assert.Equal(HttpMethod.Post, handler.Method);
+        Assert.EndsWith("/api/employee-transfers/7/reject", handler.Url);
+        Assert.Equal("Bearer employee-unit-test-token", handler.Authorization);
+        using JsonDocument body = JsonDocument.Parse(handler.Body!);
+        Assert.Equal("Không tiếp nhận", body.RootElement.GetProperty("reason").GetString());
+    }
+
+    [Fact]
+    public async Task TransferCreate_NetworkFailureDoesNotRetry()
+    {
+        using EmployeeHandler handler = new EmployeeHandler(HttpStatusCode.OK) { FailConnection = true };
+        using HttpClient client = new HttpClient(handler) { BaseAddress = new Uri("https://unit.test/") };
+        EmployeeTransferApiService service = new EmployeeTransferApiService(CreateAuthorizedService(client));
+
+        await Assert.ThrowsAsync<HttpRequestException>(() => service.CreateAsync(new EmployeeTransferCreateDTO
+        {
+            EmployeeId = 12, SourceBranchId = 2, TargetBranchId = 3, Note = "Ghi chú thử"
+        }));
+
+        Assert.Equal(1, handler.Calls);
+        using JsonDocument body = JsonDocument.Parse(handler.Body!);
+        Assert.Equal(2, body.RootElement.GetProperty("sourceBranchId").GetInt32());
+        Assert.Equal(3, body.RootElement.GetProperty("targetBranchId").GetInt32());
+        Assert.Equal("Ghi chú thử", body.RootElement.GetProperty("note").GetString());
+        Assert.False(body.RootElement.GetProperty("transferImmediately").GetBoolean());
+    }
+
     [Theory]
     [InlineData(HttpStatusCode.OK)]
     [InlineData(HttpStatusCode.BadRequest)]
@@ -167,6 +222,11 @@ public class EmployeeApiServiceTests
 
     private static EmployeeApiService CreateService(HttpClient client)
     {
+        return new EmployeeApiService(CreateAuthorizedService(client));
+    }
+
+    private static AuthorizedApiService CreateAuthorizedService(HttpClient client)
+    {
         Guid sessionId = Guid.NewGuid();
         Mock<AuthenticationStateProvider> authenticationStateProvider = new Mock<AuthenticationStateProvider>();
         ClaimsPrincipal user = new ClaimsPrincipal(new ClaimsIdentity(new[]
@@ -181,10 +241,10 @@ public class EmployeeApiServiceTests
         Mock<IHttpClientFactory> httpClientFactory = new Mock<IHttpClientFactory>();
         httpClientFactory.Setup(factory => factory.CreateClient("BranchFlowApi")).Returns(client);
 
-        return new EmployeeApiService(new AuthorizedApiService(
+        return new AuthorizedApiService(
             httpClientFactory.Object,
             authenticationStateProvider.Object,
-            webTokenService.Object));
+            webTokenService.Object);
     }
 
     private sealed class EmployeeHandler : HttpMessageHandler

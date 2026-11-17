@@ -10,6 +10,15 @@
     gap: 1rem;
     padding-bottom: 1rem;
     border-bottom: 1px solid var(--bf-border);
+    flex-wrap: wrap;
+}
+
+.employee-detail-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-left: auto;
 }
 
 .employee-detail-edit-button {
@@ -349,6 +358,16 @@
 
     .employee-detail-hero h1 {
         font-size: 1.65rem;
+    }
+
+    .employee-detail-actions {
+        width: 100%;
+        margin-left: 0;
+        flex-direction: column;
+    }
+
+    .employee-detail-actions .btn {
+        width: 100%;
     }
 
     .employee-detail-profile,

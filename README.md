@@ -14,7 +14,7 @@ Demo access is available on request from the author. Account passwords are not p
 ## Features
 
 - **Access control:** HttpOnly cookie authentication on Web, JWT authentication on API, `OWNER`, `ADMIN`, and `EMPLOYEE` roles, and branch-scoped API access. Refresh-token rotation and account-wide logout revoke API sessions.
-- **Employee management:** branch employee lists, search and status filters, profile viewing, creation, editing and work-status changes in Web; API support for branch transfers with assignment history.
+- **Employee management:** branch employee lists, search and status filters, profile viewing, creation, editing and work-status changes in Web; direct branch transfers or cross-admin transfer requests with destination acceptance and assignment history.
 - **Menu management:** ADMIN can create, edit, and soft-delete categories, sizes, products and prices, toppings, and quick notes. OWNER has read-only access. Menu definitions and prices are shared; product and topping availability is branch-specific.
 - **Employee ordering:** browse and filter the branch menu, choose sizes and options, manage a cart, and submit orders.
 - **Order validation:** the API rechecks availability and prices, generates daily order codes, and saves order details and name/price snapshots in one transaction.
@@ -56,7 +56,7 @@ Menu management and employee ordering have been deployed to the Azure demo and m
 
 The auth update is deployed to Azure. Web uses a Secure, HttpOnly session cookie and keeps API tokens on the server, not in browser storage. API access tokens last 15 minutes; refresh tokens rotate within a fixed seven-day session, with only their hashes stored in SQL. Logout revokes all existing sessions of the same account; detected refresh-token reuse also triggers account-wide revocation.
 
-The author manually smoke-tested login, F5/new tabs, cookie flags, WebSocket connectivity, refresh rotation, account-wide logout, and login rate limiting on Azure at the auth milestone. The current local Release test suite has 156 passing tests.
+The author manually smoke-tested login, F5/new tabs, cookie flags, WebSocket connectivity, refresh rotation, account-wide logout, and login rate limiting on Azure at the auth milestone. The current local Release test suite has 181 passing tests.
 
 **Demo limits:** Web token storage and rate-limit counters are in process memory. The deployment uses one instance; Web restart/deploy requires signing in again. There is no distributed session store, and backup restoration has not yet been rehearsed.
 
@@ -73,6 +73,8 @@ B4.2b is implemented locally: ADMINs can adjust existing lines, quantity, size, 
 Employee profile editing is implemented and checked locally: ADMIN-only editing through the existing scoped PUT API, field validation, unsaved-change confirmation, error-preserving forms and mobile-friendly actions. Browser, local SQL and real HTTP role/status checks passed; see the [implementation and UX report](docs/features/employee-profile-edit.md). This update has not been deployed.
 
 Employee work-status changes are implemented and checked locally: explicit confirmation, effective-date explanations, preserved assignment history, transactional session/token revocation and serialized status/login operations. Concurrent SQL, rollback, HTTP authorization and responsive browser checks passed; see the [work-status report](docs/features/employee-work-status.md). This update has not been deployed.
+
+Employee branch transfers are implemented and checked locally: direct transfer for an ADMIN managing both branches, otherwise a pending request for destination acceptance, with rejection/withdrawal history. SQL concurrency/rollback, status-transfer races, order branch rechecks, HTTP scope and mobile/desktop browser checks passed; see the [transfer workflow and report](docs/features/employee-transfer-workflow.md). Apply SQL scripts 006/007 before deploying this version; cloud schema and deployment have not been changed.
 
 ## Running Locally
 

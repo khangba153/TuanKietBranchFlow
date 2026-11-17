@@ -454,6 +454,18 @@ public class EmployeesController : ControllerBase
                 currentBranchId,
                 request);
 
+        if (result.ErrorCode != null)
+        {
+            int statusCode = result.ErrorCode switch
+            {
+                "Forbidden" => 403,
+                "NotFound" => 404,
+                "Conflict" => 409,
+                _ => 400
+            };
+            return Problem(statusCode: statusCode, title: "Không thể chuyển chi nhánh", detail: result.ErrorMessage);
+        }
+
         // Chi nhánh hiện tại không tồn tại hoặc đã bị xóa
         if (!result.IsCurrentBranchFound)
         {

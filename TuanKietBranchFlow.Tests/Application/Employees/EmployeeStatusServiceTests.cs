@@ -191,7 +191,8 @@ public class EmployeeStatusServiceTests
                 .Callback(() => Operations.Add("commit")).Returns(Task.CompletedTask);
             Service = new EmployeeService(Employees.Object, branches.Object, Mock.Of<IUserRepository>(),
                 Mock.Of<IRoleRepository>(), Assignments.Object, Mock.Of<IPasswordHasher<AppUser>>(),
-                UnitOfWork.Object, Sessions.Object);
+                UnitOfWork.Object, Sessions.Object, Mock.Of<IEmployeeTransferRepository>(),
+                Mock.Of<IEmployeeTransferService>());
         }
 
         public Task<EmployeeStatusUpdateResultDTO> UpdateAsync(bool isActive)

@@ -21,6 +21,8 @@ public class OrderServiceTests
 
         Mock<IOrderRepository> orderRepositoryMock =
             new Mock<IOrderRepository>();
+        orderRepositoryMock.Setup(repository => repository.LockAndCheckEmployeeBranchAsync(
+            It.IsAny<int>(), It.IsAny<int>(), It.IsAny<DateOnly>())).ReturnsAsync(true);
 
         Mock<IUnitOfWork> unitOfWorkMock =
             new Mock<IUnitOfWork>();
@@ -86,6 +88,8 @@ public class OrderServiceTests
 
         Mock<IOrderRepository> orderRepositoryMock =
             new Mock<IOrderRepository>();
+        orderRepositoryMock.Setup(repository => repository.LockAndCheckEmployeeBranchAsync(
+            It.IsAny<int>(), It.IsAny<int>(), It.IsAny<DateOnly>())).ReturnsAsync(true);
 
         Mock<IUnitOfWork> unitOfWorkMock =
             new Mock<IUnitOfWork>();
@@ -170,6 +174,8 @@ public class OrderServiceTests
 
         Mock<IOrderRepository> orderRepositoryMock =
             new Mock<IOrderRepository>();
+        orderRepositoryMock.Setup(repository => repository.LockAndCheckEmployeeBranchAsync(
+            It.IsAny<int>(), It.IsAny<int>(), It.IsAny<DateOnly>())).ReturnsAsync(true);
 
         Mock<IUnitOfWork> unitOfWorkMock =
             new Mock<IUnitOfWork>();
@@ -277,6 +283,8 @@ public class OrderServiceTests
 
         Mock<IOrderRepository> orderRepositoryMock =
             new Mock<IOrderRepository>();
+        orderRepositoryMock.Setup(repository => repository.LockAndCheckEmployeeBranchAsync(
+            It.IsAny<int>(), It.IsAny<int>(), It.IsAny<DateOnly>())).ReturnsAsync(true);
 
         Mock<IUnitOfWork> unitOfWorkMock =
             new Mock<IUnitOfWork>();
@@ -414,6 +422,8 @@ public class OrderServiceTests
 
         Mock<IOrderRepository> orderRepositoryMock =
             new Mock<IOrderRepository>();
+        orderRepositoryMock.Setup(repository => repository.LockAndCheckEmployeeBranchAsync(
+            It.IsAny<int>(), It.IsAny<int>(), It.IsAny<DateOnly>())).ReturnsAsync(true);
 
         Mock<IUnitOfWork> unitOfWorkMock =
             new Mock<IUnitOfWork>();
@@ -544,6 +554,8 @@ public class OrderServiceTests
 
         Mock<IOrderRepository> orderRepositoryMock =
             new Mock<IOrderRepository>();
+        orderRepositoryMock.Setup(repository => repository.LockAndCheckEmployeeBranchAsync(
+            It.IsAny<int>(), It.IsAny<int>(), It.IsAny<DateOnly>())).ReturnsAsync(true);
 
         Mock<IUnitOfWork> unitOfWorkMock =
             new Mock<IUnitOfWork>();
@@ -696,6 +708,8 @@ public class OrderServiceTests
 
         Mock<IOrderRepository> orderRepositoryMock =
             new Mock<IOrderRepository>();
+        orderRepositoryMock.Setup(repository => repository.LockAndCheckEmployeeBranchAsync(
+            It.IsAny<int>(), It.IsAny<int>(), It.IsAny<DateOnly>())).ReturnsAsync(true);
 
         Mock<IUnitOfWork> unitOfWorkMock =
             new Mock<IUnitOfWork>();
@@ -841,6 +855,8 @@ public class OrderServiceTests
 
         Mock<IOrderRepository> orderRepositoryMock =
             new Mock<IOrderRepository>();
+        orderRepositoryMock.Setup(repository => repository.LockAndCheckEmployeeBranchAsync(
+            It.IsAny<int>(), It.IsAny<int>(), It.IsAny<DateOnly>())).ReturnsAsync(true);
 
         Mock<IUnitOfWork> unitOfWorkMock =
             new Mock<IUnitOfWork>();
@@ -987,6 +1003,8 @@ public class OrderServiceTests
 
         Mock<IOrderRepository> orderRepositoryMock =
             new Mock<IOrderRepository>();
+        orderRepositoryMock.Setup(repository => repository.LockAndCheckEmployeeBranchAsync(
+            It.IsAny<int>(), It.IsAny<int>(), It.IsAny<DateOnly>())).ReturnsAsync(true);
 
         Mock<IUnitOfWork> unitOfWorkMock =
             new Mock<IUnitOfWork>();
@@ -1131,6 +1149,8 @@ public class OrderServiceTests
 
         Mock<IOrderRepository> orderRepositoryMock =
             new Mock<IOrderRepository>();
+        orderRepositoryMock.Setup(repository => repository.LockAndCheckEmployeeBranchAsync(
+            It.IsAny<int>(), It.IsAny<int>(), It.IsAny<DateOnly>())).ReturnsAsync(true);
 
         Mock<IUnitOfWork> unitOfWorkMock =
             new Mock<IUnitOfWork>();
@@ -1333,6 +1353,8 @@ public class OrderServiceTests
 
         Mock<IOrderRepository> orderRepositoryMock =
             new Mock<IOrderRepository>();
+        orderRepositoryMock.Setup(repository => repository.LockAndCheckEmployeeBranchAsync(
+            It.IsAny<int>(), It.IsAny<int>(), It.IsAny<DateOnly>())).ReturnsAsync(true);
 
         Mock<IUnitOfWork> unitOfWorkMock =
             new Mock<IUnitOfWork>();
@@ -1606,6 +1628,8 @@ public class OrderServiceTests
 
         Mock<IOrderRepository> orderRepositoryMock =
             new Mock<IOrderRepository>();
+        orderRepositoryMock.Setup(repository => repository.LockAndCheckEmployeeBranchAsync(
+            It.IsAny<int>(), It.IsAny<int>(), It.IsAny<DateOnly>())).ReturnsAsync(true);
 
         Mock<IUnitOfWork> unitOfWorkMock =
             new Mock<IUnitOfWork>();
@@ -1771,6 +1795,8 @@ public class OrderServiceTests
 
         Mock<IOrderRepository> orderRepositoryMock =
             new Mock<IOrderRepository>();
+        orderRepositoryMock.Setup(repository => repository.LockAndCheckEmployeeBranchAsync(
+            It.IsAny<int>(), It.IsAny<int>(), It.IsAny<DateOnly>())).ReturnsAsync(true);
 
         Mock<IUnitOfWork> unitOfWorkMock =
             new Mock<IUnitOfWork>();
@@ -1841,6 +1867,8 @@ public class OrderServiceTests
 
         Mock<IOrderRepository> orderRepositoryMock =
             new Mock<IOrderRepository>();
+        orderRepositoryMock.Setup(repository => repository.LockAndCheckEmployeeBranchAsync(
+            It.IsAny<int>(), It.IsAny<int>(), It.IsAny<DateOnly>())).ReturnsAsync(true);
 
         Mock<IUnitOfWork> unitOfWorkMock =
             new Mock<IUnitOfWork>();

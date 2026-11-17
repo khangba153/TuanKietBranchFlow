@@ -133,6 +133,8 @@ builder.Services.AddScoped<IRoleService, RoleService>();
 
 // Đăng ký service xử lý nghiệp vụ nhân viên
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
+builder.Services.AddScoped<IEmployeeTransferRepository, EmployeeTransferRepository>();
+builder.Services.AddScoped<IEmployeeTransferService, EmployeeTransferService>();
 
 // Đăng ký service xử lý nghiệp vụ gọi món
 builder.Services.AddScoped<IOrderMenuService, OrderMenuService>();

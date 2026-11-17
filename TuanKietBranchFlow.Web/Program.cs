@@ -148,6 +148,7 @@ builder.Services.AddScoped<BranchApiService>();
 
 // Đăng ký service gọi các API nhân viên
 builder.Services.AddScoped<EmployeeApiService>();
+builder.Services.AddScoped<EmployeeTransferApiService>();
 
 // Đăng ký service gọi API danh mục menu
 builder.Services.AddScoped<CategoryApiService>();

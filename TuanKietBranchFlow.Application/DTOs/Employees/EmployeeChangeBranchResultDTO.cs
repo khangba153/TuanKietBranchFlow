@@ -2,6 +2,9 @@ namespace TuanKietBranchFlow.Application.DTOs.Employees;
 
 public class EmployeeChangeBranchResultDTO
 {
+    // Endpoint cũ giữ response hồ sơ nhưng dùng lỗi nghiệp vụ từ workflow mới.
+    public string? ErrorCode { get; set; }
+    public string? ErrorMessage { get; set; }
     // Cho biết chi nhánh hiện tại có tồn tại hay không
     public bool IsCurrentBranchFound { get; set; }
 

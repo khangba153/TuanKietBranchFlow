@@ -15,6 +15,22 @@ public class OrderRepository : RepositoryBase<SalesOrder>, IOrderRepository
     }
 
     // SQL chỉ cho một request thắng; kiểm tra lại cả quyền và phiên báo sai tại thời điểm ghi.
+    public async Task<bool> LockAndCheckEmployeeBranchAsync(int userId, int branchId, DateOnly today)
+    {
+        int lockedRows = await Context.AppUsers
+            .Where(user => user.Id == userId && user.IsActive && !user.Deleted)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(user => user.UpdatedAt, user => user.UpdatedAt));
+        if (lockedRows != 1)
+        {
+            return false;
+        }
+        return await Context.UserBranches.AnyAsync(assignment => assignment.UserId == userId
+            && assignment.BranchId == branchId && assignment.ActiveFrom <= today
+            && (assignment.ActiveTo == null || assignment.ActiveTo >= today)
+            && !assignment.Branch.Deleted && assignment.Branch.IsActive);
+    }
+
+    // SQL chỉ cho một request thắng; kiểm tra lại cả quyền và phiên báo sai tại thời điểm ghi.
     public async Task<int> TryResolveReviewAsync(int orderId, int adminId, DateOnly assignmentDate,
         DateTime expectedReportedAt, int expectedHistoryId, string status, DateTime updatedAt)
     {

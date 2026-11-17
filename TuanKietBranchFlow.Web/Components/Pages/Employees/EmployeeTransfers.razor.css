@@ -1,0 +1,109 @@
+.transfers-page {
+    max-width: 1100px;
+    margin-inline: auto;
+}
+
+.transfers-page h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+}
+
+.transfers-page h2, .transfers-page h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.transfers-toolbar, .transfers-tabs, .transfer-card-actions, .transfers-pagination {
+    display: flex;
+    gap: .75rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.transfers-toolbar {
+    justify-content: space-between;
+    margin-block: 1.25rem;
+}
+
+.transfers-list {
+    display: grid;
+    gap: 1rem;
+}
+
+.transfer-card {
+    padding: 1.25rem;
+    overflow-wrap: anywhere;
+}
+
+.transfer-card-heading {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: start;
+}
+
+.transfer-card-heading .badge {
+    white-space: normal;
+    line-height: 1.5;
+    font-size: .85rem;
+    padding: .45rem .7rem;
+}
+
+.transfer-facts {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.transfer-facts dt {
+    color: var(--bs-secondary-color);
+    font-size: .85rem;
+    font-weight: 500;
+}
+
+.transfer-facts dd {
+    margin: .25rem 0 0;
+}
+
+.transfer-decision {
+    border-top: 1px solid var(--bs-border-color);
+    margin-top: 1rem;
+    padding-top: 1rem;
+}
+
+.transfers-page .btn {
+    min-height: 44px;
+    white-space: normal;
+}
+
+.transfers-pagination {
+    justify-content: center;
+    margin-block: 1.5rem;
+}
+
+@media (max-width: 575.98px) {
+
+    .transfer-facts {
+        grid-template-columns: 1fr;
+    }
+
+    .transfer-card-heading {
+        flex-direction: column;
+        margin-bottom: 1rem;
+    }
+
+    .transfer-card {
+        padding: 1rem;
+    }
+
+    .transfer-card-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .transfers-tabs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        width: 100%;
+    }
+}

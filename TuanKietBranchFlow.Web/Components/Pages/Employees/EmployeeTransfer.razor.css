@@ -1,0 +1,59 @@
+.transfer-page {
+    max-width: 900px;
+    margin-inline: auto;
+}
+
+.transfer-page header {
+    margin-bottom: 1.5rem;
+}
+
+.transfer-page h1 {
+    font-size: 1.75rem;
+    margin-top: 1rem;
+    font-weight: 700;
+}
+
+.transfer-page h2, .transfer-page h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.transfer-form {
+    padding: 1.5rem;
+    overflow-wrap: anywhere;
+}
+
+.transfer-form p {
+    line-height: 1.6;
+}
+
+.transfer-form .btn, .transfer-form .form-select {
+    min-height: 44px;
+}
+
+.transfer-confirm {
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--bs-border-color);
+}
+
+.transfer-actions {
+    display: flex;
+    gap: .75rem;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 575.98px) {
+
+    .transfer-form {
+        padding: 1rem;
+    }
+
+    .transfer-form .btn {
+        width: 100%;
+    }
+
+    .transfer-actions {
+        flex-direction: column;
+    }
+}

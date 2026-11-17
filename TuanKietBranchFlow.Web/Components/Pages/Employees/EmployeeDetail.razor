@@ -60,10 +60,19 @@
                 <Authorized>
                     @if (!_isStatusSaving)
                     {
-                        <a class="btn btn-primary employee-detail-edit-button"
-                           href="@($"/employees/{EmployeeId}/edit?branchId={BranchId}")">
-                            Sửa thông tin
-                        </a>
+                        <div class="employee-detail-actions" role="group" aria-label="Thao tác hồ sơ nhân viên">
+                            <a class="btn btn-primary employee-detail-edit-button"
+                               href="@($"/employees/{EmployeeId}/edit?branchId={BranchId}")">
+                                Sửa thông tin
+                            </a>
+                            @if (_employee.IsActive)
+                            {
+                                <a class="btn btn-outline-primary employee-detail-edit-button"
+                                   href="@($"/employees/{EmployeeId}/transfer?branchId={BranchId}")">
+                                    Chuyển chi nhánh
+                                </a>
+                            }
+                        </div>
                     }
                 </Authorized>
             </AuthorizeView>

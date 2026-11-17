@@ -7,6 +7,7 @@ using TuanKietBranchFlow.Infrastructure.Models;
 using Microsoft.AspNetCore.Identity;
 using TuanKietBranchFlow.Infrastructure.UnitOfWork;
 using TuanKietBranchFlow.Infrastructure.Repositories.Auth;
+using TuanKietBranchFlow.Application.DTOs.Employees.Transfers;
 
 namespace TuanKietBranchFlow.Application.Services.Employees;
 
@@ -20,6 +21,8 @@ public class EmployeeService : IEmployeeService
     private readonly IPasswordHasher<AppUser> _passwordHasher;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAuthSessionRepository _authSessionRepository;
+    private readonly IEmployeeTransferRepository _transferRepository;
+    private readonly IEmployeeTransferService _transferService;
 
     // Nhận các dependency cần dùng từ DI
     public EmployeeService(
@@ -30,7 +33,9 @@ public class EmployeeService : IEmployeeService
         IUserBranchRepository userBranchRepository,
         IPasswordHasher<AppUser> passwordHasher,
         IUnitOfWork unitOfWork,
-        IAuthSessionRepository authSessionRepository)
+        IAuthSessionRepository authSessionRepository,
+        IEmployeeTransferRepository transferRepository,
+        IEmployeeTransferService transferService)
     {
         _employeeRepository = employeeRepository;
         _branchRepository = branchRepository;
@@ -40,6 +45,8 @@ public class EmployeeService : IEmployeeService
         _passwordHasher = passwordHasher;
         _unitOfWork = unitOfWork;
         _authSessionRepository = authSessionRepository;
+        _transferRepository = transferRepository;
+        _transferService = transferService;
     }
 
     // Lấy danh sách nhân viên sau khi kiểm tra tra nhánh và quyền truy cập
@@ -651,84 +658,14 @@ public class EmployeeService : IEmployeeService
         };
     }
 
-    // Chuyển nhân viên từ chi nhánh hiện tại sang chi nhánh mới
+    // Endpoint cũ chuyển trực tiếp cũng đi qua workflow mới, không còn đường ghi bỏ qua kiểm tra.
     public async Task<EmployeeChangeBranchResultDTO> ChangeEmployeeBranchAsync(
         int currentAdminId,
         int employeeId,
         int currentBranchId,
         EmployeeChangeBranchDTO request)
     {
-        DateOnly currentDate = DateOnly.FromDateTime(DateTime.Today);
-
-        // Bước 1: kiểm tra chi nhánh hiện tại có tồn tại hay chưa bị xóa
-        Branch? currentBranch =
-            await _branchRepository.GetNotDeletedByIdAsync(currentBranchId);
-
-        if (currentBranch == null)
-        {
-            return new EmployeeChangeBranchResultDTO
-            {
-                IsCurrentBranchFound = false
-            };
-        }
-
-        // Bước 2: kiểm tra chi nhánh mới có tồn tại hoặc chưa bị chưa bị xóa
-        Branch? newBranch =
-            await _branchRepository.GetNotDeletedByIdAsync(request.NewBranchId);
-
-        if (newBranch == null)
-        {
-            return new EmployeeChangeBranchResultDTO
-            {
-                IsCurrentBranchFound  = true,
-                IsNewBranchFound = false
-            };
-        }
-
-        // Bước 3: kiểm tra ADMIN có quyền tại chi nhánh hiện tại hay không
-        bool hasCurrentBranchAccess =
-            await _branchRepository.HasActiveAssignmentAsync(
-                currentAdminId,
-                currentBranchId,
-                currentDate);
-
-        // Kiểm tra ADMIN có quyền tại chi nhánh mới
-        bool hasNewBranchAccess =
-            await _branchRepository.HasActiveAssignmentAsync(
-                currentAdminId,
-                request.NewBranchId,
-                currentDate);
-
-        if (!hasCurrentBranchAccess || !hasNewBranchAccess)
-        {
-            return new EmployeeChangeBranchResultDTO
-            {
-                IsCurrentBranchFound = true,
-                IsNewBranchFound = true,
-                HasAccess = false
-            };
-        }
-
-        // Bước 4: lấy hồ sơ nhân viên tại chi nhánh hiện tại
-        EmployeeProfile? employeeProfile =
-            await _employeeRepository.GetDetailByIdAndBranchAsync(
-                employeeId,
-                currentBranchId,
-                currentDate);
-
-        if (employeeProfile == null)
-        {
-            return new EmployeeChangeBranchResultDTO
-            {
-                IsCurrentBranchFound = true,
-                IsNewBranchFound = true,
-                HasAccess = true,
-                IsEmployeeFound = false
-            };
-        }
-
-        // Bước 5: không cho chuyển đến chi nhánh đang làm
-        if (currentBranchId == request.NewBranchId)
+        if (request.ActiveFrom != DateOnly.FromDateTime(DateTime.Today))
         {
             return new EmployeeChangeBranchResultDTO
             {
@@ -736,121 +673,40 @@ public class EmployeeService : IEmployeeService
                 IsNewBranchFound = true,
                 HasAccess = true,
                 IsEmployeeFound = true,
-                IsSameBranch = true
+                IsActiveFromValid = false,
+                ErrorCode = "Invalid",
+                ErrorMessage = "Ngày chuyển phải là hôm nay. Không hỗ trợ hồi tố hoặc đặt lịch chuyển."
             };
         }
 
-        // Bước 6: lấy bản ghi phân công tại chi nhánh hiện tại để cập nhật ngày kết thúc
-        UserBranch? currentAssignment =
-            await _userBranchRepository.GetActiveAssignmentAsync(
-                employeeProfile.UserId,
-                currentBranchId,
-                currentDate);
-
-        if (currentAssignment == null)
-        {
-            return new EmployeeChangeBranchResultDTO
+        EmployeeTransferResultDTO result = await _transferService.CreateAsync(currentAdminId,
+            new EmployeeTransferCreateDTO
             {
-                IsCurrentBranchFound = true,
-                IsNewBranchFound = true,
-                HasAccess = true,
-                IsEmployeeFound = false
-            };
+                EmployeeId = employeeId,
+                SourceBranchId = currentBranchId,
+                TargetBranchId = request.NewBranchId,
+                TransferImmediately = true
+            });
+
+        EmployeeDetailDTO? employee = null;
+        if (result.Request?.Status == "TRANSFERRED")
+        {
+            EmployeeDetailResultDTO detail = await GetEmployeeDetailAsync(
+                currentAdminId, "ADMIN", employeeId, request.NewBranchId);
+            employee = detail.Employee;
         }
-
-        // Ngày bắt đầu mới phải sau ngày bắt đầu của phân công hiện tại.
-        if (request.ActiveFrom <= currentAssignment.ActiveFrom)
-        {
-            return new EmployeeChangeBranchResultDTO
-            {
-                IsCurrentBranchFound = true,
-                IsNewBranchFound = true,
-                HasAccess = true,
-                IsEmployeeFound = true,
-                IsSameBranch = false,
-                IsActiveFromValid = false
-            };
-        }
-
-        // Bước 7: kết thúc phân công cũ trước ngày chuyển chi nhánh
-        currentAssignment.ActiveTo = request.ActiveFrom.AddDays(-1);
-
-        // Tạo bản ghi phân công mới để giữ lại lịch sử chi nhánh
-        UserBranch newAssignment = new UserBranch
-        {
-            UserId = employeeProfile.UserId,
-            BranchId = newBranch.Id,
-            ActiveFrom = request.ActiveFrom,
-            ActiveTo = null
-        };
-
-        // Bước 8: chuẩn bị lịch sử phân công để trả giao diện
-        List<EmployeeBranchHistoryDTO> branchHistory =
-            new List<EmployeeBranchHistoryDTO>();
-
-        foreach (UserBranch userBranch in employeeProfile.User.UserBranches)
-        {
-            if (userBranch.Branch.Deleted)
-            {
-                continue;
-            }
-
-            EmployeeBranchHistoryDTO historyDTO =
-                new EmployeeBranchHistoryDTO
-                {
-                    BranchId = userBranch.BranchId,
-                    BranchName = userBranch.Branch.Name,
-                    ActiveFrom = userBranch.ActiveFrom,
-                    ActiveTo = userBranch.ActiveTo
-                };
-
-            branchHistory.Add(historyDTO);
-        }
-
-        // Thêm chi nhánh mới vào lịch sử trả về
-        branchHistory.Add(new EmployeeBranchHistoryDTO
-        {
-            BranchId = newBranch.Id,
-            BranchName = newBranch.Name,
-            ActiveFrom = newAssignment.ActiveFrom,
-            ActiveTo = newAssignment.ActiveTo
-        });
-
-        // Bước 9: đánh dấu cập nhật phân công cũ và thêm phân công mới
-        _userBranchRepository.Update(currentAssignment);
-        await _userBranchRepository.AddAsync(newAssignment);
-
-        // Lưu 2 thay đổi cùng lúc
-        await _unitOfWork.SaveChangesAsync();
-
-        // Bước 10: ánh xạ thông tin nhân viên sau khi chuyển chi nhánh
-        EmployeeDetailDTO employeeDTO = new EmployeeDetailDTO
-        {
-            Id = employeeProfile.Id,
-            EmployeeCode = employeeProfile.EmployeeCode,
-            FullName = employeeProfile.User.FullName,
-            DateOfBirth = employeeProfile.DateOfBirth,
-            HireDate = employeeProfile.HireDate,
-            LeaveDate = employeeProfile.LeaveDate,
-            Position = employeeProfile.Position,
-            BaseSalary = employeeProfile.BaseSalary,
-            Phone = employeeProfile.User.Phone,
-            Email = employeeProfile.User.Email,
-            Address = employeeProfile.Address,
-            AvatarUrl = employeeProfile.AvatarUrl,
-            IsActive = employeeProfile.User.IsActive,
-            BranchHistory = branchHistory
-        };
 
         return new EmployeeChangeBranchResultDTO
         {
-            IsCurrentBranchFound = true,
-            IsNewBranchFound = true,
-            HasAccess = true,
-            IsEmployeeFound = true,
-            IsSameBranch = false,
+            IsCurrentBranchFound = result.ErrorCode != "NotFound",
+            IsNewBranchFound = result.ErrorCode != "Invalid",
+            HasAccess = result.ErrorCode != "Forbidden",
+            IsEmployeeFound = result.ErrorCode != "NotFound",
+            IsSameBranch = result.ErrorCode == "Conflict",
             IsActiveFromValid = true,
-            Employee = employeeDTO
+            Employee = employee,
+            ErrorCode = result.ErrorCode,
+            ErrorMessage = result.ErrorMessage
         };
     }
 
@@ -1089,6 +945,8 @@ public class EmployeeService : IEmployeeService
         _employeeRepository.Update(employeeProfile);
 
         // Cả nghỉ và quay lại đều không khôi phục phiên cũ; token đã dùng vẫn giữ UsedAt.
+        await _transferRepository.InvalidatePendingAsync(employeeProfile.Id,
+            "Trạng thái làm việc của nhân viên đã thay đổi.", DateTime.UtcNow);
         await _authSessionRepository.RevokeAllForEmployeeStatusAsync(
             employeeProfile.UserId, DateTime.UtcNow);
 

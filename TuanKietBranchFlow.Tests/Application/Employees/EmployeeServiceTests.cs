@@ -48,7 +48,9 @@ public class EmployeeServiceTests
             userBranchRepositoryMock.Object,
             passwordHasherMock.Object,
             unitOfWorkMock.Object,
-            Mock.Of<IAuthSessionRepository>());
+            Mock.Of<IAuthSessionRepository>(),
+            Mock.Of<IEmployeeTransferRepository>(),
+            Mock.Of<IEmployeeTransferService>());
 
         // Dữ liệu giả chỉ phục vụ test; ngày vào làm nằm trong tương lai.
         EmployeeCreateDTO request = new EmployeeCreateDTO
@@ -116,7 +118,9 @@ public class EmployeeServiceTests
             userBranchRepositoryMock.Object,
             passwordHasherMock.Object,
             unitOfWorkMock.Object,
-            Mock.Of<IAuthSessionRepository>());
+            Mock.Of<IAuthSessionRepository>(),
+            Mock.Of<IEmployeeTransferRepository>(),
+            Mock.Of<IEmployeeTransferService>());
 
         int currentAdminId = 1;
         int branchId = 2;

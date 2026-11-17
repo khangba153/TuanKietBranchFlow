@@ -203,6 +203,13 @@ public class OrderService : IOrderService
 
         try
         {
+            // Cùng khóa tài khoản với điều chuyển: không ghi đơn vào nguồn sau khi chuyển đã commit.
+            if (!await _orderRepository.LockAndCheckEmployeeBranchAsync(currentUserId, request.BranchId, businessDate))
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                return new CreateOrderResultDTO { IsBranchFound = true, HasAccess = false };
+            }
+
             OrderCodeResult orderCodeResult =
                 await _orderRepository.GetNextOrderCodeAsync(request.BranchId, businessDate);
 

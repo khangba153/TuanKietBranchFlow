@@ -1,0 +1,232 @@
+@page "/employees/{EmployeeId:int}/transfer"
+@using TuanKietBranchFlow.Application.DTOs.Employees
+@using TuanKietBranchFlow.Application.DTOs.Employees.Transfers
+@using TuanKietBranchFlow.Web.Services.Employees
+@inject EmployeeApiService EmployeeApiService
+@inject EmployeeTransferApiService TransferApiService
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>Chuyển chi nhánh nhân viên</PageTitle>
+<NavigationLock ConfirmExternalNavigation="@_isSaving" OnBeforeInternalNavigation="PreventNavigation" />
+
+<AuthorizeView Roles="ADMIN">
+    <Authorized>
+        <div class="bf-page transfer-page">
+            <header>
+                <a href="@($"/employees/{EmployeeId}?branchId={BranchId}")">Quay lại hồ sơ</a>
+                <h1>Chuyển chi nhánh</h1>
+                <p>Chuyển trực tiếp trong phạm vi quản lý, hoặc gửi yêu cầu để chi nhánh khác tiếp nhận.</p>
+            </header>
+
+            @if (_isLoading)
+            {
+                <p role="status">Đang tải thông tin nhân viên và chi nhánh…</p>
+            }
+            else if (_employee == null)
+            {
+                <div class="alert alert-warning" role="alert">@_message</div>
+                <button class="btn btn-outline-primary" @onclick="LoadAsync">Tải lại</button>
+            }
+            else
+            {
+                <section class="bf-surface-card transfer-form">
+                    <h2>@_employee.FullName</h2>
+                    <p>@_employee.EmployeeCode · Hiệu lực khi chuyển thành công trong ngày thực hiện.</p>
+                    @if (!_employee.IsActive)
+                    {
+                        <div class="alert alert-warning">Nhân viên đã nghỉ việc, không thể chuyển chi nhánh.</div>
+                    }
+                    else if (_completed)
+                    {
+                        <div class="alert alert-success" role="status">@_message</div>
+                        <a class="btn btn-primary" href="/employee-transfers">Xem yêu cầu đã gửi</a>
+                    }
+                    else
+                    {
+                        @if (!string.IsNullOrWhiteSpace(_message))
+                        {
+                            <div class="alert alert-warning" role="alert">@_message</div>
+                        }
+                        @if (_mustReload)
+                        {
+                            <button class="btn btn-outline-primary" @onclick="LoadAsync">Tải lại trước khi thao tác tiếp</button>
+                        }
+                        else
+                        {
+                            <label for="transfer-target" class="form-label">Chi nhánh đích</label>
+                            <select id="transfer-target" class="form-select" @bind="_targetId" @bind:after="ResetConfirmation"
+                                    disabled="@(_isSaving || _confirming)">
+                                <option value="0">Chọn chi nhánh tiếp nhận</option>
+                                @foreach (EmployeeTransferTargetDTO target in _targets)
+                                {
+                                    <option value="@target.Id">@target.Code — @target.Name</option>
+                                }
+                            </select>
+                            <label for="transfer-note" class="form-label mt-3">Ghi chú (không bắt buộc)</label>
+                            <textarea id="transfer-note" class="form-control" rows="3" maxlength="500"
+                                      @bind="_note" @bind:event="oninput" disabled="@(_isSaving || _confirming)"></textarea>
+                            @if (_confirming && SelectedTarget != null)
+                            {
+                                <div class="transfer-confirm">
+                                    <h3>@(SelectedTarget.CanTransferImmediately ? "Xác nhận chuyển ngay?" : "Xác nhận gửi yêu cầu?")</h3>
+                                    <p><strong>@SourceBranchName</strong> → <strong>@SelectedTarget.Name</strong></p>
+                                    <p>@(SelectedTarget.CanTransferImmediately
+                                        ? "Phân công nguồn kết thúc hôm qua. Nhân viên bắt đầu tại đích hôm nay và cần đăng nhập lại."
+                                        : "Nhân viên vẫn ở chi nhánh nguồn trong lúc chờ. Ngày chuyển là ngày admin đích đồng ý tiếp nhận thành công.")</p>
+                                    <div class="transfer-actions">
+                                        <button class="btn btn-primary" disabled="@_isSaving" @onclick="SubmitAsync">
+                                            @(_isSaving ? "Đang xử lý…" : "Xác nhận")
+                                        </button>
+                                        <button class="btn btn-outline-secondary" disabled="@_isSaving" @onclick="ResetConfirmation">Hủy</button>
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <button class="btn btn-primary mt-3" disabled="@(_targetId <= 0)" @onclick="Confirm">
+                                    @(SelectedTarget?.CanTransferImmediately == true ? "Chuyển ngay" : "Gửi yêu cầu tiếp nhận")
+                                </button>
+                            }
+                        }
+                    }
+                </section>
+            }
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <div class="alert alert-warning">Chỉ ADMIN được chuyển chi nhánh nhân viên.</div>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    [Parameter] public int EmployeeId { get; set; }
+    [SupplyParameterFromQuery(Name = "branchId")] public int BranchId { get; set; }
+    private EmployeeDetailDTO? _employee;
+    private List<EmployeeTransferTargetDTO> _targets = new List<EmployeeTransferTargetDTO>();
+    private int _targetId;
+    private string? _note;
+    private string? _message;
+    private bool _isLoading = true;
+    private bool _confirming;
+    private bool _isSaving;
+    private bool _mustReload;
+    private bool _completed;
+    private int _loadedEmployeeId;
+    private int _loadedBranchId;
+    private EmployeeTransferTargetDTO? SelectedTarget => _targets.FirstOrDefault(target => target.Id == _targetId);
+    private string SourceBranchName => _employee?.BranchHistory.FirstOrDefault(history => history.BranchId == BranchId)?.BranchName ?? "Chi nhánh nguồn";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender || _loadedEmployeeId != EmployeeId || _loadedBranchId != BranchId)
+        {
+            _loadedEmployeeId = EmployeeId;
+            _loadedBranchId = BranchId;
+            AuthenticationState authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            if (authenticationState.User.IsInRole("ADMIN"))
+            {
+                await LoadAsync();
+            }
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _message = null;
+        _mustReload = false;
+        _confirming = false;
+        _employee = null;
+        _completed = false;
+        _targetId = 0;
+        try
+        {
+            _employee = await EmployeeApiService.GetEmployeeDetailAsync(EmployeeId, BranchId);
+            if (_employee == null)
+            {
+                _message = "Không tìm thấy nhân viên hoặc bạn không có quyền tại chi nhánh nguồn.";
+                return;
+            }
+            _targets = await TransferApiService.GetTargetsAsync(BranchId);
+            if (_targets.Count == 0)
+            {
+                _message = "Chưa có chi nhánh đang hoạt động khác để tiếp nhận.";
+            }
+        }
+        catch (Exception exception) when (exception is HttpRequestException or System.Text.Json.JsonException or OperationCanceledException)
+        {
+            _message = "Không tải được thông tin chuyển chi nhánh. Vui lòng tải lại.";
+            _mustReload = true;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void Confirm()
+    {
+        _confirming = SelectedTarget != null;
+    }
+
+    private void ResetConfirmation()
+    {
+        _confirming = false;
+    }
+
+    private async Task SubmitAsync()
+    {
+        if (_isSaving || !_confirming || SelectedTarget == null)
+        {
+            return;
+        }
+        _isSaving = true;
+        try
+        {
+            EmployeeTransferDTO result = await TransferApiService.CreateAsync(new EmployeeTransferCreateDTO
+            {
+                EmployeeId = EmployeeId,
+                SourceBranchId = BranchId,
+                TargetBranchId = _targetId,
+                TransferImmediately = SelectedTarget.CanTransferImmediately,
+                Note = _note
+            });
+            if (result.Status == "TRANSFERRED")
+            {
+                _isSaving = false;
+                Navigation.NavigateTo($"/employees/{EmployeeId}?branchId={result.TargetBranchId}");
+                return;
+            }
+            _completed = true;
+            _message = "Đã gửi yêu cầu. Nhân viên vẫn ở chi nhánh nguồn trong lúc chờ tiếp nhận.";
+        }
+        catch (Exception exception) when (exception is HttpRequestException or System.Text.Json.JsonException or OperationCanceledException)
+        {
+            _message = "Chưa xác định được kết quả. Hãy tải lại danh sách yêu cầu trước khi gửi lại.";
+            if (exception is HttpRequestException httpException && httpException.StatusCode.HasValue)
+            {
+                int statusCode = (int)httpException.StatusCode.Value;
+                if (statusCode >= 400 && statusCode < 500)
+                {
+                    _message = httpException.Message;
+                }
+            }
+            _mustReload = true;
+        }
+        finally
+        {
+            _isSaving = false;
+            _confirming = false;
+        }
+    }
+
+    private void PreventNavigation(Microsoft.AspNetCore.Components.Routing.LocationChangingContext context)
+    {
+        if (_isSaving)
+        {
+            context.PreventNavigation();
+        }
+    }
+}
