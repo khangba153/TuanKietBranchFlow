@@ -1,0 +1,5 @@
+@inherits InputTextArea
+
+@* Giữ địa chỉ trong model ngay khi gõ thay vì chờ rời ô nhập. *@
+<textarea @attributes="AdditionalAttributes" name="@NameAttributeValue" class="@CssClass"
+          @bind="CurrentValueAsString" @bind:event="oninput"></textarea>

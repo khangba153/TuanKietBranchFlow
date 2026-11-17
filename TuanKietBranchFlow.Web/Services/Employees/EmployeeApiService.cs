@@ -85,6 +85,94 @@ public class EmployeeApiService
         return employee;
     }
 
+    // Đọc hồ sơ cho form sửa và giữ HTTP status để hiển thị hướng xử lý phù hợp.
+    public async Task<EmployeeDetailApiResult> GetEmployeeForEditAsync(
+        int employeeId,
+        int branchId)
+    {
+        string requestUrl = $"api/employees/{employeeId}?branchId={branchId}";
+
+        using HttpRequestMessage request =
+            new HttpRequestMessage(HttpMethod.Get, requestUrl);
+
+        using HttpResponseMessage response =
+            await _authorizedApiService.SendAsync(request);
+
+        return await ReadEmployeeResultAsync(response);
+    }
+
+    // Chỉ gửi một PUT; không tự retry thao tác ghi khi mất phản hồi.
+    public async Task<EmployeeDetailApiResult> UpdateEmployeeAsync(
+        int employeeId,
+        int branchId,
+        EmployeeUpdateDTO employeeUpdateDTO)
+    {
+        string requestUrl = $"api/employees/{employeeId}?branchId={branchId}";
+
+        using HttpRequestMessage request =
+            new HttpRequestMessage(HttpMethod.Put, requestUrl)
+            {
+                Content = JsonContent.Create(employeeUpdateDTO)
+            };
+
+        using HttpResponseMessage response =
+            await _authorizedApiService.SendAsync(request);
+
+        return await ReadEmployeeResultAsync(response);
+    }
+
+    // Không đưa nội dung HTML hoặc lỗi parser từ máy chủ vào giao diện.
+    private static async Task<EmployeeDetailApiResult> ReadEmployeeResultAsync(
+        HttpResponseMessage response)
+    {
+        int statusCode = (int)response.StatusCode;
+
+        if (response.IsSuccessStatusCode)
+        {
+            EmployeeDetailDTO? employee = null;
+
+            try
+            {
+                employee = await response.Content.ReadFromJsonAsync<EmployeeDetailDTO>();
+            }
+            catch (JsonException)
+            {
+                // Response thành công nhưng không đọc được: cần tải lại để biết kết quả thực tế.
+            }
+
+            return new EmployeeDetailApiResult
+            {
+                IsSuccess = employee is not null,
+                StatusCode = statusCode,
+                Employee = employee,
+                ErrorMessage = employee is null
+                    ? "Không đọc được hồ sơ trả về. Hãy tải lại để kiểm tra kết quả."
+                    : string.Empty
+            };
+        }
+
+        ValidationProblemDetails? problemDetails = null;
+
+        try
+        {
+            problemDetails = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>();
+        }
+        catch (JsonException)
+        {
+            // 401 hoặc lỗi proxy có thể không chứa JSON.
+        }
+
+        return new EmployeeDetailApiResult
+        {
+            StatusCode = statusCode,
+            ErrorMessage = problemDetails?.Detail
+                ?? problemDetails?.Title
+                ?? $"Không thể xử lý hồ sơ. HTTP {statusCode}.",
+            ValidationErrors = problemDetails?.Errors
+                ?? new Dictionary<string, string[]>()
+        };
+    }
+
     // Gọi API để tạo tài khoản, hồ sơ và phân công cho nhân viên mới
     public async Task<EmployeeCreateApiResult> CreateEmployeeAsync(
         EmployeeCreateDTO employeeCreateDTO)

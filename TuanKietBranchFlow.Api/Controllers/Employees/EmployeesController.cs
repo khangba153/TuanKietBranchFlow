@@ -359,19 +359,31 @@ public class EmployeesController : ControllerBase
         // Email đang được 1 tài khoản khác sử dụng
         if (result.IsEmailDuplicated)
         {
-            return Problem(
-                statusCode: StatusCodes.Status409Conflict,
-                title: "Email đã tồn tại",
-                detail: "Vui lòng sử dụng Email khác.");
+            return StatusCode(StatusCodes.Status409Conflict, new ValidationProblemDetails(
+                new Dictionary<string, string[]>
+                {
+                    { nameof(request.Email), new[] { "Email đã được tài khoản khác sử dụng." } }
+                })
+            {
+                Status = StatusCodes.Status409Conflict,
+                Title = "Email đã tồn tại",
+                Detail = "Vui lòng sử dụng Email khác."
+            });
         }
 
         // Mã nhân viên đang được 1 hồ sơ khác sử dụng
         if (result.IsEmployeeCodeDuplicated)
         {
-            return Problem(
-                statusCode: StatusCodes.Status409Conflict,
-                title: "Mã nhân viên đã tồn tại",
-                detail: "Vui lòng sử dụng mã nhân viên khác.");
+            return StatusCode(StatusCodes.Status409Conflict, new ValidationProblemDetails(
+                new Dictionary<string, string[]>
+                {
+                    { nameof(request.EmployeeCode), new[] { "Mã nhân viên đã được hồ sơ khác sử dụng." } }
+                })
+            {
+                Status = StatusCodes.Status409Conflict,
+                Title = "Mã nhân viên đã tồn tại",
+                Detail = "Vui lòng sử dụng mã nhân viên khác."
+            });
         }
 
         // Bảo vệ trường hợp kết quả từ Service không nhất quán

@@ -1,0 +1,82 @@
+.employee-edit-page {
+    max-width: 64rem;
+    margin: 0 auto;
+}
+
+.employee-edit-header {
+    margin-bottom: 1.25rem;
+}
+
+.employee-edit-context {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    margin-bottom: 0.75rem;
+}
+
+.employee-edit-fields {
+    min-width: 0;
+}
+
+.employee-edit-section {
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.employee-edit-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    padding: 1rem 0;
+    background-color: var(--bf-background);
+    border-top: 1px solid var(--bf-border);
+}
+
+.employee-edit-action-buttons {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.employee-edit-page ::deep .form-control,
+.employee-edit-page ::deep .btn {
+    min-height: 44px;
+}
+
+.employee-edit-page ::deep .validation-message {
+    margin-top: 0.35rem;
+    font-size: 0.875rem;
+}
+
+.employee-edit-page ::deep .btn-primary:disabled {
+    background-color: var(--bf-primary);
+    border-color: var(--bf-primary);
+    opacity: 0.55;
+}
+
+@media (max-width: 575.98px) {
+    .employee-edit-context {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .employee-edit-section {
+        padding: 1rem;
+    }
+
+    .employee-edit-actions {
+        padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+    }
+
+    .employee-edit-action-buttons {
+        width: 100%;
+    }
+
+    .employee-edit-action-buttons .btn {
+        flex: 1;
+    }
+}

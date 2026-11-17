@@ -14,7 +14,7 @@ Demo access is available on request from the author. Account passwords are not p
 ## Features
 
 - **Access control:** HttpOnly cookie authentication on Web, JWT authentication on API, `OWNER`, `ADMIN`, and `EMPLOYEE` roles, and branch-scoped API access. Refresh-token rotation and account-wide logout revoke API sessions.
-- **Employee management:** branch employee lists, search and status filters, profile viewing and creation in Web; API support for updates, status changes, and branch transfers with assignment history.
+- **Employee management:** branch employee lists, search and status filters, profile viewing, creation and editing in Web; API support for status changes and branch transfers with assignment history.
 - **Menu management:** ADMIN can create, edit, and soft-delete categories, sizes, products and prices, toppings, and quick notes. OWNER has read-only access. Menu definitions and prices are shared; product and topping availability is branch-specific.
 - **Employee ordering:** browse and filter the branch menu, choose sizes and options, manage a cart, and submit orders.
 - **Order validation:** the API rechecks availability and prices, generates daily order codes, and saves order details and name/price snapshots in one transaction.
@@ -50,13 +50,13 @@ Files within each layer are grouped by feature. See the [folder organization gui
 
 ## Current Status
 
-**Updated: 2026-11-15**
+**Updated: 2026-11-16**
 
 Menu management and employee ordering have been deployed to the Azure demo and manually smoke-tested by the author.
 
 The auth update is deployed to Azure. Web uses a Secure, HttpOnly session cookie and keeps API tokens on the server, not in browser storage. API access tokens last 15 minutes; refresh tokens rotate within a fixed seven-day session, with only their hashes stored in SQL. Logout revokes all existing sessions of the same account; detected refresh-token reuse also triggers account-wide revocation.
 
-The author manually smoke-tested login, F5/new tabs, cookie flags, WebSocket connectivity, refresh rotation, account-wide logout, and login rate limiting on Azure at the auth milestone. The current local Release test suite has 112 passing tests.
+The author manually smoke-tested login, F5/new tabs, cookie flags, WebSocket connectivity, refresh rotation, account-wide logout, and login rate limiting on Azure at the auth milestone. The current local Release test suite has 140 passing tests.
 
 **Demo limits:** Web token storage and rate-limit counters are in process memory. The deployment uses one instance; Web restart/deploy requires signing in again. There is no distributed session store, and backup restoration has not yet been rehearsed.
 
@@ -69,6 +69,8 @@ Closeout checks include SQL pagination with 25 temporary orders (rolled back), E
 B4.2a is implemented locally: assigned ADMINs can keep or cancel a NEEDS_REVIEW order with a required reason and atomic before/after history. SQL concurrency/rollback and real HTTP role checks passed; the author accepted the UI on 2026-11-16. See the [B4.2a report](docs/features/order-review-b4.2a.md).
 
 B4.2b is implemented locally: ADMINs can adjust existing lines, quantity, size, toppings and notes with a server-calculated preview and atomic history. Changed sizes use current prices; unchanged sizes retain sale snapshots. Unit, SQL/HTTP and browser checks passed; see the [B4.2b report and limits](docs/features/order-adjustment-b4.2b.md). These updates have not been deployed. Inventory, payroll, reporting, and system-wide audit logging remain planned.
+
+Employee profile editing is implemented and checked locally: ADMIN-only editing through the existing scoped PUT API, field validation, unsaved-change confirmation, error-preserving forms and mobile-friendly actions. Browser, local SQL and real HTTP role/status checks passed; see the [implementation and UX report](docs/features/employee-profile-edit.md). This update has not been deployed.
 
 ## Running Locally
 

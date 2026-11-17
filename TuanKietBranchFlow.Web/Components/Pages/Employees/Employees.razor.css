@@ -244,15 +244,19 @@
 }
 
 .employee-card-footer {
+    display: flex;
+    gap: 0.5rem;
     margin-top: auto;
     padding: 0 1.15rem 1.15rem;
 }
 
 .employee-profile-link {
+    flex: 1;
+    min-width: 0;
     display: flex;
     min-height: 2.75rem;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
     gap: 0.75rem;
     padding: 0.65rem 0.85rem;
     color: var(--bf-primary);

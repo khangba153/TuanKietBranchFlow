@@ -4,8 +4,17 @@
 
 /* Họ tên có toàn bộ chiều ngang; chỉ ngắt theo từ khi màn hình hẹp. */
 .employee-detail-hero {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
     padding-bottom: 1rem;
     border-bottom: 1px solid var(--bf-border);
+}
+
+.employee-detail-edit-button {
+    min-height: 44px;
+    flex-shrink: 0;
 }
 
 .employee-detail-hero-copy {
@@ -333,6 +342,8 @@
     }
 
     .employee-detail-hero {
+        flex-direction: column;
+        align-items: stretch;
         padding-bottom: 1rem;
     }
 
@@ -353,6 +364,10 @@
 
     .employee-detail-history-count {
         width: 100%;
-        margin-left: 3.55rem;
+        margin-left: 0;
+    }
+
+    .employee-detail-profile {
+        display: none;
     }
 }

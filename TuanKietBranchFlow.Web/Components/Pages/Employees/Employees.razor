@@ -19,7 +19,7 @@
             <p>Hệ thống đang lấy danh sách nhân viên trong chi nhánh đã chọn.</p>
         </section>
     }
-    else if (!string.IsNullOrWhiteSpace(_errorMessage))
+    else if (!_hasLoaded && !string.IsNullOrWhiteSpace(_errorMessage))
     {
         <section class="employees-state employees-state-error bf-surface-card" role="alert">
             <h1 class="h5 mb-0">Không thể tải nhân viên</h1>
@@ -58,7 +58,13 @@
             </AuthorizeView>
         </header>
 
-        <section class="employees-filter bf-surface-card" aria-labelledby="employees-filter-title">
+        @if (!string.IsNullOrWhiteSpace(_errorMessage))
+        {
+            <div class="alert alert-danger mt-3" role="alert">@_errorMessage</div>
+        }
+
+        <form class="employees-filter bf-surface-card" aria-labelledby="employees-filter-title"
+              @onsubmit="SearchEmployeesAsync" @onsubmit:preventDefault>
             <div class="employees-filter-heading">
                 <div>
                     <h2 id="employees-filter-title">Tìm nhân viên</h2>
@@ -69,7 +75,7 @@
                     <button type="button"
                             class="btn btn-link btn-sm employees-clear-button"
                             @onclick="ClearFiltersAsync"
-                            disabled="@_isLoading">
+                            disabled="@_isSearching">
                         Xóa bộ lọc
                     </button>
                 }
@@ -86,7 +92,7 @@
                                placeholder="Ví dụ: Nguyễn Văn An hoặc NV001"
                                @bind="_keyword"
                                @bind:event="oninput"
-                               disabled="@_isLoading" />
+                               disabled="@_isSearching" />
                     </div>
                 </div>
 
@@ -96,7 +102,7 @@
                     <select id="employee-status"
                             class="form-select"
                             @bind="_statusFilter"
-                            disabled="@_isLoading">
+                            disabled="@_isSearching">
                         <option value="">Tất cả trạng thái</option>
                         <option value="true">Đang làm việc</option>
                         <option value="false">Đã nghỉ việc</option>
@@ -104,23 +110,22 @@
                 </div>
 
                 <div class="col-12 col-sm-5 col-lg-3">
-                    <button type="button"
+                    <button type="submit"
                             class="btn btn-primary w-100 employees-search-button"
-                            @onclick="SearchEmployeesAsync"
-                            disabled="@_isLoading">
-                        Áp dụng bộ lọc
+                            disabled="@_isSearching">
+                        @(_isSearching ? "Đang tìm..." : "Tìm nhân viên")
                     </button>
                 </div>
             </div>
-        </section>
+        </form>
 
-        <section class="employees-list" aria-labelledby="employees-list-title">
+        <section class="employees-list" aria-labelledby="employees-list-title" aria-busy="@_isSearching">
             <div class="employees-list-heading">
                 <div>
                     <h2 id="employees-list-title">Nhân viên tại chi nhánh</h2>
                 </div>
 
-                <span>@_employees.Count kết quả · @ActiveEmployeeCount đang làm · @InactiveEmployeeCount đã nghỉ</span>
+                <span>@_employees.Count kết quả theo bộ lọc: @ActiveEmployeeCount đang làm, @InactiveEmployeeCount đã nghỉ</span>
             </div>
 
             @if (_employees.Count == 0)
@@ -173,7 +178,6 @@
                                 </div>
 
                                 <span class="employee-status @(employee.IsActive ? "is-active" : "is-inactive")">
-                                    <span aria-hidden="true"></span>
                                     @(employee.IsActive ? "Đang làm" : "Đã nghỉ")
                                 </span>
                             </header>
@@ -202,6 +206,15 @@
                                     </span>
 
                                 </a>
+                                <AuthorizeView Roles="ADMIN">
+                                    <Authorized>
+                                        <a class="employee-profile-link"
+                                           href="@($"/employees/{employee.Id}/edit?branchId={employee.BranchId}")"
+                                           aria-label="Sửa hồ sơ @employee.FullName">
+                                            Sửa hồ sơ
+                                        </a>
+                                    </Authorized>
+                                </AuthorizeView>
                             </footer>
                         </article>
                     }
@@ -225,6 +238,9 @@
         new List<EmployeeListItemDTO>();
 
     private bool _isLoading = true;
+    private bool _isSearching;
+    private bool _hasLoaded;
+    private int _loadedBranchId;
     private string? _errorMessage;
 
     private int ActiveEmployeeCount =>
@@ -245,11 +261,16 @@
     // Tải dữ liệu một lần sau khi component render lần đầu.
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender)
+        if (!firstRender && _loadedBranchId == BranchId)
         {
             return;
         }
 
+        _loadedBranchId = BranchId;
+        _hasLoaded = false;
+        _branchName = null;
+        _keyword = string.Empty;
+        _statusFilter = string.Empty;
         await LoadEmployeesAsync();
         StateHasChanged();
     }
@@ -273,7 +294,13 @@
     // Gọi API lấy danh sách nhân viên theo chi nhánh và bộ lọc hiện tại.
     private async Task LoadEmployeesAsync()
     {
-        _isLoading = true;
+        if (_isSearching)
+        {
+            return;
+        }
+
+        _isLoading = !_hasLoaded;
+        _isSearching = true;
         _errorMessage = null;
 
         try
@@ -299,6 +326,7 @@
             }
 
             _employees = employees;
+            _hasLoaded = true;
 
             // Giữ tên chi nhánh khi bộ lọc sau đó không có kết quả.
             EmployeeListItemDTO? firstEmployee = _employees.FirstOrDefault();
@@ -312,9 +340,18 @@
         {
             _errorMessage = "Không thể kết nối đến API.";
         }
+        catch (System.Text.Json.JsonException)
+        {
+            _errorMessage = "Không đọc được danh sách. Vui lòng tải lại.";
+        }
+        catch (OperationCanceledException)
+        {
+            _errorMessage = "Yêu cầu tìm nhân viên hết thời gian chờ. Hãy thử lại.";
+        }
         finally
         {
             _isLoading = false;
+            _isSearching = false;
         }
     }
 

@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace TuanKietBranchFlow.Application.DTOs.Employees;
 
-public class EmployeeUpdateDTO
+public class EmployeeUpdateDTO : IValidatableObject
 {
     // Các thông tin thuộc bảng AppUser
     [Required(ErrorMessage = "Họ tên không được để trống.")]
@@ -27,9 +27,34 @@ public class EmployeeUpdateDTO
     [StringLength(100, ErrorMessage = "Chức vụ không được vượt quá 100 ký tự.")]
     public string? Position { get; set; }
 
-    [Range(0, double.MaxValue, ErrorMessage = "Lương cơ bản không được nhỏ hơn 0.")]
+    [Range(typeof(decimal), "0", "9999999999999999.99",
+        ParseLimitsInInvariantCulture = true,
+        ErrorMessage = "Lương cơ bản phải từ 0 đến 9.999.999.999.999.999,99.")]
     public decimal BaseSalary { get; set; }
 
     [StringLength(500, ErrorMessage = "Địa chỉ không được vượt quá 500 ký tự.")]
     public string? Address { get; set; }
+
+    // Dùng chung kiểm tra ngày cho API và form sửa hồ sơ.
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        List<ValidationResult> errors = new List<ValidationResult>();
+        DateOnly today = DateOnly.FromDateTime(DateTime.Today);
+
+        if (HireDate == default || HireDate > today)
+        {
+            errors.Add(new ValidationResult(
+                "Ngày vào làm không được để trống hoặc lớn hơn ngày hiện tại.",
+                new[] { nameof(HireDate) }));
+        }
+
+        if (DateOfBirth.HasValue && DateOfBirth.Value > today)
+        {
+            errors.Add(new ValidationResult(
+                "Ngày sinh không được lớn hơn ngày hiện tại.",
+                new[] { nameof(DateOfBirth) }));
+        }
+
+        return errors;
+    }
 }

@@ -52,10 +52,17 @@
                 </a>
                 <h1>@_employee.FullName</h1>
                 <span class="employee-detail-status @(_employee.IsActive ? "is-active" : "is-inactive")">
-                    <span aria-hidden="true"></span>
                     @(_employee.IsActive ? "Đang làm việc" : "Đã nghỉ việc")
                 </span>
             </div>
+            <AuthorizeView Roles="ADMIN">
+                <Authorized>
+                    <a class="btn btn-primary employee-detail-edit-button"
+                       href="@($"/employees/{EmployeeId}/edit?branchId={BranchId}")">
+                        Sửa thông tin
+                    </a>
+                </Authorized>
+            </AuthorizeView>
         </header>
 
         <div class="employee-detail-content">
@@ -212,15 +219,19 @@
     private EmployeeDetailDTO? _employee;
     private bool _isLoading = true;
     private string? _errorMessage;
+    private int _loadedEmployeeId;
+    private int _loadedBranchId;
 
     // Tải dữ liệu một lần sau khi component render lần đầu.
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender)
+        if (!firstRender && _loadedEmployeeId == EmployeeId && _loadedBranchId == BranchId)
         {
             return;
         }
 
+        _loadedEmployeeId = EmployeeId;
+        _loadedBranchId = BranchId;
         await LoadEmployeeAsync();
         StateHasChanged();
     }
@@ -229,7 +240,10 @@
     private async Task LoadEmployeeAsync()
     {
         _isLoading = true;
+        _employee = null;
         _errorMessage = null;
+        int requestedEmployeeId = EmployeeId;
+        int requestedBranchId = BranchId;
 
         try
         {
@@ -240,7 +254,12 @@
             }
 
             EmployeeDetailDTO? employee =
-                await EmployeeApiService.GetEmployeeDetailAsync(EmployeeId, BranchId);
+                await EmployeeApiService.GetEmployeeDetailAsync(requestedEmployeeId, requestedBranchId);
+
+            if (requestedEmployeeId != EmployeeId || requestedBranchId != BranchId)
+            {
+                return;
+            }
 
             if (employee is null)
             {
@@ -253,6 +272,14 @@
         catch (HttpRequestException)
         {
             _errorMessage = "Không thể kết nối đến API.";
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            _errorMessage = "Không đọc được hồ sơ. Vui lòng tải lại.";
+        }
+        catch (OperationCanceledException)
+        {
+            _errorMessage = "Yêu cầu tải hồ sơ hết thời gian chờ. Vui lòng thử lại.";
         }
         finally
         {
