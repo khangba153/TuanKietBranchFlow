@@ -20,16 +20,13 @@ public class EmployeeUpdateDTO : IValidatableObject
     [Required(ErrorMessage = "Mã nhân viên không được để trống.")]
     [StringLength(30, ErrorMessage = "Mã nhân viên không được vượt quá 30 ký tự.")]
     public string EmployeeCode { get; set; } = string.Empty;
-
     public DateOnly? DateOfBirth { get; set; }
     public DateOnly HireDate { get; set; }
 
     [StringLength(100, ErrorMessage = "Chức vụ không được vượt quá 100 ký tự.")]
     public string? Position { get; set; }
 
-    [Range(typeof(decimal), "0", "9999999999999999.99",
-        ParseLimitsInInvariantCulture = true,
-        ErrorMessage = "Lương cơ bản phải từ 0 đến 9.999.999.999.999.999,99.")]
+    [Range(typeof(decimal), "0", "9999999999999999.99", ParseLimitsInInvariantCulture = true, ErrorMessage = "Lương cơ bản phải từ 0 đến 9.999.999.999.999.999,99.")]
     public decimal BaseSalary { get; set; }
 
     [StringLength(500, ErrorMessage = "Địa chỉ không được vượt quá 500 ký tự.")]

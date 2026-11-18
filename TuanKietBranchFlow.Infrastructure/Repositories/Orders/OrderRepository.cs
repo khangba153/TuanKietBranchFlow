@@ -15,34 +15,31 @@ public class OrderRepository : RepositoryBase<SalesOrder>, IOrderRepository
     }
 
     // SQL chỉ cho một request thắng; kiểm tra lại cả quyền và phiên báo sai tại thời điểm ghi.
-    public async Task<bool> LockAndCheckEmployeeBranchAsync(int userId, int branchId, DateOnly today)
+    public async Task<bool> LockAndCheckEmployeeBranchAsync(
+        int userId,
+        int branchId,
+        DateOnly today)
     {
-        int lockedRows = await Context.AppUsers
-            .Where(user => user.Id == userId && user.IsActive && !user.Deleted)
-            .ExecuteUpdateAsync(setters => setters.SetProperty(user => user.UpdatedAt, user => user.UpdatedAt));
+        int lockedRows = await Context.AppUsers.Where(user => user.Id == userId && user.IsActive && !user.Deleted).ExecuteUpdateAsync(setters => setters.SetProperty(user => user.UpdatedAt, user => user.UpdatedAt));
         if (lockedRows != 1)
         {
             return false;
         }
-        return await Context.UserBranches.AnyAsync(assignment => assignment.UserId == userId
-            && assignment.BranchId == branchId && assignment.ActiveFrom <= today
-            && (assignment.ActiveTo == null || assignment.ActiveTo >= today)
-            && !assignment.Branch.Deleted && assignment.Branch.IsActive);
+
+        return await Context.UserBranches.AnyAsync(assignment => assignment.UserId == userId && assignment.BranchId == branchId && assignment.ActiveFrom <= today && (assignment.ActiveTo == null || assignment.ActiveTo >= today) && !assignment.Branch.Deleted && assignment.Branch.IsActive);
     }
 
     // SQL chỉ cho một request thắng; kiểm tra lại cả quyền và phiên báo sai tại thời điểm ghi.
-    public async Task<int> TryResolveReviewAsync(int orderId, int adminId, DateOnly assignmentDate,
-        DateTime expectedReportedAt, int expectedHistoryId, string status, DateTime updatedAt)
+    public async Task<int> TryResolveReviewAsync(
+        int orderId,
+        int adminId,
+        DateOnly assignmentDate,
+        DateTime expectedReportedAt,
+        int expectedHistoryId,
+        string status,
+        DateTime updatedAt)
     {
-        return await Context.SalesOrders
-            .Where(order => order.Id == orderId && order.Status == "NEEDS_REVIEW" &&
-                order.ReportedAt == expectedReportedAt && !order.Branch.Deleted &&
-                !order.OrderAdjustments.Any(history => history.Id > expectedHistoryId) &&
-                order.Branch.UserBranches.Any(assignment => assignment.UserId == adminId &&
-                    assignment.ActiveFrom <= assignmentDate &&
-                    (assignment.ActiveTo == null || assignment.ActiveTo >= assignmentDate)))
-            .ExecuteUpdateAsync(setters => setters.SetProperty(order => order.Status, status)
-                .SetProperty(order => order.UpdatedAt, updatedAt));
+        return await Context.SalesOrders.Where(order => order.Id == orderId && order.Status == "NEEDS_REVIEW" && order.ReportedAt == expectedReportedAt && !order.Branch.Deleted && !order.OrderAdjustments.Any(history => history.Id > expectedHistoryId) && order.Branch.UserBranches.Any(assignment => assignment.UserId == adminId && assignment.ActiveFrom <= assignmentDate && (assignment.ActiveTo == null || assignment.ActiveTo >= assignmentDate))).ExecuteUpdateAsync(setters => setters.SetProperty(order => order.Status, status).SetProperty(order => order.UpdatedAt, updatedAt));
     }
 
     // Chỉ stage lịch sử; UnitOfWork lưu và commit cùng cập nhật trạng thái.
@@ -52,153 +49,131 @@ public class OrderRepository : RepositoryBase<SalesOrder>, IOrderRepository
     }
 
     // Giữ ID dòng còn lại, xóa dòng bỏ khỏi bản hiện hành; snapshot gốc nằm trong history.
-    public async Task ApplyAdjustedItemsAsync(int orderId, List<OrderItem> items, decimal totalAmount)
+    public async Task ApplyAdjustedItemsAsync(
+        int orderId,
+        List<OrderItem> items,
+        decimal totalAmount)
     {
-        SalesOrder order = await Context.SalesOrders
-            .Include(order => order.OrderItems).ThenInclude(item => item.OrderItemToppings)
-            .Include(order => order.OrderItems).ThenInclude(item => item.OrderItemNotes)
-            .SingleAsync(order => order.Id == orderId);
+        SalesOrder order = await Context.SalesOrders.Include(order => order.OrderItems).ThenInclude(item => item.OrderItemToppings).Include(order => order.OrderItems).ThenInclude(item => item.OrderItemNotes).SingleAsync(order => order.Id == orderId);
         foreach (OrderItem existing in order.OrderItems.ToList())
         {
             Context.OrderItemToppings.RemoveRange(existing.OrderItemToppings);
             Context.OrderItemNotes.RemoveRange(existing.OrderItemNotes);
-            existing.OrderItemToppings.Clear(); existing.OrderItemNotes.Clear();
+            existing.OrderItemToppings.Clear();
+            existing.OrderItemNotes.Clear();
             OrderItem? changed = items.FirstOrDefault(item => item.Id == existing.Id);
-            if (changed == null) { Context.OrderItems.Remove(existing); continue; }
+            if (changed == null)
+            {
+                Context.OrderItems.Remove(existing);
+                continue;
+            }
+
             existing.ProductSizeId = changed.ProductSizeId;
             existing.SizeNameSnapshot = changed.SizeNameSnapshot;
             existing.Quantity = changed.Quantity;
             existing.UnitPriceSnapshot = changed.UnitPriceSnapshot;
             existing.SubtotalAmount = changed.SubtotalAmount;
-            foreach (OrderItemTopping topping in changed.OrderItemToppings) existing.OrderItemToppings.Add(topping);
-            foreach (OrderItemNote note in changed.OrderItemNotes) existing.OrderItemNotes.Add(note);
+            foreach (OrderItemTopping topping in changed.OrderItemToppings)
+            {
+                existing.OrderItemToppings.Add(topping);
+            }
+
+            foreach (OrderItemNote note in changed.OrderItemNotes)
+            {
+                existing.OrderItemNotes.Add(note);
+            }
         }
+
         order.TotalAmount = totalAmount;
     }
 
     // Tính tổng và phân trang trên SQL; mọi bộ lọc đều đi cùng phạm vi chi nhánh.
     public async Task<OrderManagementPage> GetOrdersForManagementAsync(
-        List<int> branchIds, string keyword, DateOnly? businessDate,
-        string status, int skip, int take)
+        List<int> branchIds,
+        string keyword,
+        DateOnly? businessDate,
+        string status,
+        int skip,
+        int take)
     {
-        IQueryable<SalesOrder> query = Context.SalesOrders.AsNoTracking()
-            .Where(order => branchIds.Contains(order.BranchId));
-
+        IQueryable<SalesOrder> query = Context.SalesOrders.AsNoTracking().Where(order => branchIds.Contains(order.BranchId));
         if (!string.IsNullOrWhiteSpace(keyword))
+        {
             query = query.Where(order => order.Code.Contains(keyword));
+        }
+
         if (businessDate.HasValue)
+        {
             query = query.Where(order => order.BusinessDate == businessDate.Value);
+        }
 
         // Đếm/tính tiền tại SQL trên toàn bộ phạm vi; không cộng từ trang hiện tại.
         // Không áp dụng status ở đây để các nút trạng thái luôn giữ số đếm toàn cảnh.
-        OrderManagementSummary summary = await query.GroupBy(order => 1)
-            .Select(group => new OrderManagementSummary
-            {
-                TotalOrders = group.Count(),
-                CompletedOrders = group.Count(order => order.Status == "COMPLETED"),
-                AdjustedOrders = group.Count(order => order.Status == "ADJUSTED"),
-                NeedsReviewOrders = group.Count(order => order.Status == "NEEDS_REVIEW"),
-                CancelledOrders = group.Count(order => order.Status == "CANCELLED"),
-                CompletedOrderValue = group.Sum(order =>
-                    order.Status == "COMPLETED" || order.Status == "ADJUSTED" ? order.TotalAmount : 0m)
-            }).FirstOrDefaultAsync() ?? new OrderManagementSummary();
-
+        OrderManagementSummary summary = await query.GroupBy(order => 1).Select(group => new OrderManagementSummary
+        {
+            TotalOrders = group.Count(),
+            CompletedOrders = group.Count(order => order.Status == "COMPLETED"),
+            AdjustedOrders = group.Count(order => order.Status == "ADJUSTED"),
+            NeedsReviewOrders = group.Count(order => order.Status == "NEEDS_REVIEW"),
+            CancelledOrders = group.Count(order => order.Status == "CANCELLED"),
+            CompletedOrderValue = group.Sum(order => order.Status == "COMPLETED" || order.Status == "ADJUSTED" ? order.TotalAmount : 0m)
+        }).FirstOrDefaultAsync() ?? new OrderManagementSummary();
         if (!string.IsNullOrWhiteSpace(status))
+        {
             query = query.Where(order => order.Status == status);
+        }
 
         int count = await query.CountAsync();
-        List<SalesOrder> items = await query
-            .OrderByDescending(order => order.CreatedAt).ThenByDescending(order => order.Id)
-            .Skip(skip).Take(take)
-            .Include(order => order.Branch)
-            .Include(order => order.CreatedByUser)
-            .Include(order => order.OrderItems)
-            .ToListAsync();
+        List<SalesOrder> items = await query.OrderByDescending(order => order.CreatedAt).ThenByDescending(order => order.Id).Skip(skip).Take(take).Include(order => order.Branch).Include(order => order.CreatedByUser).Include(order => order.OrderItems).ToListAsync();
+        return new OrderManagementPage
 
-        return new OrderManagementPage { Items = items, TotalCount = count, Summary = summary };
+        {
+
+            Items = items,
+            TotalCount = count,
+            Summary = summary
+
+        };
     }
 
     // Đọc snapshot và thông tin báo sai; service chỉ ánh xạ trường cần thiết ra DTO.
-    public async Task<SalesOrder?> GetOrderDetailForManagementAsync(int orderId, List<int> branchIds)
+    public async Task<SalesOrder?> GetOrderDetailForManagementAsync(
+        int orderId,
+        List<int> branchIds)
     {
-        return await Context.SalesOrders.AsNoTracking()
-            .Where(order => order.Id == orderId && branchIds.Contains(order.BranchId))
-            .Include(order => order.Branch)
-            .Include(order => order.CreatedByUser)
-            .Include(order => order.ReportedByUser)
-            .Include(order => order.OrderAdjustments).ThenInclude(history => history.AdjustedByUser)
-            .Include(order => order.OrderItems).ThenInclude(item => item.ProductSize)
-            .Include(order => order.OrderItems).ThenInclude(item => item.OrderItemToppings)
-            .Include(order => order.OrderItems).ThenInclude(item => item.OrderItemNotes)
-            .FirstOrDefaultAsync();
+        return await Context.SalesOrders.AsNoTracking().Where(order => order.Id == orderId && branchIds.Contains(order.BranchId)).Include(order => order.Branch).Include(order => order.CreatedByUser).Include(order => order.ReportedByUser).Include(order => order.OrderAdjustments).ThenInclude(history => history.AdjustedByUser).Include(order => order.OrderItems).ThenInclude(item => item.ProductSize).Include(order => order.OrderItems).ThenInclude(item => item.OrderItemToppings).Include(order => order.OrderItems).ThenInclude(item => item.OrderItemNotes).FirstOrDefaultAsync();
     }
 
     // Lấy danh sách các món-size hợp lệ và đang được bán tại chi nhánh
     public async Task<List<ProductSize>> GetAvailableProductSizesAsync(
-        int branchId, List<int> productSizeIds)
+        int branchId,
+        List<int> productSizeIds)
     {
-        return await Context.ProductSizes
-            .AsNoTracking()
-            .Where(productSize =>
-                productSizeIds.Contains(productSize.Id)
-                && productSize.IsActive
-                && !productSize.Deleted
-                && productSize.Product.IsActive
-                && !productSize.Product.Deleted
-                && productSize.Size.IsActive
-                && !productSize.Size.Deleted
-                && productSize.Product.BranchProducts.Any(branchProduct =>
-                    branchProduct.BranchId == branchId
-                    && branchProduct.IsAvailable))
-            .Include(productSize => productSize.Product)
-            .Include(productSize => productSize.Size)
-            .ToListAsync();
+        return await Context.ProductSizes.AsNoTracking().Where(productSize => productSizeIds.Contains(productSize.Id) && productSize.IsActive && !productSize.Deleted && productSize.Product.IsActive && !productSize.Product.Deleted && productSize.Size.IsActive && !productSize.Size.Deleted && productSize.Product.BranchProducts.Any(branchProduct => branchProduct.BranchId == branchId && branchProduct.IsAvailable)).Include(productSize => productSize.Product).Include(productSize => productSize.Size).ToListAsync();
     }
 
     // Lấy danh sách các topping hợp lệ và đang được bán tại chi nhánh
     public async Task<List<Topping>> GetAvailableToppingsAsync(
-        int branchId, List<int> toppingIds)
+        int branchId,
+        List<int> toppingIds)
     {
-        return await Context.Toppings
-            .AsNoTracking()
-            .Where(topping =>
-                toppingIds.Contains(topping.Id)
-                && topping.IsActive
-                && !topping.Deleted
-                && topping.ToppingGroup.IsActive
-                && !topping.ToppingGroup.Deleted
-                && topping.BranchToppings.Any(branchTopping =>
-                    branchTopping.BranchId == branchId
-                    && branchTopping.IsAvailable))
-            .Include(topping => topping.ToppingGroup)
-            .ToListAsync();
+        return await Context.Toppings.AsNoTracking().Where(topping => toppingIds.Contains(topping.Id) && topping.IsActive && !topping.Deleted && topping.ToppingGroup.IsActive && !topping.ToppingGroup.Deleted && topping.BranchToppings.Any(branchTopping => branchTopping.BranchId == branchId && branchTopping.IsAvailable)).Include(topping => topping.ToppingGroup).ToListAsync();
     }
 
     // Lấy danh sách các lựa chọn ghi chú đang hoạt động
-    public async Task<List<NoteOption>> GetActiveNoteOptionsAsync(
-        List<int> noteOptionIds)
+    public async Task<List<NoteOption>> GetActiveNoteOptionsAsync(List<int> noteOptionIds)
     {
-        return await Context.NoteOptions
-            .AsNoTracking()
-            .Where(noteOption =>
-                noteOptionIds.Contains(noteOption.Id)
-                && noteOption.IsActive
-                && !noteOption.Deleted
-                && noteOption.NoteGroup.IsActive
-                && !noteOption.NoteGroup.Deleted)
-            .Include(noteOption => noteOption.NoteGroup)
-            .ToListAsync();
+        return await Context.NoteOptions.AsNoTracking().Where(noteOption => noteOptionIds.Contains(noteOption.Id) && noteOption.IsActive && !noteOption.Deleted && noteOption.NoteGroup.IsActive && !noteOption.NoteGroup.Deleted).Include(noteOption => noteOption.NoteGroup).ToListAsync();
     }
 
     // Gọi stored procedure để lấy mã đơn và số thứ tự không bị trùng
     public async Task<OrderCodeResult> GetNextOrderCodeAsync(
-        int branchId, DateOnly businessDate)
+        int branchId,
+        DateOnly businessDate)
     {
         DbConnection connection = Context.Database.GetDbConnection();
-
         // Chỉ đóng connection nếu chính method này đã mở nó
         bool shouldCloseConnection = connection.State != ConnectionState.Open;
-
         if (shouldCloseConnection)
         {
             await connection.OpenAsync();
@@ -207,45 +182,39 @@ public class OrderRepository : RepositoryBase<SalesOrder>, IOrderRepository
         try
         {
             await using DbCommand command = connection.CreateCommand();
-
             command.CommandText = "dbo.usp_GetNextOrderCode";
             command.CommandType = CommandType.StoredProcedure;
-
             // Nếu Service đã mở trong transaction thì procedure phải tham gia transaction đó
-            command.Transaction =
-                Context.Database.CurrentTransaction?.GetDbTransaction();
-
+            command.Transaction = Context.Database.CurrentTransaction?.GetDbTransaction();
             DbParameter branchIdParameter = command.CreateParameter();
             branchIdParameter.ParameterName = "@BranchId";
             branchIdParameter.DbType = DbType.Int32;
             branchIdParameter.Value = branchId;
             command.Parameters.Add(branchIdParameter);
-
             DbParameter businessDateParameter = command.CreateParameter();
             businessDateParameter.ParameterName = "@BusinessDate";
             businessDateParameter.DbType = DbType.Date;
             businessDateParameter.Value = businessDate.ToDateTime(TimeOnly.MinValue);
             command.Parameters.Add(businessDateParameter);
-
             DbParameter orderCodeParameter = command.CreateParameter();
             orderCodeParameter.ParameterName = "@OrderCode";
             orderCodeParameter.DbType = DbType.String;
             orderCodeParameter.Size = 50;
             orderCodeParameter.Direction = ParameterDirection.Output;
             command.Parameters.Add(orderCodeParameter);
-
             DbParameter sequenceNumberParameter = command.CreateParameter();
             sequenceNumberParameter.ParameterName = "@SequenceNumber";
             sequenceNumberParameter.DbType = DbType.Int32;
             sequenceNumberParameter.Direction = ParameterDirection.Output;
             command.Parameters.Add(sequenceNumberParameter);
-
             await command.ExecuteNonQueryAsync();
-
             return new OrderCodeResult
+
             {
+
                 Code = Convert.ToString(orderCodeParameter.Value) ?? string.Empty,
                 SequenceNumber = Convert.ToInt32(sequenceNumberParameter.Value)
+
             };
         }
         finally
@@ -263,29 +232,20 @@ public class OrderRepository : RepositoryBase<SalesOrder>, IOrderRepository
         string keyword,
         DateOnly? businessDate)
     {
-        IQueryable<SalesOrder> query = Context.SalesOrders
-            .AsNoTracking()
-            .Where(salesOrder =>
-                salesOrder.CreatedByUserId == currentUserId);
-
+        IQueryable<SalesOrder> query = Context.SalesOrders.AsNoTracking().Where(salesOrder => salesOrder.CreatedByUserId == currentUserId);
         // Chỉ lọc mã đơn khi người dùng nhập từ khóa
         if (!string.IsNullOrWhiteSpace(keyword))
         {
-            query = query.Where(salesOrder =>
-                salesOrder.Code.Contains(keyword));
+            query = query.Where(salesOrder => salesOrder.Code.Contains(keyword));
         }
 
         // Web truyền ngày hiện tại khi người dùng chọn lọc bộ lọc "Hôm nay"
         if (businessDate.HasValue)
         {
-            query = query.Where(salesOrder =>
-                salesOrder.BusinessDate == businessDate.Value);
+            query = query.Where(salesOrder => salesOrder.BusinessDate == businessDate.Value);
         }
 
-        return await query
-            .Include(salesOrder => salesOrder.OrderItems)
-            .OrderByDescending(salesOrder => salesOrder.CreatedAt)
-            .ToListAsync();
+        return await query.Include(salesOrder => salesOrder.OrderItems).OrderByDescending(salesOrder => salesOrder.CreatedAt).ToListAsync();
     }
 
     // Lấy chi tiết 1 đơn do chính employee hiện tại tạo
@@ -293,20 +253,7 @@ public class OrderRepository : RepositoryBase<SalesOrder>, IOrderRepository
         int orderId,
         int currentUserId)
     {
-        return await Context.SalesOrders
-            .AsNoTracking()
-            .AsSingleQuery()
-            .Where(salesOrder =>
-                salesOrder.Id == orderId
-                && salesOrder.CreatedByUserId == currentUserId)
-            .Include(salesOrder => salesOrder.Branch)
-            .Include(salesOrder => salesOrder.OrderAdjustments)
-                .ThenInclude(history => history.AdjustedByUser)
-            .Include(salesOrder => salesOrder.OrderItems)
-                .ThenInclude(orderItem => orderItem.OrderItemToppings)
-            .Include(salesOrder => salesOrder.OrderItems)
-                .ThenInclude(orderItem => orderItem.OrderItemNotes)
-            .FirstOrDefaultAsync();
+        return await Context.SalesOrders.AsNoTracking().AsSingleQuery().Where(salesOrder => salesOrder.Id == orderId && salesOrder.CreatedByUserId == currentUserId).Include(salesOrder => salesOrder.Branch).Include(salesOrder => salesOrder.OrderAdjustments).ThenInclude(history => history.AdjustedByUser).Include(salesOrder => salesOrder.OrderItems).ThenInclude(orderItem => orderItem.OrderItemToppings).Include(salesOrder => salesOrder.OrderItems).ThenInclude(orderItem => orderItem.OrderItemNotes).FirstOrDefaultAsync();
     }
 
     // Chỉ đọc trạng thái và phiên bản trước khi thử cập nhật có điều kiện.
@@ -314,13 +261,7 @@ public class OrderRepository : RepositoryBase<SalesOrder>, IOrderRepository
         int orderId,
         int currentUserId)
     {
-        return await Context.SalesOrders
-            .AsNoTracking()
-            .Where(salesOrder =>
-                salesOrder.Id == orderId
-                && salesOrder.CreatedByUserId == currentUserId)
-            .Include(salesOrder => salesOrder.OrderAdjustments)
-            .FirstOrDefaultAsync();
+        return await Context.SalesOrders.AsNoTracking().Where(salesOrder => salesOrder.Id == orderId && salesOrder.CreatedByUserId == currentUserId).Include(salesOrder => salesOrder.OrderAdjustments).FirstOrDefaultAsync();
     }
 
     // SQL kiểm tra đồng thời quyền sở hữu, trạng thái và lịch sử mới nhất.
@@ -331,17 +272,6 @@ public class OrderRepository : RepositoryBase<SalesOrder>, IOrderRepository
         string reason,
         DateTime reportedAt)
     {
-        return await Context.SalesOrders
-            .Where(order => order.Id == orderId
-                && order.CreatedByUserId == currentUserId
-                && (order.Status == "COMPLETED" || order.Status == "ADJUSTED")
-                && (order.OrderAdjustments.Select(history => (int?)history.Id).Max() ?? 0)
-                    == expectedHistoryId)
-            .ExecuteUpdateAsync(setters => setters
-                .SetProperty(order => order.Status, "NEEDS_REVIEW")
-                .SetProperty(order => order.ReportReason, reason)
-                .SetProperty(order => order.ReportedByUserId, currentUserId)
-                .SetProperty(order => order.ReportedAt, reportedAt)
-                .SetProperty(order => order.UpdatedAt, reportedAt));
+        return await Context.SalesOrders.Where(order => order.Id == orderId && order.CreatedByUserId == currentUserId && (order.Status == "COMPLETED" || order.Status == "ADJUSTED") && (order.OrderAdjustments.Select(history => (int?)history.Id).Max() ?? 0) == expectedHistoryId).ExecuteUpdateAsync(setters => setters.SetProperty(order => order.Status, "NEEDS_REVIEW").SetProperty(order => order.ReportReason, reason).SetProperty(order => order.ReportedByUserId, currentUserId).SetProperty(order => order.ReportedAt, reportedAt).SetProperty(order => order.UpdatedAt, reportedAt));
     }
 }

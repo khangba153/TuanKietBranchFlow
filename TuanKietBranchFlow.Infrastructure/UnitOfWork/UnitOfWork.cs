@@ -7,7 +7,6 @@ public class UnitOfWork : IUnitOfWork
 {
     private readonly BranchFlowDbContext _context;
     private IDbContextTransaction? _currentTransaction;
-
     // Nhận DbContext từ DI để quản lý việc lưu dữ liệu
     public UnitOfWork(BranchFlowDbContext context)
     {
@@ -25,12 +24,10 @@ public class UnitOfWork : IUnitOfWork
     {
         if (_currentTransaction is not null)
         {
-            throw new InvalidOperationException(
-                "Một transaction đang được thực hiện.");
+            throw new InvalidOperationException("Một transaction đang được thực hiện.");
         }
 
-        _currentTransaction =
-            await _context.Database.BeginTransactionAsync();
+        _currentTransaction = await _context.Database.BeginTransactionAsync();
     }
 
     // Commit transaction sau khi toàn bộ dữ liệu đã được lưu thành công
@@ -38,14 +35,11 @@ public class UnitOfWork : IUnitOfWork
     {
         if (_currentTransaction is null)
         {
-            throw new InvalidOperationException(
-                "Không có transaction để commit.");
+            throw new InvalidOperationException("Không có transaction để commit.");
         }
 
         IDbContextTransaction transaction = _currentTransaction;
-
         await transaction.CommitAsync();
-
         _currentTransaction = null;
         await transaction.DisposeAsync();
     }
@@ -60,7 +54,6 @@ public class UnitOfWork : IUnitOfWork
 
         IDbContextTransaction transaction = _currentTransaction;
         _currentTransaction = null;
-
         try
         {
             await transaction.RollbackAsync();

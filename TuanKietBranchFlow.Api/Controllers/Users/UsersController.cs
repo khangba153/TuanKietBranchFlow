@@ -12,7 +12,6 @@ namespace TuanKietBranchFlow.Api.Controllers.Users;
 public class UsersController : ControllerBase
 {
     private readonly IUserService _userService;
-
     // Nhận UserService từ DI
     public UsersController(IUserService userService)
     {
@@ -29,7 +28,6 @@ public class UsersController : ControllerBase
         // Lấy UserId từ JWT
         string? userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
         bool isValidUserId = int.TryParse(userIdValue, out int userId);
-
         if (!isValidUserId)
         {
             return Problem(
@@ -39,7 +37,6 @@ public class UsersController : ControllerBase
         }
 
         UserProfileDTO? profile = await _userService.GetCurrentProfileAsync(userId);
-
         // Không tìm thấy tài khoản hợp lệ trong db
         if (profile == null)
         {
@@ -51,5 +48,4 @@ public class UsersController : ControllerBase
 
         return Ok(profile);
     }
-    
 }

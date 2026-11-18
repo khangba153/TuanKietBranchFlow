@@ -24,22 +24,34 @@ public class EmployeeApiServiceTests
     public async Task TransferDecision_SendsOnePostAndNeverRetries(HttpStatusCode statusCode)
     {
         using EmployeeHandler handler = new EmployeeHandler(statusCode)
-        {
-            Content = statusCode == HttpStatusCode.OK
-                ? JsonContent.Create(new EmployeeTransferDTO { Id = 7, Status = "REJECTED" })
-                : JsonContent.Create(new ProblemDetails { Detail = "Yêu cầu không còn hợp lệ." })
-        };
-        using HttpClient client = new HttpClient(handler) { BaseAddress = new Uri("https://unit.test/") };
-        EmployeeTransferApiService service = new EmployeeTransferApiService(CreateAuthorizedService(client));
 
+        {
+
+            Content = statusCode == HttpStatusCode.OK ? JsonContent.Create(new EmployeeTransferDTO
+            {
+                Id = 7,
+                Status = "REJECTED"
+            }) : JsonContent.Create(new ProblemDetails
+            {
+                Detail = "Yêu cầu không còn hợp lệ."
+            })
+
+        };
+        using HttpClient client = new HttpClient(handler)
+
+        {
+
+            BaseAddress = new Uri("https://unit.test/")
+
+        };
+        EmployeeTransferApiService service = new EmployeeTransferApiService(CreateAuthorizedService(client));
         if (statusCode == HttpStatusCode.OK)
         {
             Assert.Equal("REJECTED", (await service.DecideAsync(7, "reject", "Không tiếp nhận")).Status);
         }
         else
         {
-            HttpRequestException exception = await Assert.ThrowsAsync<HttpRequestException>(() =>
-                service.DecideAsync(7, "reject", "Không tiếp nhận"));
+            HttpRequestException exception = await Assert.ThrowsAsync<HttpRequestException>(() => service.DecideAsync(7, "reject", "Không tiếp nhận"));
             Assert.Equal(statusCode, exception.StatusCode);
         }
 
@@ -54,15 +66,28 @@ public class EmployeeApiServiceTests
     [Fact]
     public async Task TransferCreate_NetworkFailureDoesNotRetry()
     {
-        using EmployeeHandler handler = new EmployeeHandler(HttpStatusCode.OK) { FailConnection = true };
-        using HttpClient client = new HttpClient(handler) { BaseAddress = new Uri("https://unit.test/") };
-        EmployeeTransferApiService service = new EmployeeTransferApiService(CreateAuthorizedService(client));
+        using EmployeeHandler handler = new EmployeeHandler(HttpStatusCode.OK)
 
+        {
+
+            FailConnection = true
+
+        };
+        using HttpClient client = new HttpClient(handler)
+
+        {
+
+            BaseAddress = new Uri("https://unit.test/")
+
+        };
+        EmployeeTransferApiService service = new EmployeeTransferApiService(CreateAuthorizedService(client));
         await Assert.ThrowsAsync<HttpRequestException>(() => service.CreateAsync(new EmployeeTransferCreateDTO
         {
-            EmployeeId = 12, SourceBranchId = 2, TargetBranchId = 3, Note = "Ghi chú thử"
+            EmployeeId = 12,
+            SourceBranchId = 2,
+            TargetBranchId = 3,
+            Note = "Ghi chú thử"
         }));
-
         Assert.Equal(1, handler.Calls);
         using JsonDocument body = JsonDocument.Parse(handler.Body!);
         Assert.Equal(2, body.RootElement.GetProperty("sourceBranchId").GetInt32());
@@ -79,12 +104,19 @@ public class EmployeeApiServiceTests
     public async Task Status_SendsOnePatchWithBranchBearerAndEffectiveDate(HttpStatusCode statusCode)
     {
         using EmployeeHandler handler = new EmployeeHandler(statusCode);
-        using HttpClient client = new HttpClient(handler) { BaseAddress = new Uri("https://unit.test/") };
+        using HttpClient client = new HttpClient(handler)
+
+        {
+
+            BaseAddress = new Uri("https://unit.test/")
+
+        };
         DateOnly today = DateOnly.FromDateTime(DateTime.Today);
-
-        EmployeeDetailApiResult result = await CreateService(client).UpdateEmployeeStatusAsync(12, 2,
-            new EmployeeStatusUpdateDTO { IsActive = false, EffectiveDate = today });
-
+        EmployeeDetailApiResult result = await CreateService(client).UpdateEmployeeStatusAsync(12, 2, new EmployeeStatusUpdateDTO
+        {
+            IsActive = false,
+            EffectiveDate = today
+        });
         Assert.Equal(HttpMethod.Patch, handler.Method);
         Assert.EndsWith("/api/employees/12/status?branchId=2", handler.Url);
         Assert.Equal("Bearer employee-unit-test-token", handler.Authorization);
@@ -100,10 +132,14 @@ public class EmployeeApiServiceTests
     public async Task GetForEdit_SendsEmployeeBranchAndSessionBearer()
     {
         using EmployeeHandler handler = new EmployeeHandler(HttpStatusCode.OK);
-        using HttpClient client = new HttpClient(handler) { BaseAddress = new Uri("https://unit.test/") };
+        using HttpClient client = new HttpClient(handler)
 
+        {
+
+            BaseAddress = new Uri("https://unit.test/")
+
+        };
         EmployeeDetailApiResult result = await CreateService(client).GetEmployeeForEditAsync(12, 2);
-
         Assert.True(result.IsSuccess);
         Assert.Equal(12, result.Employee?.Id);
         Assert.Equal(HttpMethod.Get, handler.Method);
@@ -116,11 +152,15 @@ public class EmployeeApiServiceTests
     public async Task Update_SendsOnePutWithEditableFieldsOnly()
     {
         using EmployeeHandler handler = new EmployeeHandler(HttpStatusCode.OK);
-        using HttpClient client = new HttpClient(handler) { BaseAddress = new Uri("https://unit.test/") };
+        using HttpClient client = new HttpClient(handler)
+
+        {
+
+            BaseAddress = new Uri("https://unit.test/")
+
+        };
         EmployeeUpdateDTO request = CreateRequest();
-
         EmployeeDetailApiResult result = await CreateService(client).UpdateEmployeeAsync(12, 2, request);
-
         Assert.True(result.IsSuccess);
         Assert.Equal(HttpMethod.Put, handler.Method);
         Assert.EndsWith("/api/employees/12?branchId=2", handler.Url);
@@ -137,17 +177,29 @@ public class EmployeeApiServiceTests
     public async Task Update_ValidationFailure_PreservesFieldErrors()
     {
         using EmployeeHandler handler = new EmployeeHandler(HttpStatusCode.BadRequest)
+
         {
-            Content = JsonContent.Create(new ValidationProblemDetails(
-                new Dictionary<string, string[]>
-                {
-                    { "Email", new[] { "Email không đúng định dạng." } }
-                }))
+
+            Content = JsonContent.Create(new ValidationProblemDetails(new Dictionary<string, string[]>
+        {
+            {
+            "Email",
+            new[]
+        {
+            "Email không đúng định dạng."
+        }
+        }
+        }))
+
         };
-        using HttpClient client = new HttpClient(handler) { BaseAddress = new Uri("https://unit.test/") };
+        using HttpClient client = new HttpClient(handler)
 
+        {
+
+            BaseAddress = new Uri("https://unit.test/")
+
+        };
         EmployeeDetailApiResult result = await CreateService(client).UpdateEmployeeAsync(12, 2, CreateRequest());
-
         Assert.False(result.IsSuccess);
         Assert.Equal(400, result.StatusCode);
         Assert.Equal("Email không đúng định dạng.", Assert.Single(result.ValidationErrors["Email"]));
@@ -162,13 +214,24 @@ public class EmployeeApiServiceTests
     public async Task Update_ProblemFailure_KeepsStatusAndDoesNotRetry(HttpStatusCode statusCode)
     {
         using EmployeeHandler handler = new EmployeeHandler(statusCode)
+
         {
-            Content = JsonContent.Create(new ProblemDetails { Title = "Không thể sửa", Detail = "Chi tiết lỗi thử nghiệm" })
+
+            Content = JsonContent.Create(new ProblemDetails
+            {
+                Title = "Không thể sửa",
+                Detail = "Chi tiết lỗi thử nghiệm"
+            })
+
         };
-        using HttpClient client = new HttpClient(handler) { BaseAddress = new Uri("https://unit.test/") };
+        using HttpClient client = new HttpClient(handler)
 
+        {
+
+            BaseAddress = new Uri("https://unit.test/")
+
+        };
         EmployeeDetailApiResult result = await CreateService(client).UpdateEmployeeAsync(12, 2, CreateRequest());
-
         Assert.False(result.IsSuccess);
         Assert.Equal((int)statusCode, result.StatusCode);
         Assert.Equal("Chi tiết lỗi thử nghiệm", result.ErrorMessage);
@@ -181,13 +244,20 @@ public class EmployeeApiServiceTests
     public async Task Update_InvalidResponse_DoesNotExposeHtmlOrReturnSuccess(HttpStatusCode statusCode)
     {
         using EmployeeHandler handler = new EmployeeHandler(statusCode)
+
         {
+
             Content = new StringContent("<html>internal-error-details</html>", Encoding.UTF8, "text/html")
+
         };
-        using HttpClient client = new HttpClient(handler) { BaseAddress = new Uri("https://unit.test/") };
+        using HttpClient client = new HttpClient(handler)
 
+        {
+
+            BaseAddress = new Uri("https://unit.test/")
+
+        };
         EmployeeDetailApiResult result = await CreateService(client).UpdateEmployeeAsync(12, 2, CreateRequest());
-
         Assert.False(result.IsSuccess);
         Assert.DoesNotContain("internal-error-details", result.ErrorMessage);
         Assert.Equal(1, handler.Calls);
@@ -196,19 +266,30 @@ public class EmployeeApiServiceTests
     [Fact]
     public async Task Update_NetworkFailure_DoesNotRetry()
     {
-        using EmployeeHandler handler = new EmployeeHandler(HttpStatusCode.OK) { FailConnection = true };
-        using HttpClient client = new HttpClient(handler) { BaseAddress = new Uri("https://unit.test/") };
+        using EmployeeHandler handler = new EmployeeHandler(HttpStatusCode.OK)
 
-        await Assert.ThrowsAsync<HttpRequestException>(() =>
-            CreateService(client).UpdateEmployeeAsync(12, 2, CreateRequest()));
+        {
 
+            FailConnection = true
+
+        };
+        using HttpClient client = new HttpClient(handler)
+
+        {
+
+            BaseAddress = new Uri("https://unit.test/")
+
+        };
+        await Assert.ThrowsAsync<HttpRequestException>(() => CreateService(client).UpdateEmployeeAsync(12, 2, CreateRequest()));
         Assert.Equal(1, handler.Calls);
     }
 
     private static EmployeeUpdateDTO CreateRequest()
     {
         return new EmployeeUpdateDTO
+
         {
+
             FullName = "Nguyễn Thị Thủy",
             EmployeeCode = "NV-TEST",
             Email = "unit@example.test",
@@ -217,6 +298,7 @@ public class EmployeeApiServiceTests
             BaseSalary = 7500000,
             Position = "Nhân viên order",
             Address = "Địa chỉ thử nghiệm"
+
         };
     }
 
@@ -229,22 +311,18 @@ public class EmployeeApiServiceTests
     {
         Guid sessionId = Guid.NewGuid();
         Mock<AuthenticationStateProvider> authenticationStateProvider = new Mock<AuthenticationStateProvider>();
-        ClaimsPrincipal user = new ClaimsPrincipal(new ClaimsIdentity(new[]
+        ClaimsPrincipal user = new ClaimsPrincipal(new ClaimsIdentity(
+            new[]
         {
             new Claim(WebCookieAuthenticationEvents.WebSessionIdClaim, sessionId.ToString())
-        }, "TestCookie"));
-        authenticationStateProvider.Setup(provider => provider.GetAuthenticationStateAsync())
-            .ReturnsAsync(new AuthenticationState(user));
+        },
+            "TestCookie"));
+        authenticationStateProvider.Setup(provider => provider.GetAuthenticationStateAsync()).ReturnsAsync(new AuthenticationState(user));
         Mock<IWebTokenService> webTokenService = new Mock<IWebTokenService>();
-        webTokenService.Setup(service => service.GetAccessTokenAsync(sessionId))
-            .ReturnsAsync("employee-unit-test-token");
+        webTokenService.Setup(service => service.GetAccessTokenAsync(sessionId)).ReturnsAsync("employee-unit-test-token");
         Mock<IHttpClientFactory> httpClientFactory = new Mock<IHttpClientFactory>();
         httpClientFactory.Setup(factory => factory.CreateClient("BranchFlowApi")).Returns(client);
-
-        return new AuthorizedApiService(
-            httpClientFactory.Object,
-            authenticationStateProvider.Object,
-            webTokenService.Object);
+        return new AuthorizedApiService(httpClientFactory.Object, authenticationStateProvider.Object, webTokenService.Object);
     }
 
     private sealed class EmployeeHandler : HttpMessageHandler
@@ -271,7 +349,6 @@ public class EmployeeApiServiceTests
             Url = request.RequestUri?.AbsoluteUri;
             Method = request.Method;
             Authorization = request.Headers.Authorization?.ToString();
-
             if (request.Content is not null)
             {
                 Body = await request.Content.ReadAsStringAsync(cancellationToken);
@@ -283,7 +360,9 @@ public class EmployeeApiServiceTests
             }
 
             return new HttpResponseMessage(_statusCode)
+
             {
+
                 Content = Content ?? JsonContent.Create(new EmployeeDetailDTO
                 {
                     Id = 12,
@@ -291,6 +370,7 @@ public class EmployeeApiServiceTests
                     EmployeeCode = "NV-TEST",
                     HireDate = new DateOnly(2026, 1, 1)
                 })
+
             };
         }
     }

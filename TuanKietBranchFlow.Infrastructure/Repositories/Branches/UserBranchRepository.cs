@@ -18,12 +18,6 @@ public class UserBranchRepository : RepositoryBase<UserBranch>, IUserBranchRepos
         int branchId,
         DateOnly currentDate)
     {
-        return await Context.UserBranches
-            .SingleOrDefaultAsync(userBranch =>
-                userBranch.UserId == userId
-                && userBranch.BranchId == branchId
-                && userBranch.ActiveFrom <= currentDate
-                && (userBranch.ActiveTo == null
-                    || userBranch.ActiveTo >= currentDate));
+        return await Context.UserBranches.SingleOrDefaultAsync(userBranch => userBranch.UserId == userId && userBranch.BranchId == branchId && userBranch.ActiveFrom <= currentDate && (userBranch.ActiveTo == null || userBranch.ActiveTo >= currentDate));
     }
 }

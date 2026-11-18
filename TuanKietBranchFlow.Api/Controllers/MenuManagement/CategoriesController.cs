@@ -11,7 +11,6 @@ namespace TuanKietBranchFlow.Api.Controllers.MenuManagement;
 public class CategoriesController : ControllerBase
 {
     private readonly ICategoryService _categoryService;
-
     public CategoriesController(ICategoryService categoryService)
     {
         _categoryService = categoryService;
@@ -26,9 +25,7 @@ public class CategoriesController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<List<MenuCategoryDTO>>> GetAllCategoriesAsync()
     {
-        List<MenuCategoryDTO> categories =
-            await _categoryService.GetAllCategoriesAsync();
-
+        List<MenuCategoryDTO> categories = await _categoryService.GetAllCategoriesAsync();
         return Ok(categories);
     }
 
@@ -43,12 +40,9 @@ public class CategoriesController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<MenuCategoryDTO>> CreateCategoryAsync(
-        [FromBody] CreateCategoryRequestDTO request)
+    public async Task<ActionResult<MenuCategoryDTO>> CreateCategoryAsync([FromBody] CreateCategoryRequestDTO request)
     {
-        CreateCategoryResultDTO result =
-            await _categoryService.CreateCategoryAsync(request);
-
+        CreateCategoryResultDTO result = await _categoryService.CreateCategoryAsync(request);
         if (result.IsNameInvalid)
         {
             return Problem(
@@ -94,9 +88,7 @@ public class CategoriesController : ControllerBase
         int categoryId,
         [FromBody] UpdateCategoryRequestDTO request)
     {
-        UpdateCategoryResultDTO result =
-            await _categoryService.UpdateCategoryAsync(categoryId, request);
-
+        UpdateCategoryResultDTO result = await _categoryService.UpdateCategoryAsync(categoryId, request);
         if (result.IsRequestInvalid)
         {
             return Problem(
@@ -145,9 +137,7 @@ public class CategoriesController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> DeleteCategoryAsync(int categoryId)
     {
-        DeleteCategoryResultDTO result =
-            await _categoryService.DeleteCategoryAsync(categoryId);
-
+        DeleteCategoryResultDTO result = await _categoryService.DeleteCategoryAsync(categoryId);
         if (result.IsCategoryNotFound)
         {
             return Problem(

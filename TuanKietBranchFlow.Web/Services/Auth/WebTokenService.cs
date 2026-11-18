@@ -10,7 +10,6 @@ public class WebTokenService : IWebTokenService
 {
     private readonly IWebAuthSessionStore _sessionStore;
     private readonly IHttpClientFactory _httpClientFactory;
-
     // Nhận kho phiên và factory tạo client gọi API
     public WebTokenService(
         IWebAuthSessionStore sessionStore,
@@ -19,12 +18,11 @@ public class WebTokenService : IWebTokenService
         _sessionStore = sessionStore;
         _httpClientFactory = httpClientFactory;
     }
-    
+
     // Lấy access token và đồng bộ refresh của riêng phiên Web
     public async Task<string?> GetAccessTokenAsync(Guid webSessionId)
     {
         WebAuthSession? session = _sessionStore.GetById(webSessionId);
-
         if (session == null)
         {
             return null;
@@ -32,7 +30,6 @@ public class WebTokenService : IWebTokenService
 
         // Chờ quyền xử lý token của phiên này
         await session.TokenLock.WaitAsync();
-
         try
         {
             // Phiên có thể đã bị xóa trong lúc request chờ khóa
@@ -42,32 +39,19 @@ public class WebTokenService : IWebTokenService
             }
 
             // Giữ khoảng đệm 30 giây trước khi token hết hạn
-            if (!string.IsNullOrWhiteSpace(session.AccessToken) &&
-                session.AccessTokenExpiresAt > DateTime.UtcNow.AddSeconds(30))
+            if (!string.IsNullOrWhiteSpace(session.AccessToken) && session.AccessTokenExpiresAt > DateTime.UtcNow.AddSeconds(30))
             {
                 return session.AccessToken;
             }
 
             LoginResponseDTO? tokenResponse;
-
             try
             {
                 tokenResponse = await RefreshTokensAsync(session.RefreshToken);
-
                 // Chỉ nhận cặp token đầy đủ, không gia hạn phiên ban đầu
-                if (tokenResponse != null &&
-                    (string.IsNullOrWhiteSpace(tokenResponse.AccessToken) ||
-                    string.IsNullOrWhiteSpace(tokenResponse.RefreshToken) ||
-                    tokenResponse.RefreshToken.Length != 44 ||
-                    tokenResponse.RefreshToken == session.RefreshToken ||
-                    tokenResponse.AccessTokenExpiresAt <= DateTime.UtcNow ||
-                    tokenResponse.RefreshTokenExpiresAt !=
-                        session.RefreshTokenExpiresAt ||
-                    tokenResponse.AccessTokenExpiresAt >
-                        tokenResponse.RefreshTokenExpiresAt))
+                if (tokenResponse != null && (string.IsNullOrWhiteSpace(tokenResponse.AccessToken) || string.IsNullOrWhiteSpace(tokenResponse.RefreshToken) || tokenResponse.RefreshToken.Length != 44 || tokenResponse.RefreshToken == session.RefreshToken || tokenResponse.AccessTokenExpiresAt <= DateTime.UtcNow || tokenResponse.RefreshTokenExpiresAt != session.RefreshTokenExpiresAt || tokenResponse.AccessTokenExpiresAt > tokenResponse.RefreshTokenExpiresAt))
                 {
-                    throw new InvalidOperationException(
-                        "API refresh trả dữ liệu token không hợp lệ.");
+                    throw new InvalidOperationException("API refresh trả dữ liệu token không hợp lệ.");
                 }
             }
             catch
@@ -95,7 +79,6 @@ public class WebTokenService : IWebTokenService
             session.RefreshToken = tokenResponse.RefreshToken;
             session.AccessTokenExpiresAt = tokenResponse.AccessTokenExpiresAt;
             session.RefreshTokenExpiresAt = tokenResponse.RefreshTokenExpiresAt;
-
             return session.AccessToken;
         }
         finally
@@ -106,22 +89,17 @@ public class WebTokenService : IWebTokenService
     }
 
     // Gửi token gốc để xin cặp token mới, không cần Bearer
-    private async Task<LoginResponseDTO?> RefreshTokensAsync(
-        string refreshToken)
+    private async Task<LoginResponseDTO?> RefreshTokensAsync(string refreshToken)
     {
-        HttpClient httpClient =
-            _httpClientFactory.CreateClient("BranchFlowApi");
-
+        HttpClient httpClient = _httpClientFactory.CreateClient("BranchFlowApi");
         RefreshTokenRequestDTO request = new RefreshTokenRequestDTO
+
         {
+
             RefreshToken = refreshToken
+
         };
-
-        using HttpResponseMessage response =
-            await httpClient.PostAsJsonAsync(
-                "api/auth/refresh",
-                request);
-
+        using HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/auth/refresh", request);
         // API từ chối token hoặc phiên
         if (response.StatusCode == HttpStatusCode.Unauthorized)
         {
@@ -130,14 +108,10 @@ public class WebTokenService : IWebTokenService
 
         // Không biến lỗi hệ thống thành kết quả hết phiên
         response.EnsureSuccessStatusCode();
-
-        LoginResponseDTO? tokenResponse =
-            await response.Content.ReadFromJsonAsync<LoginResponseDTO>();
-
+        LoginResponseDTO? tokenResponse = await response.Content.ReadFromJsonAsync<LoginResponseDTO>();
         if (tokenResponse == null)
         {
-            throw new InvalidOperationException(
-                "API refresh trả thành công nhưng không có dữ liệu token.");
+            throw new InvalidOperationException("API refresh trả thành công nhưng không có dữ liệu token.");
         }
 
         return tokenResponse;

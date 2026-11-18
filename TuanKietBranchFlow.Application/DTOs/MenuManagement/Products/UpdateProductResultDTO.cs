@@ -7,6 +7,5 @@ public class UpdateProductResultDTO
     public bool IsRequestInvalid { get; set; }
     public bool IsProductSizesInvalid { get; set; }
     public bool IsNameDuplicated { get; set; }
-
     public MenuProductDTO? Product { get; set; }
 }

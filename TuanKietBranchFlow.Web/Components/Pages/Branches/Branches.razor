@@ -1,30 +1,36 @@
 @using TuanKietBranchFlow.Web.Services.Branches
 @page "/branches"
-
 @using TuanKietBranchFlow.Application.DTOs.Branches
-
 @inject BranchApiService BranchApiService
-
-<PageTitle>Chi nhánh</PageTitle>
-
+<PageTitle>
+    Chi nhánh
+</PageTitle>
 <div class="branches-page bf-page">
     @if (_isLoading)
     {
         <section class="branches-state bf-surface" aria-live="polite">
             <div class="spinner-border text-success" role="status">
-                <span class="visually-hidden">Đang tải danh sách chi nhánh</span>
+                <span class="visually-hidden">
+                    Đang tải danh sách chi nhánh
+                </span>
             </div>
-
-            <h1 class="h5 mb-0">Đang tải chi nhánh</h1>
-            <p>Hệ thống đang kiểm tra phạm vi bạn được phép truy cập.</p>
+            <h1 class="h5 mb-0">
+                Đang tải chi nhánh
+            </h1>
+            <p>
+                Hệ thống đang kiểm tra phạm vi bạn được phép truy cập.
+            </p>
         </section>
     }
     else if (!string.IsNullOrWhiteSpace(_errorMessage))
     {
         <section class="branches-state branches-state-error bf-surface" role="alert">
-            <h1 class="h5 mb-0">Không thể tải chi nhánh</h1>
-            <p>@_errorMessage</p>
-
+            <h1 class="h5 mb-0">
+                Không thể tải chi nhánh
+            </h1>
+            <p>
+                @_errorMessage
+            </p>
             <button type="button" class="btn btn-danger" @onclick="LoadBranchesAsync">
                 Thử lại
             </button>
@@ -34,25 +40,34 @@
     {
         <header class="branches-hero">
             <div class="branches-hero-copy">
-                <h1>Chi nhánh</h1>
-                <p>Chọn chi nhánh để xem nhân viên.</p>
+                <h1>
+                    Chi nhánh
+                </h1>
+                <p>
+                    Chọn chi nhánh để xem nhân viên.
+                </p>
             </div>
         </header>
-
         <section class="branches-list" aria-labelledby="branches-list-title">
             <div class="branches-list-heading">
                 <div>
-                    <h2 id="branches-list-title">Danh sách chi nhánh</h2>
+                    <h2 id="branches-list-title">
+                        Danh sách chi nhánh
+                    </h2>
                 </div>
-
-                <span>@_branches.Count kết quả</span>
+                <span>
+                    @_branches.Count kết quả
+                </span>
             </div>
-
             @if (_branches.Count == 0)
             {
                 <div class="branches-empty bf-surface" role="status">
-                    <h3 class="h5 mb-0">Chưa có chi nhánh</h3>
-                    <p>Tài khoản hiện chưa được cấp quyền truy cập chi nhánh nào.</p>
+                    <h3 class="h5 mb-0">
+                        Chưa có chi nhánh
+                    </h3>
+                    <p>
+                        Tài khoản hiện chưa được cấp quyền truy cập chi nhánh nào.
+                    </p>
                 </div>
             }
             else
@@ -62,27 +77,31 @@
                     {
                         <article class="branches-card">
                             <header class="branches-card-header">
-                                <span class="branches-code">@branch.Code</span>
-
+                                <span class="branches-code">
+                                    @branch.Code
+                                </span>
                                 <span class="branches-status @(branch.IsActive ? "is-active" : "is-inactive")">
-                                    <span aria-hidden="true"></span>
+                                    <span aria-hidden="true">
+                                    </span>
                                     @(branch.IsActive ? "Đang hoạt động" : "Ngừng hoạt động")
                                 </span>
                             </header>
-
                             <div class="branches-card-body">
-                                <h3>@branch.Name</h3>
-
-                                <p>@branch.Address</p>
+                                <h3>
+                                    @branch.Name
+                                </h3>
+                                <p>
+                                    @branch.Address
+                                </p>
                             </div>
-
                             <footer class="branches-card-footer">
                                 <AuthorizeView Roles="OWNER,ADMIN">
                                     <Authorized>
                                         <NavLink class="branches-card-link"
-                                                 href="@($"/employees?branchId={branch.Id}")">
-                                            <span>Xem nhân viên</span>
-
+                                            href="@($"/employees?branchId={branch.Id}")">
+                                            <span>
+                                                Xem nhân viên
+                                            </span>
                                         </NavLink>
                                     </Authorized>
                                 </AuthorizeView>
@@ -95,17 +114,14 @@
     }
 </div>
 
-@code {
+@code
+{
     // Chứa danh sách các chi nhánh nhận được từ API
-    private List<AccessibleBranchDTO> _branches =
-        new List<AccessibleBranchDTO>();
-
+    private List<AccessibleBranchDTO> _branches = new List<AccessibleBranchDTO>();
     // Cho biết component đang gọi API
     private bool _isLoading = true;
-
     // Chứa thông báo khi gọi API thất bại
     private string? _errorMessage;
-
     // Chí tải dữ liệu sau khi giao diện đã render lần đầu
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -116,7 +132,6 @@
         }
 
         await LoadBranchesAsync();
-
         // Yêu cầu Blazor cập nhật lại giao diện
         StateHasChanged();
     }
@@ -127,17 +142,13 @@
         // Bắt đầu request
         _isLoading = true;
         _errorMessage = null;
-
         try
         {
-            List<AccessibleBranchDTO>? branches =
-                await BranchApiService.GetAccessibleBranchesAsync();
-
+            List<AccessibleBranchDTO>? branches = await BranchApiService.GetAccessibleBranchesAsync();
             // Null có nghĩa là request không thành công
             if (branches == null)
             {
                 _errorMessage = "Không thể tải danh sách chi nhánh";
-
                 return;
             }
 

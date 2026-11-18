@@ -1,0 +1,481 @@
+@page "/inventory/catalog"
+@using System.Net
+@using System.Text.Json
+@using Microsoft.JSInterop
+@using TuanKietBranchFlow.Application.DTOs.Inventory
+@using TuanKietBranchFlow.Web.Services.Inventory
+@inject InventoryApiService InventoryApi
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJSRuntime JS
+<NavigationLock ConfirmExternalNavigation="@(_isSaving || HasChanges)" OnBeforeInternalNavigation="ConfirmNavigationAsync" />
+<PageTitle>
+    Danh mục nguyên liệu
+</PageTitle>
+<div class="bf-page catalog-page">
+    <a href="/inventory" class="d-inline-block mb-3">
+        Về kho nguyên liệu
+    </a>
+    <h1 class="h3">
+        Danh mục nguyên liệu
+    </h1>
+    <p class="text-body-secondary">
+        Danh mục dùng chung toàn hệ thống. Sửa tại đây ảnh hưởng mọi chi nhánh.
+    </p>
+    <AuthorizeView Roles="ADMIN,OWNER">
+        <Authorized>
+            @if (_isLoading)
+            {
+                <p role="status">
+                    Đang tải danh mục...
+                </p>
+            }
+            else
+            {
+                @if (_feedbackMessage != null)
+                {
+                    <div class="alert @(_hasUnknownSaveResult ? "alert-warning" : "alert-info")" role="status">
+                        @_feedbackMessage
+                    </div>
+                }
+                @if (_errorMessage != null)
+                {
+                    <div class="alert alert-danger" role="alert">
+                        @_errorMessage
+                        <a href="/login">
+                            Đăng nhập lại
+                        </a>
+                    </div>
+                }
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    <button class="btn @(!_showUnits ? "btn-primary" : "btn-outline-primary")" disabled="@(_isSaving || _hasUnknownSaveResult)" @onclick="() => ChangeTab(false)">
+                        Nguyên liệu (@_ingredients.Count)
+                    </button>
+                    <button class="btn @(_showUnits ? "btn-primary" : "btn-outline-primary")" disabled="@(_isSaving || _hasUnknownSaveResult)" @onclick="() => ChangeTab(true)">
+                        Đơn vị tính (@_units.Count)
+                    </button>
+                    <button class="btn btn-outline-secondary" disabled="@_isSaving" @onclick="ReloadConfirmedAsync">
+                        Tải lại danh mục
+                    </button>
+                </div>
+                @if (_canWrite && _errorMessage == null)
+                {
+                    <div class="card card-body mb-3">
+                        <h2 class="h5">
+                            @(_editId == 0 ? "Thêm " : "Sửa ")@(_showUnits ? "đơn vị tính" : "nguyên liệu")
+                        </h2>
+                        <form @onsubmit="SaveAsync" @onsubmit:preventDefault>
+                            <fieldset disabled="@(_isSaving || _hasUnknownSaveResult)">
+                                <legend class="visually-hidden">
+                                    Thông tin danh mục
+                                </legend>
+                                <div class="row g-3 align-items-end">
+                                    <div class="col-12 col-md-6">
+                                        <label for="catalog-name" class="form-label">
+                                            Tên @(_showUnits ? "đơn vị tính" : "nguyên liệu")
+                                        </label>
+                                        <input @ref="_nameInput" id="catalog-name" class="form-control" maxlength="@(_showUnits ? 50 : 150)" @bind="_name" @bind:event="oninput" disabled="@(_showUnits && _editUsed)" />
+                                    </div>
+                                    @if (!_showUnits)
+                                    {
+                                        <div class="col-12 col-md-6">
+                                            <label for="catalog-unit" class="form-label">
+                                                Đơn vị tính
+                                            </label>
+                                            <select id="catalog-unit" class="form-select" @bind="_unitId" disabled="@_editUsed">
+                                                <option value="0">
+                                                    Chọn đơn vị
+                                                </option>
+                                                @foreach (InventoryUnitDTO unit in _units.Where(item => item.IsActive || item.Id == _unitId))
+                                                {
+                                                    <option value="@unit.Id">
+                                                        @unit.Name@(!unit.IsActive ? " (ngừng dùng)" : "")
+                                                    </option>
+                                                }
+                                            </select>
+                                        </div>
+                                    }
+                                    <div class="col-12 d-flex gap-2">
+                                        <button type="submit" class="btn btn-primary" disabled="@(_showUnits && _editUsed)">
+                                            @(_isSaving ? "Đang lưu..." : _editId == 0 ? "Thêm mới" : "Lưu thay đổi")
+                                        </button>
+                                        @if (_editId > 0) {
+                                        <button class="btn btn-outline-secondary" type="button" @onclick="CancelEditAsync">
+                                            Hủy sửa
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        </fieldset>
+                    </form>
+                    <p class="small text-body-secondary mt-3 mb-0">
+                        @(_showUnits ? "Đơn vị đã sử dụng không đổi tên để bảo toàn ý nghĩa số lượng." : "Nguyên liệu đã cấu hình kho hoặc có lịch sử không đổi đơn vị tính. Tồn được quản lý riêng tại từng chi nhánh.")
+                    </p>
+                </div>
+            }
+            @if (_pendingStatusId > 0)
+            {
+                <section class="alert alert-warning" aria-label="Xác nhận trạng thái">
+                    <p>
+                        @(_pendingActive ? "Bật lại" : "Ngừng dùng")
+                        <strong>
+                            @_pendingName
+                        </strong>
+                        trong danh mục toàn hệ thống? Ngừng dùng không xóa tồn hoặc lịch sử.
+                    </p>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button class="btn btn-primary" disabled="@(_isSaving || _hasUnknownSaveResult)" @onclick="ConfirmStatusAsync">
+                            Xác nhận
+                        </button>
+                        <button class="btn btn-outline-secondary" disabled="@_isSaving" @onclick="() => _pendingStatusId = 0">
+                            Hủy
+                        </button>
+                    </div>
+                </section>
+            }
+            <label for="catalog-search" class="form-label">
+                Tìm trong danh mục
+            </label>
+            <input id="catalog-search" class="form-control mb-3" @bind="_search" @bind:event="oninput" maxlength="150" placeholder="Tên nguyên liệu hoặc đơn vị" />
+            <div class="catalog-list">
+                @if (_showUnits)
+                {
+                    @foreach (InventoryUnitDTO item in _units.Where(item => item.Name.Contains(_search.Trim(), StringComparison.CurrentCultureIgnoreCase)))
+                    {
+                        <article class="catalog-row" @key="item.Id">
+                            <div>
+                                <strong>
+                                    @item.Name
+                                </strong>
+                                <span class="d-block small text-body-secondary">
+                                    @(item.IsActive ? "Đang dùng" : "Ngừng dùng") · @(item.IsUsed ? "Đã được sử dụng" : "Chưa sử dụng")
+                                </span>
+                            </div>
+                            @if (_canWrite)
+                            {
+                                <div class="catalog-actions">
+                                    <button class="btn btn-outline-primary" disabled="@(_isSaving || _hasUnknownSaveResult || item.IsUsed)" @onclick="() => EditUnit(item)">
+                                        Sửa tên
+                                    </button>
+                                    <button class="btn btn-outline-secondary" disabled="@(_isSaving || _hasUnknownSaveResult)" @onclick="() => AskStatus(item.Id, item.Name, !item.IsActive)">
+                                        @(item.IsActive ? "Ngừng dùng" : "Bật lại")
+                                    </button>
+                                </div>
+                            }
+                        </article>
+                    }
+                    @if (!_units.Any(item => item.Name.Contains(_search.Trim(), StringComparison.CurrentCultureIgnoreCase)))
+                    {
+                        <p class="card card-body">
+                            Không có đơn vị phù hợp.
+                        </p>
+                    }
+                }
+                else
+                {
+                    @foreach (InventoryIngredientDTO item in _ingredients.Where(item => item.Name.Contains(_search.Trim(), StringComparison.CurrentCultureIgnoreCase)))
+                    {
+                        <article class="catalog-row" @key="item.Id">
+                            <div>
+                                <strong>
+                                    @item.Name
+                                </strong>
+                                <span class="d-block small text-body-secondary">
+                                    @item.UnitName · @(item.IsActive ? "Đang dùng" : "Ngừng dùng")
+                                </span>
+                            </div>
+                            @if (_canWrite)
+                            {
+                                <div class="catalog-actions">
+                                    <button class="btn btn-outline-primary" disabled="@(_isSaving || _hasUnknownSaveResult)" @onclick="() => EditIngredient(item)">
+                                        Sửa thông tin
+                                    </button>
+                                    <button class="btn btn-outline-secondary" disabled="@(_isSaving || _hasUnknownSaveResult)" @onclick="() => AskStatus(item.Id, item.Name, !item.IsActive)">
+                                        @(item.IsActive ? "Ngừng dùng" : "Bật lại")
+                                    </button>
+                                </div>
+                            }
+                        </article>
+                    }
+                    @if (!_ingredients.Any(item => item.Name.Contains(_search.Trim(), StringComparison.CurrentCultureIgnoreCase)))
+                    {
+                        <p class="card card-body">
+                            Không có nguyên liệu phù hợp.
+                        </p>
+                    }
+                }
+            </div>
+        }
+    </Authorized>
+    <NotAuthorized>
+        <div class="alert alert-warning">
+            Danh mục chỉ dành cho ADMIN và OWNER.
+            <a href="/inventory">
+                Về kho
+            </a>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+</div>
+
+@code
+{
+    private List<InventoryUnitDTO> _units = new List<InventoryUnitDTO>();
+    private List<InventoryIngredientDTO> _ingredients = new List<InventoryIngredientDTO>();
+    private bool _canWrite;
+    private bool _isLoading = true;
+    private bool _isSaving;
+    private bool _hasUnknownSaveResult;
+    private bool _showUnits;
+    private string? _errorMessage;
+    private string? _feedbackMessage;
+    private string _search = "";
+    private string _name = "";
+    private int _editId;
+    private int _unitId;
+    private bool _editUsed;
+    private int _pendingStatusId;
+    private string _pendingName = "";
+    private bool _pendingActive;
+    private string _initialName = "";
+    private int _initialUnitId;
+    private ElementReference _nameInput;
+    private bool _focusName;
+    private bool HasChanges => _name != _initialName || _unitId != _initialUnitId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        _canWrite = state.User.IsInRole("ADMIN");
+        if (_canWrite || state.User.IsInRole("OWNER"))
+        {
+            await LoadAsync();
+        }
+
+        _isLoading = false;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_focusName)
+        {
+            _focusName = false;
+            await _nameInput.FocusAsync();
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+        try
+        {
+            List<InventoryUnitDTO> units = await InventoryApi.GetUnitsAsync();
+            List<InventoryIngredientDTO> ingredients = await InventoryApi.GetIngredientsAsync();
+            _units = units;
+            _ingredients = ingredients;
+            _hasUnknownSaveResult = false;
+            ClearEditor();
+        }
+        catch (HttpRequestException exception)
+        {
+            _errorMessage = exception.StatusCode.HasValue ? exception.Message : "Không kết nối được API. Hãy tải lại.";
+        }
+        catch (Exception exception)when (exception is TaskCanceledException or JsonException)
+        {
+            _errorMessage = "Không đọc được danh mục. Hãy tải lại.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task ChangeTab(bool showUnits)
+    {
+        if (!await CanDiscardAsync())
+        {
+            return;
+        }
+
+        _showUnits = showUnits;
+        _search = "";
+        ClearEditor();
+    }
+
+    private void ClearEditor()
+    {
+        _editId = 0;
+        _name = "";
+        _unitId = 0;
+        _editUsed = false;
+        _pendingStatusId = 0;
+        _initialName = "";
+        _initialUnitId = 0;
+    }
+
+    private async Task EditUnit(InventoryUnitDTO item)
+    {
+        if (!await CanDiscardAsync())
+        {
+            return;
+        }
+
+        _editId = item.Id;
+        _name = item.Name;
+        _editUsed = item.IsUsed;
+        _initialName = _name;
+        _initialUnitId = _unitId;
+        _pendingStatusId = 0;
+        _feedbackMessage = null;
+        _focusName = true;
+    }
+
+    private async Task EditIngredient(InventoryIngredientDTO item)
+    {
+        if (!await CanDiscardAsync())
+        {
+            return;
+        }
+
+        _editId = item.Id;
+        _name = item.Name;
+        _unitId = item.UnitId;
+        _editUsed = item.IsUsed;
+        _initialName = _name;
+        _initialUnitId = _unitId;
+        _pendingStatusId = 0;
+        _feedbackMessage = null;
+        _focusName = true;
+    }
+
+    private void AskStatus(
+        int id,
+        string name,
+        bool active)
+    {
+        _pendingStatusId = id;
+        _pendingName = name;
+        _pendingActive = active;
+        _feedbackMessage = null;
+    }
+
+    // Thao tác trạng thái không được làm mất phần tên/đơn vị đang sửa.
+    private async Task<bool> CanDiscardAsync()
+    {
+        if (_isSaving)
+        {
+            return false;
+        }
+
+        if (HasChanges)
+        {
+            return await JS.InvokeAsync<bool>("confirm", "Bỏ nội dung danh mục chưa lưu?");
+        }
+
+        return true;
+    }
+
+    private async Task CancelEditAsync()
+    {
+        if (await CanDiscardAsync())
+        {
+            ClearEditor();
+        }
+    }
+
+    private async Task ReloadConfirmedAsync()
+    {
+        if (await CanDiscardAsync())
+        {
+            await LoadAsync();
+        }
+    }
+
+    private async Task ConfirmNavigationAsync(LocationChangingContext context)
+    {
+        if (!await CanDiscardAsync())
+        {
+            context.PreventNavigation();
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_isSaving || _hasUnknownSaveResult)
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_name) || _name.Trim().Length > (_showUnits ? 50 : 150) || (!_showUnits && _unitId <= 0))
+        {
+            _feedbackMessage = "Nhập tên hợp lệ và chọn đơn vị tính nếu thêm nguyên liệu.";
+            return;
+        }
+
+        string url = _showUnits ? "api/ingredient-units" : "api/ingredients";
+        if (_editId > 0)
+        {
+            url += $"/{_editId}";
+        }
+
+        await WriteAsync(
+            _editId == 0 ? HttpMethod.Post : HttpMethod.Put,
+            url,
+            new InventoryCatalogRequestDTO
+        {
+            Name = _name,
+            UnitId = _unitId
+        });
+    }
+
+    private async Task ConfirmStatusAsync()
+    {
+        if (!await CanDiscardAsync())
+        {
+            return;
+        }
+
+        string url = (_showUnits ? "api/ingredient-units" : "api/ingredients") + $"/{_pendingStatusId}/status";
+        await WriteAsync(HttpMethod.Patch, url, new InventoryStatusRequestDTO
+        {
+            IsActive = _pendingActive
+        });
+    }
+
+    private async Task WriteAsync<T>(
+        HttpMethod method,
+        string url,
+        T input)
+    {
+        if (_isSaving || _hasUnknownSaveResult)
+        {
+            return;
+        }
+
+        _isSaving = true;
+        try
+        {
+            await InventoryApi.WriteAsync(method, url, input);
+            _feedbackMessage = "Đã lưu danh mục dùng chung.";
+        }
+        catch (HttpRequestException exception)when (exception.StatusCode.HasValue && (int)exception.StatusCode.Value < 500)
+        {
+            _feedbackMessage = exception.Message;
+            return;
+        }
+        catch (Exception exception)when (exception is HttpRequestException or TaskCanceledException or JsonException)
+        {
+            _hasUnknownSaveResult = true;
+            _feedbackMessage = "Chưa xác định kết quả lưu. Không gửi lại; hãy tải lại danh mục để đối chiếu.";
+            return;
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+
+        // Chặn ghi tiếp nếu server đã lưu nhưng lượt đọc mới chưa thành công.
+        _hasUnknownSaveResult = true;
+        await LoadAsync();
+    }
+}

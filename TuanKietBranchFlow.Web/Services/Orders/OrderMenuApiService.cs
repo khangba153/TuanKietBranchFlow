@@ -7,7 +7,6 @@ namespace TuanKietBranchFlow.Web.Services.Orders;
 public class OrderMenuApiService
 {
     private readonly AuthorizedApiService _authorizedApiService;
-
     public OrderMenuApiService(AuthorizedApiService authorizedApiService)
     {
         _authorizedApiService = authorizedApiService;
@@ -22,14 +21,9 @@ public class OrderMenuApiService
         }
 
         string requestUrl = $"api/order-menu?branchId={branchId}";
-
-        using HttpRequestMessage request =
-            new HttpRequestMessage(HttpMethod.Get, requestUrl);
-            
+        using HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
         // Đọc token và gửi request đến API
-        using HttpResponseMessage response =
-            await _authorizedApiService.SendAsync(request);
-
+        using HttpResponseMessage response = await _authorizedApiService.SendAsync(request);
         // API có thể trả 400, 401, 403, 404 hoặc 500
         if (!response.IsSuccessStatusCode)
         {
@@ -37,10 +31,7 @@ public class OrderMenuApiService
         }
 
         // Chuyển JSON menu thành DTO dùng cho giao diện
-        OrderMenuResponseDTO? menu =
-            await response.Content.ReadFromJsonAsync<OrderMenuResponseDTO>();
-        
+        OrderMenuResponseDTO? menu = await response.Content.ReadFromJsonAsync<OrderMenuResponseDTO>();
         return menu;
-
     }
 }

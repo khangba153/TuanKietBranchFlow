@@ -6,79 +6,127 @@
 @inject EmployeeTransferApiService TransferApiService
 @inject NavigationManager Navigation
 @inject AuthenticationStateProvider AuthenticationStateProvider
-
-<PageTitle>Chuyển chi nhánh nhân viên</PageTitle>
+<PageTitle>
+    Chuyển chi nhánh nhân viên
+</PageTitle>
 <NavigationLock ConfirmExternalNavigation="@_isSaving" OnBeforeInternalNavigation="PreventNavigation" />
-
 <AuthorizeView Roles="ADMIN">
     <Authorized>
         <div class="bf-page transfer-page">
             <header>
-                <a href="@($"/employees/{EmployeeId}?branchId={BranchId}")">Quay lại hồ sơ</a>
-                <h1>Chuyển chi nhánh</h1>
-                <p>Chuyển trực tiếp trong phạm vi quản lý, hoặc gửi yêu cầu để chi nhánh khác tiếp nhận.</p>
+                <a href="@($"/employees/{EmployeeId}?branchId={BranchId}")">
+                    Quay lại hồ sơ
+                </a>
+                <h1>
+                    Chuyển chi nhánh
+                </h1>
+                <p>
+                    Chuyển trực tiếp trong phạm vi quản lý, hoặc gửi yêu cầu để chi nhánh khác tiếp nhận.
+                </p>
             </header>
-
             @if (_isLoading)
             {
-                <p role="status">Đang tải thông tin nhân viên và chi nhánh…</p>
+                <p role="status">
+                    Đang tải thông tin nhân viên và chi nhánh…
+                </p>
             }
             else if (_employee == null)
             {
-                <div class="alert alert-warning" role="alert">@_message</div>
-                <button class="btn btn-outline-primary" @onclick="LoadAsync">Tải lại</button>
+                <div class="alert alert-warning" role="alert">
+                    @_feedbackMessage
+                </div>
+                <button class="btn btn-outline-primary" @onclick="LoadAsync">
+                    Tải lại
+                </button>
             }
             else
             {
                 <section class="bf-surface-card transfer-form">
-                    <h2>@_employee.FullName</h2>
-                    <p>@_employee.EmployeeCode · Hiệu lực khi chuyển thành công trong ngày thực hiện.</p>
+                    <h2>
+                        @_employee.FullName
+                    </h2>
+                    <p>
+                        @_employee.EmployeeCode · Hiệu lực khi chuyển thành công trong ngày thực hiện.
+                    </p>
                     @if (!_employee.IsActive)
                     {
-                        <div class="alert alert-warning">Nhân viên đã nghỉ việc, không thể chuyển chi nhánh.</div>
+                        <div class="alert alert-warning">
+                            Nhân viên đã nghỉ việc, không thể chuyển chi nhánh.
+                        </div>
                     }
                     else if (_completed)
                     {
-                        <div class="alert alert-success" role="status">@_message</div>
-                        <a class="btn btn-primary" href="/employee-transfers">Xem yêu cầu đã gửi</a>
+                        <div class="alert alert-success" role="status">
+                            @_feedbackMessage
+                        </div>
+                        <a class="btn btn-primary" href="/employee-transfers">
+                            Xem yêu cầu đã gửi
+                        </a>
                     }
                     else
                     {
-                        @if (!string.IsNullOrWhiteSpace(_message))
+                        @if (!string.IsNullOrWhiteSpace(_feedbackMessage))
                         {
-                            <div class="alert alert-warning" role="alert">@_message</div>
+                            <div class="alert alert-warning" role="alert">
+                                @_feedbackMessage
+                            </div>
                         }
                         @if (_mustReload)
                         {
-                            <button class="btn btn-outline-primary" @onclick="LoadAsync">Tải lại trước khi thao tác tiếp</button>
+                            <button class="btn btn-outline-primary" @onclick="LoadAsync">
+                                Tải lại trước khi thao tác tiếp
+                            </button>
                         }
                         else
                         {
-                            <label for="transfer-target" class="form-label">Chi nhánh đích</label>
+                            <label for="transfer-target" class="form-label">
+                                Chi nhánh đích
+                            </label>
                             <select id="transfer-target" class="form-select" @bind="_targetId" @bind:after="ResetConfirmation"
-                                    disabled="@(_isSaving || _confirming)">
-                                <option value="0">Chọn chi nhánh tiếp nhận</option>
+                                disabled="@(_isSaving || _confirming)">
+                                <option value="0">
+                                    Chọn chi nhánh tiếp nhận
+                                </option>
                                 @foreach (EmployeeTransferTargetDTO target in _targets)
                                 {
-                                    <option value="@target.Id">@target.Code — @target.Name</option>
+                                    <option value="@target.Id">
+                                        @target.Code — @target.Name
+                                    </option>
                                 }
                             </select>
-                            <label for="transfer-note" class="form-label mt-3">Ghi chú (không bắt buộc)</label>
+                            <label for="transfer-note" class="form-label mt-3">
+                                Ghi chú (không bắt buộc)
+                            </label>
                             <textarea id="transfer-note" class="form-control" rows="3" maxlength="500"
-                                      @bind="_note" @bind:event="oninput" disabled="@(_isSaving || _confirming)"></textarea>
+                                @bind="_note" @bind:event="oninput" disabled="@(_isSaving || _confirming)">
+                            </textarea>
                             @if (_confirming && SelectedTarget != null)
                             {
                                 <div class="transfer-confirm">
-                                    <h3>@(SelectedTarget.CanTransferImmediately ? "Xác nhận chuyển ngay?" : "Xác nhận gửi yêu cầu?")</h3>
-                                    <p><strong>@SourceBranchName</strong> → <strong>@SelectedTarget.Name</strong></p>
-                                    <p>@(SelectedTarget.CanTransferImmediately
+                                    <h3>
+                                        @(SelectedTarget.CanTransferImmediately ? "Xác nhận chuyển ngay?" : "Xác nhận gửi yêu cầu?")
+                                    </h3>
+                                    <p>
+                                        <strong>
+                                            @SourceBranchName
+                                        </strong>
+                                        →
+                                        <strong>
+                                            @SelectedTarget.Name
+                                        </strong>
+                                    </p>
+                                    <p>
+                                        @(SelectedTarget.CanTransferImmediately
                                         ? "Phân công nguồn kết thúc hôm qua. Nhân viên bắt đầu tại đích hôm nay và cần đăng nhập lại."
-                                        : "Nhân viên vẫn ở chi nhánh nguồn trong lúc chờ. Ngày chuyển là ngày admin đích đồng ý tiếp nhận thành công.")</p>
+                                        : "Nhân viên vẫn ở chi nhánh nguồn trong lúc chờ. Ngày chuyển là ngày admin đích đồng ý tiếp nhận thành công.")
+                                    </p>
                                     <div class="transfer-actions">
                                         <button class="btn btn-primary" disabled="@_isSaving" @onclick="SubmitAsync">
                                             @(_isSaving ? "Đang xử lý…" : "Xác nhận")
                                         </button>
-                                        <button class="btn btn-outline-secondary" disabled="@_isSaving" @onclick="ResetConfirmation">Hủy</button>
+                                        <button class="btn btn-outline-secondary" disabled="@_isSaving" @onclick="ResetConfirmation">
+                                            Hủy
+                                        </button>
                                     </div>
                                 </div>
                             }
@@ -95,18 +143,25 @@
         </div>
     </Authorized>
     <NotAuthorized>
-        <div class="alert alert-warning">Chỉ ADMIN được chuyển chi nhánh nhân viên.</div>
+        <div class="alert alert-warning">
+            Chỉ ADMIN được chuyển chi nhánh nhân viên.
+        </div>
     </NotAuthorized>
 </AuthorizeView>
 
-@code {
-    [Parameter] public int EmployeeId { get; set; }
-    [SupplyParameterFromQuery(Name = "branchId")] public int BranchId { get; set; }
+@code
+{
+    [Parameter]
+    public int EmployeeId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "branchId")]
+    public int BranchId { get; set; }
+
     private EmployeeDetailDTO? _employee;
     private List<EmployeeTransferTargetDTO> _targets = new List<EmployeeTransferTargetDTO>();
     private int _targetId;
     private string? _note;
-    private string? _message;
+    private string? _feedbackMessage;
     private bool _isLoading = true;
     private bool _confirming;
     private bool _isSaving;
@@ -128,6 +183,7 @@
             {
                 await LoadAsync();
             }
+
             StateHasChanged();
         }
     }
@@ -135,7 +191,7 @@
     private async Task LoadAsync()
     {
         _isLoading = true;
-        _message = null;
+        _feedbackMessage = null;
         _mustReload = false;
         _confirming = false;
         _employee = null;
@@ -146,18 +202,19 @@
             _employee = await EmployeeApiService.GetEmployeeDetailAsync(EmployeeId, BranchId);
             if (_employee == null)
             {
-                _message = "Không tìm thấy nhân viên hoặc bạn không có quyền tại chi nhánh nguồn.";
+                _feedbackMessage = "Không tìm thấy nhân viên hoặc bạn không có quyền tại chi nhánh nguồn.";
                 return;
             }
+
             _targets = await TransferApiService.GetTargetsAsync(BranchId);
             if (_targets.Count == 0)
             {
-                _message = "Chưa có chi nhánh đang hoạt động khác để tiếp nhận.";
+                _feedbackMessage = "Chưa có chi nhánh đang hoạt động khác để tiếp nhận.";
             }
         }
-        catch (Exception exception) when (exception is HttpRequestException or System.Text.Json.JsonException or OperationCanceledException)
+        catch (Exception exception)when (exception is HttpRequestException or System.Text.Json.JsonException or OperationCanceledException)
         {
-            _message = "Không tải được thông tin chuyển chi nhánh. Vui lòng tải lại.";
+            _feedbackMessage = "Không tải được thông tin chuyển chi nhánh. Vui lòng tải lại.";
             _mustReload = true;
         }
         finally
@@ -182,6 +239,7 @@
         {
             return;
         }
+
         _isSaving = true;
         try
         {
@@ -199,20 +257,22 @@
                 Navigation.NavigateTo($"/employees/{EmployeeId}?branchId={result.TargetBranchId}");
                 return;
             }
+
             _completed = true;
-            _message = "Đã gửi yêu cầu. Nhân viên vẫn ở chi nhánh nguồn trong lúc chờ tiếp nhận.";
+            _feedbackMessage = "Đã gửi yêu cầu. Nhân viên vẫn ở chi nhánh nguồn trong lúc chờ tiếp nhận.";
         }
-        catch (Exception exception) when (exception is HttpRequestException or System.Text.Json.JsonException or OperationCanceledException)
+        catch (Exception exception)when (exception is HttpRequestException or System.Text.Json.JsonException or OperationCanceledException)
         {
-            _message = "Chưa xác định được kết quả. Hãy tải lại danh sách yêu cầu trước khi gửi lại.";
+            _feedbackMessage = "Chưa xác định được kết quả. Hãy tải lại danh sách yêu cầu trước khi gửi lại.";
             if (exception is HttpRequestException httpException && httpException.StatusCode.HasValue)
             {
                 int statusCode = (int)httpException.StatusCode.Value;
                 if (statusCode >= 400 && statusCode < 500)
                 {
-                    _message = httpException.Message;
+                    _feedbackMessage = httpException.Message;
                 }
             }
+
             _mustReload = true;
         }
         finally

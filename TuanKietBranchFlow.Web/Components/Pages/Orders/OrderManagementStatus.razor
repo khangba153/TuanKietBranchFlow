@@ -1,15 +1,25 @@
-<span class="badge @Color">@Text</span>
+<span class="badge @Color">
+    @Text
+</span>
 
-@code {
-    [Parameter] public string Status { get; set; } = string.Empty;
+@code
+{
+    [Parameter]
+    public string Status { get; set; } = string.Empty;
     private string Text => Status switch
     {
-        "COMPLETED" => "Hoàn tất", "NEEDS_REVIEW" => "Chờ xem lại",
-        "ADJUSTED" => "Đã điều chỉnh", "CANCELLED" => "Đã hủy", _ => Status
+        "COMPLETED" => "Hoàn tất",
+        "NEEDS_REVIEW" => "Chờ xem lại",
+        "ADJUSTED" => "Đã điều chỉnh",
+        "CANCELLED" => "Đã hủy",
+        _ => Status
     };
     private string Color => Status switch
     {
-        "COMPLETED" => "text-bg-success", "NEEDS_REVIEW" => "text-bg-warning",
-        "ADJUSTED" => "text-bg-info", "CANCELLED" => "text-bg-secondary", _ => "text-bg-secondary"
+        "COMPLETED" => "text-bg-success",
+        "NEEDS_REVIEW" => "text-bg-warning",
+        "ADJUSTED" => "text-bg-info",
+        "CANCELLED" => "text-bg-secondary",
+        _ => "text-bg-secondary"
     };
 }

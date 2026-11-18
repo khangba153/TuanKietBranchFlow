@@ -1,35 +1,40 @@
 @using TuanKietBranchFlow.Web.Services.Employees
 @page "/employees"
-
 @using TuanKietBranchFlow.Application.DTOs.Employees
-
 @inject EmployeeApiService EmployeeApiService
-
-<PageTitle>Nhân viên</PageTitle>
-
+<PageTitle>
+    Nhân viên
+</PageTitle>
 <div class="employees-page bf-page">
     @if (_isLoading)
     {
         <section class="employees-state bf-surface-card" aria-live="polite">
             <div class="spinner-border text-success" role="status">
-                <span class="visually-hidden">Đang tải danh sách nhân viên</span>
+                <span class="visually-hidden">
+                    Đang tải danh sách nhân viên
+                </span>
             </div>
-
-            <h1 class="h5 mb-0">Đang tải đội ngũ</h1>
-            <p>Hệ thống đang lấy danh sách nhân viên trong chi nhánh đã chọn.</p>
+            <h1 class="h5 mb-0">
+                Đang tải đội ngũ
+            </h1>
+            <p>
+                Hệ thống đang lấy danh sách nhân viên trong chi nhánh đã chọn.
+            </p>
         </section>
     }
     else if (!_hasLoaded && !string.IsNullOrWhiteSpace(_errorMessage))
     {
         <section class="employees-state employees-state-error bf-surface-card" role="alert">
-            <h1 class="h5 mb-0">Không thể tải nhân viên</h1>
-            <p>@_errorMessage</p>
-
+            <h1 class="h5 mb-0">
+                Không thể tải nhân viên
+            </h1>
+            <p>
+                @_errorMessage
+            </p>
             <div class="d-flex flex-wrap justify-content-center gap-2">
                 <a class="btn btn-outline-secondary" href="/branches">
                     Chọn chi nhánh
                 </a>
-
                 <button type="button" class="btn btn-danger" @onclick="LoadEmployeesAsync">
                     Thử lại
                 </button>
@@ -41,108 +46,115 @@
         <header class="employees-hero">
             <div class="employees-hero-copy">
                 <a class="employees-back-link" href="/branches">
-                     Chi nhánh
+                    Chi nhánh
                 </a>
-
-                <h1>Nhân viên</h1>
-                <p>@BranchDisplayName</p>
+                <h1>
+                    Nhân viên
+                </h1>
+                <p>
+                    @BranchDisplayName
+                </p>
             </div>
-
             <AuthorizeView Roles="ADMIN">
                 <Authorized>
                     <a class="btn btn-primary employees-create-button"
-                       href="@($"/employees/create?branchId={BranchId}")">
+                        href="@($"/employees/create?branchId={BranchId}")">
                         Thêm nhân viên
                     </a>
                 </Authorized>
             </AuthorizeView>
         </header>
-
         @if (!string.IsNullOrWhiteSpace(_errorMessage))
         {
-            <div class="alert alert-danger mt-3" role="alert">@_errorMessage</div>
+            <div class="alert alert-danger mt-3" role="alert">
+                @_errorMessage
+            </div>
         }
-
         <form class="employees-filter bf-surface-card" aria-labelledby="employees-filter-title"
-              @onsubmit="SearchEmployeesAsync" @onsubmit:preventDefault>
+            @onsubmit="SearchEmployeesAsync" @onsubmit:preventDefault>
             <div class="employees-filter-heading">
                 <div>
-                    <h2 id="employees-filter-title">Tìm nhân viên</h2>
+                    <h2 id="employees-filter-title">
+                        Tìm nhân viên
+                    </h2>
                 </div>
-
                 @if (HasActiveFilters)
                 {
                     <button type="button"
-                            class="btn btn-link btn-sm employees-clear-button"
-                            @onclick="ClearFiltersAsync"
-                            disabled="@_isSearching">
+                        class="btn btn-link btn-sm employees-clear-button"
+                        @onclick="ClearFiltersAsync"
+                        disabled="@_isSearching">
                         Xóa bộ lọc
                     </button>
                 }
             </div>
-
             <div class="row g-3 align-items-end">
                 <div class="col-12 col-lg-6">
-                    <label for="employee-keyword" class="form-label">Tên hoặc mã nhân viên</label>
-
+                    <label for="employee-keyword" class="form-label">
+                        Tên hoặc mã nhân viên
+                    </label>
                     <div class="employees-search-field">
                         <input id="employee-keyword"
-                               type="search"
-                               class="form-control"
-                               placeholder="Ví dụ: Nguyễn Văn An hoặc NV001"
-                               @bind="_keyword"
-                               @bind:event="oninput"
-                               disabled="@_isSearching" />
+                            type="search"
+                            class="form-control"
+                            placeholder="Ví dụ: Nguyễn Văn An hoặc NV001"
+                            @bind="_keyword"
+                            @bind:event="oninput"
+                            disabled="@_isSearching" />
                     </div>
                 </div>
-
                 <div class="col-12 col-sm-7 col-lg-3">
-                    <label for="employee-status" class="form-label">Trạng thái</label>
-
+                    <label for="employee-status" class="form-label">
+                        Trạng thái
+                    </label>
                     <select id="employee-status"
-                            class="form-select"
-                            @bind="_statusFilter"
-                            disabled="@_isSearching">
-                        <option value="">Tất cả trạng thái</option>
-                        <option value="true">Đang làm việc</option>
-                        <option value="false">Đã nghỉ việc</option>
+                        class="form-select"
+                        @bind="_statusFilter"
+                        disabled="@_isSearching">
+                        <option value="">
+                            Tất cả trạng thái
+                        </option>
+                        <option value="true">
+                            Đang làm việc
+                        </option>
+                        <option value="false">
+                            Đã nghỉ việc
+                        </option>
                     </select>
                 </div>
-
                 <div class="col-12 col-sm-5 col-lg-3">
                     <button type="submit"
-                            class="btn btn-primary w-100 employees-search-button"
-                            disabled="@_isSearching">
+                        class="btn btn-primary w-100 employees-search-button"
+                        disabled="@_isSearching">
                         @(_isSearching ? "Đang tìm..." : "Tìm nhân viên")
                     </button>
                 </div>
             </div>
         </form>
-
         <section class="employees-list" aria-labelledby="employees-list-title" aria-busy="@_isSearching">
             <div class="employees-list-heading">
                 <div>
-                    <h2 id="employees-list-title">Nhân viên tại chi nhánh</h2>
+                    <h2 id="employees-list-title">
+                        Nhân viên tại chi nhánh
+                    </h2>
                 </div>
-
-                <span>@_employees.Count kết quả theo bộ lọc: @ActiveEmployeeCount đang làm, @InactiveEmployeeCount đã nghỉ</span>
+                <span>
+                    @_employees.Count kết quả theo bộ lọc: @ActiveEmployeeCount đang làm, @InactiveEmployeeCount đã nghỉ
+                </span>
             </div>
-
             @if (_employees.Count == 0)
             {
                 <div class="employees-empty bf-surface-card" role="status">
                     <h3 class="h5 mb-0">
                         @(HasActiveFilters
-                            ? "Không tìm thấy nhân viên phù hợp"
-                            : "Chi nhánh chưa có nhân viên")
+                        ? "Không tìm thấy nhân viên phù hợp"
+                        : "Chi nhánh chưa có nhân viên")
                     </h3>
-
                     <p>
                         @(HasActiveFilters
-                            ? "Hãy thử từ khóa khác hoặc xóa bộ lọc để xem toàn bộ đội ngũ."
-                            : "Khi nhân viên được phân công vào chi nhánh, hồ sơ sẽ xuất hiện tại đây.")
+                        ? "Hãy thử từ khóa khác hoặc xóa bộ lọc để xem toàn bộ đội ngũ."
+                        : "Khi nhân viên được phân công vào chi nhánh, hồ sơ sẽ xuất hiện tại đây.")
                     </p>
-
                     @if (HasActiveFilters)
                     {
                         <button type="button" class="btn btn-outline-primary" @onclick="ClearFiltersAsync">
@@ -161,8 +173,8 @@
                                 @if (!string.IsNullOrWhiteSpace(employee.AvatarUrl))
                                 {
                                     <img class="employee-avatar"
-                                         src="@employee.AvatarUrl"
-                                         alt="Ảnh đại diện của @employee.FullName" />
+                                        src="@employee.AvatarUrl"
+                                        alt="Ảnh đại diện của @employee.FullName" />
                                 }
                                 else
                                 {
@@ -170,47 +182,51 @@
                                         @GetEmployeeInitial(employee.FullName)
                                     </span>
                                 }
-
                                 <div class="employee-identity">
-                                    <span class="employee-code">@employee.EmployeeCode</span>
-                                    <h3>@employee.FullName</h3>
-                                    <p>@(employee.Position ?? "Chưa cập nhật chức vụ")</p>
+                                    <span class="employee-code">
+                                        @employee.EmployeeCode
+                                    </span>
+                                    <h3>
+                                        @employee.FullName
+                                    </h3>
+                                    <p>
+                                        @(employee.Position ?? "Chưa cập nhật chức vụ")
+                                    </p>
                                 </div>
-
                                 <span class="employee-status @(employee.IsActive ? "is-active" : "is-inactive")">
                                     @(employee.IsActive ? "Đang làm" : "Đã nghỉ")
                                 </span>
                             </header>
-
                             <dl class="employee-details">
                                 <div>
                                     <dt>
                                         Chi nhánh
                                     </dt>
-                                    <dd>@employee.BranchName</dd>
+                                    <dd>
+                                        @employee.BranchName
+                                    </dd>
                                 </div>
-
                                 <div>
                                     <dt>
                                         Ngày vào làm
                                     </dt>
-                                    <dd>@employee.HireDate.ToString("dd/MM/yyyy")</dd>
+                                    <dd>
+                                        @employee.HireDate.ToString("dd/MM/yyyy")
+                                    </dd>
                                 </div>
                             </dl>
-
                             <footer class="employee-card-footer">
                                 <a class="employee-profile-link"
-                                   href="@($"/employees/{employee.Id}?branchId={employee.BranchId}")">
+                                    href="@($"/employees/{employee.Id}?branchId={employee.BranchId}")">
                                     <span>
                                         Xem hồ sơ
                                     </span>
-
                                 </a>
                                 <AuthorizeView Roles="ADMIN">
                                     <Authorized>
                                         <a class="employee-profile-link"
-                                           href="@($"/employees/{employee.Id}/edit?branchId={employee.BranchId}")"
-                                           aria-label="Sửa hồ sơ @employee.FullName">
+                                            href="@($"/employees/{employee.Id}/edit?branchId={employee.BranchId}")"
+                                            aria-label="Sửa hồ sơ @employee.FullName">
                                             Sửa hồ sơ
                                         </a>
                                     </Authorized>
@@ -224,7 +240,8 @@
     }
 </div>
 
-@code {
+@code
+{
     // Nhận branchId từ URL: /employees?branchId=1
     [Parameter]
     [SupplyParameterFromQuery(Name = "branchId")]
@@ -233,30 +250,16 @@
     private string _keyword = string.Empty;
     private string _statusFilter = string.Empty;
     private string? _branchName;
-
-    private List<EmployeeListItemDTO> _employees =
-        new List<EmployeeListItemDTO>();
-
+    private List<EmployeeListItemDTO> _employees = new List<EmployeeListItemDTO>();
     private bool _isLoading = true;
     private bool _isSearching;
     private bool _hasLoaded;
     private int _loadedBranchId;
     private string? _errorMessage;
-
-    private int ActiveEmployeeCount =>
-        _employees.Count(employee => employee.IsActive);
-
-    private int InactiveEmployeeCount =>
-        _employees.Count(employee => !employee.IsActive);
-
-    private bool HasActiveFilters =>
-        !string.IsNullOrWhiteSpace(_keyword)
-        || !string.IsNullOrWhiteSpace(_statusFilter);
-
-    private string BranchDisplayName =>
-        !string.IsNullOrWhiteSpace(_branchName)
-            ? _branchName
-            : $"chi nhánh #{BranchId}";
+    private int ActiveEmployeeCount => _employees.Count(employee => employee.IsActive);
+    private int InactiveEmployeeCount => _employees.Count(employee => !employee.IsActive);
+    private bool HasActiveFilters => !string.IsNullOrWhiteSpace(_keyword) || !string.IsNullOrWhiteSpace(_statusFilter);
+    private string BranchDisplayName => !string.IsNullOrWhiteSpace(_branchName) ? _branchName : $"chi nhánh #{BranchId}";
 
     // Tải dữ liệu một lần sau khi component render lần đầu.
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -302,7 +305,6 @@
         _isLoading = !_hasLoaded;
         _isSearching = true;
         _errorMessage = null;
-
         try
         {
             if (BranchId <= 0)
@@ -312,13 +314,7 @@
             }
 
             bool? isActive = GetIsActiveFilter();
-
-            List<EmployeeListItemDTO>? employees =
-                await EmployeeApiService.GetEmployeesAsync(
-                    BranchId,
-                    _keyword,
-                    isActive);
-
+            List<EmployeeListItemDTO>? employees = await EmployeeApiService.GetEmployeesAsync(BranchId, _keyword, isActive);
             if (employees == null)
             {
                 _errorMessage = "Không thể tải danh sách nhân viên.";
@@ -327,10 +323,8 @@
 
             _employees = employees;
             _hasLoaded = true;
-
             // Giữ tên chi nhánh khi bộ lọc sau đó không có kết quả.
             EmployeeListItemDTO? firstEmployee = _employees.FirstOrDefault();
-
             if (firstEmployee != null)
             {
                 _branchName = firstEmployee.BranchName;
@@ -365,7 +359,6 @@
     {
         _keyword = string.Empty;
         _statusFilter = string.Empty;
-
         await LoadEmployeesAsync();
     }
 
@@ -377,9 +370,7 @@
             return "NV";
         }
 
-        string[] nameParts = fullName
-            .Split(' ', StringSplitOptions.RemoveEmptyEntries);
-
+        string[] nameParts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         if (nameParts.Length == 1)
         {
             return nameParts[0][0].ToString().ToUpperInvariant();
@@ -387,7 +378,6 @@
 
         string firstInitial = nameParts[0][0].ToString();
         string lastInitial = nameParts[nameParts.Length - 1][0].ToString();
-
         return (firstInitial + lastInitial).ToUpperInvariant();
     }
 }

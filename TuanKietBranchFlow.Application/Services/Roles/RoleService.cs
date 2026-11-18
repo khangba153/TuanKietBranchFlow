@@ -7,7 +7,6 @@ namespace TuanKietBranchFlow.Application.Services.Roles;
 public class RoleService : IRoleService
 {
     private readonly IRoleRepository _roleRepository;
-
     // Nhận RoleRepository từ DI
     public RoleService(IRoleRepository roleRepository)
     {
@@ -19,16 +18,13 @@ public class RoleService : IRoleService
     {
         // Repository chịu trách nhiệm truy vấn db
         List<Role> roles = await _roleRepository.GetAllNotDeletedAsync();
-
         // Service chọn trường trả cho giao diện
-        List<RoleDTO> result = roles
-            .Select(role => new RoleDTO
-            {
-                Id = role.Id,
-                Code = role.Code,
-                Name = role.Name
-            }).ToList();
-
+        List<RoleDTO> result = roles.Select(role => new RoleDTO
+        {
+            Id = role.Id,
+            Code = role.Code,
+            Name = role.Name
+        }).ToList();
         return result;
     }
 }

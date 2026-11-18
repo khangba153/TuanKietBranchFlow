@@ -7,6 +7,14 @@ public interface IEmployeeTransferRepository : IRepositoryBase<EmployeeTransferR
 {
     Task<EmployeeTransferRequest?> GetPendingAsync(int employeeId);
     Task<int?> GetEmployeeIdAsync(int requestId);
-    Task<List<EmployeeTransferRequest>> GetVisibleAsync(int userId, bool isOwner, bool incoming, int page, DateOnly today);
-    Task InvalidatePendingAsync(int employeeId, string reason, DateTime now);
+    Task<List<EmployeeTransferRequest>> GetVisibleAsync(
+        int userId,
+        bool isOwner,
+        bool incoming,
+        int page,
+        DateOnly today);
+    Task InvalidatePendingAsync(
+        int employeeId,
+        string reason,
+        DateTime now);
 }

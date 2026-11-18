@@ -9,7 +9,6 @@ public static class RefreshTokenHelper
     public static string GenerateToken()
     {
         byte[] randomBytes = RandomNumberGenerator.GetBytes(32);
-
         return Convert.ToBase64String(randomBytes);
     }
 
@@ -18,15 +17,11 @@ public static class RefreshTokenHelper
     {
         if (string.IsNullOrWhiteSpace(token))
         {
-            throw new ArgumentException(
-                "Refresh token không được để trống.",
-                nameof(token));
+            throw new ArgumentException("Refresh token không được để trống.", nameof(token));
         }
 
         byte[] tokenBytes = Encoding.UTF8.GetBytes(token);
-
         byte[] hashBytes = SHA256.HashData(tokenBytes);
-
         return Convert.ToHexString(hashBytes);
     }
 }

@@ -9,10 +9,6 @@ public class MyOrderResolutionDTO
     public string? AfterStatus { get; set; }
     public decimal? BeforeTotalAmount { get; set; }
     public decimal? AfterTotalAmount { get; set; }
-
-    public List<MyOrderDetailItemDTO> BeforeItems { get; set; } =
-        new List<MyOrderDetailItemDTO>();
-
-    public List<MyOrderDetailItemDTO> AfterItems { get; set; } =
-        new List<MyOrderDetailItemDTO>();
+    public List<MyOrderDetailItemDTO> BeforeItems { get; set; } = new List<MyOrderDetailItemDTO>();
+    public List<MyOrderDetailItemDTO> AfterItems { get; set; } = new List<MyOrderDetailItemDTO>();
 }

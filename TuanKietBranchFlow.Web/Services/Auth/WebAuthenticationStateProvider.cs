@@ -6,15 +6,12 @@ using Microsoft.AspNetCore.Components.Server;
 namespace TuanKietBranchFlow.Web.Services.Auth;
 
 // Nhận danh tính từ host và kiểm tra lại phiên trong Blazor circuit.
-public class WebAuthenticationStateProvider
-    : RevalidatingServerAuthenticationStateProvider
+public class WebAuthenticationStateProvider : RevalidatingServerAuthenticationStateProvider
 {
     private readonly IWebAuthSessionStore _sessionStore;
-
     public WebAuthenticationStateProvider(
         ILoggerFactory loggerFactory,
-        IWebAuthSessionStore sessionStore)
-        : base(loggerFactory)
+        IWebAuthSessionStore sessionStore) : base(loggerFactory)
     {
         _sessionStore = sessionStore;
     }
@@ -34,31 +31,20 @@ public class WebAuthenticationStateProvider
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-
         ClaimsPrincipal user = authenticationState.User;
-
         if (user.Identity?.IsAuthenticated != true)
         {
             return Task.FromResult(false);
         }
 
-        string? sessionIdValue = user.FindFirstValue(
-            WebCookieAuthenticationEvents.WebSessionIdClaim);
-
-        string? userIdValue = user.FindFirstValue(
-            ClaimTypes.NameIdentifier);
-
-        if (!Guid.TryParse(sessionIdValue, out Guid sessionId) ||
-            sessionId == Guid.Empty ||
-            !int.TryParse(userIdValue, out int userId) ||
-            userId <= 0)
+        string? sessionIdValue = user.FindFirstValue(WebCookieAuthenticationEvents.WebSessionIdClaim);
+        string? userIdValue = user.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(sessionIdValue, out Guid sessionId) || sessionId == Guid.Empty || !int.TryParse(userIdValue, out int userId) || userId <= 0)
         {
             return Task.FromResult(false);
         }
 
-        WebAuthSession? session =
-            _sessionStore.GetById(sessionId);
-
+        WebAuthSession? session = _sessionStore.GetById(sessionId);
         if (session == null || session.UserId != userId)
         {
             return Task.FromResult(false);
@@ -76,25 +62,15 @@ public class WebAuthenticationStateProvider
         }
 
         _sessionStore.Remove(webSessionId);
-
-        AuthenticationState authenticationState =
-            await GetAuthenticationStateAsync();
-
-        string? currentSessionIdValue =
-            authenticationState.User.FindFirstValue(
-                WebCookieAuthenticationEvents.WebSessionIdClaim);
-
+        AuthenticationState authenticationState = await GetAuthenticationStateAsync();
+        string? currentSessionIdValue = authenticationState.User.FindFirstValue(WebCookieAuthenticationEvents.WebSessionIdClaim);
         // Response của phiên cũ không được làm mất danh tính phiên khác.
-        if (!Guid.TryParse(currentSessionIdValue, out Guid currentSessionId) ||
-            currentSessionId != webSessionId)
+        if (!Guid.TryParse(currentSessionIdValue, out Guid currentSessionId) || currentSessionId != webSessionId)
         {
             return;
         }
 
-        ClaimsPrincipal anonymousUser =
-            new ClaimsPrincipal(new ClaimsIdentity());
-
-        SetAuthenticationState(Task.FromResult(
-            new AuthenticationState(anonymousUser)));
+        ClaimsPrincipal anonymousUser = new ClaimsPrincipal(new ClaimsIdentity());
+        SetAuthenticationState(Task.FromResult(new AuthenticationState(anonymousUser)));
     }
 }

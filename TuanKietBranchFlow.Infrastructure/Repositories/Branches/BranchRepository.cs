@@ -19,43 +19,31 @@ public class BranchRepository : RepositoryBase<Branch>, IBranchRepository
     }
 
     // Lấy chi nhánh dựa theo phân công trong UserBranch
-    public async Task<List<Branch>> GetAssignedBranchesAsync(int userId, DateOnly currentDate)
+    public async Task<List<Branch>> GetAssignedBranchesAsync(
+        int userId,
+        DateOnly currentDate)
     {
-        return await Context.Branches
-            .Where(branch => !branch.Deleted
-                && branch.UserBranches.Any(userBranch =>
-                userBranch.UserId == userId
-                && userBranch.ActiveFrom <= currentDate
-                && (userBranch.ActiveTo == null || userBranch.ActiveTo >= currentDate)))
-            .ToListAsync();
+        return await Context.Branches.Where(branch => !branch.Deleted && branch.UserBranches.Any(userBranch => userBranch.UserId == userId && userBranch.ActiveFrom <= currentDate && (userBranch.ActiveTo == null || userBranch.ActiveTo >= currentDate))).ToListAsync();
     }
 
     // Lấy 1 chi nhánh chưa xóa theo Id
     public async Task<Branch?> GetNotDeletedByIdAsync(int branchId)
     {
-        return await Context.Branches
-            .SingleOrDefaultAsync(branch =>
-            branch.Id == branchId && !branch.Deleted);
+        return await Context.Branches.SingleOrDefaultAsync(branch => branch.Id == branchId && !branch.Deleted);
     }
 
     // Kiêm trả phân công của người dùng tại 1 chi nhánh
-    public async Task<bool> HasActiveAssignmentAsync(int userId, int branchId, DateOnly currentDate)
+    public async Task<bool> HasActiveAssignmentAsync(
+        int userId,
+        int branchId,
+        DateOnly currentDate)
     {
-        return await Context.UserBranches
-        .AnyAsync(userBranch =>
-           userBranch.UserId == userId
-           && userBranch.BranchId == branchId
-           && userBranch.ActiveFrom <= currentDate
-           && (userBranch.ActiveTo == null || userBranch.ActiveTo >= currentDate));
+        return await Context.UserBranches.AnyAsync(userBranch => userBranch.UserId == userId && userBranch.BranchId == branchId && userBranch.ActiveFrom <= currentDate && (userBranch.ActiveTo == null || userBranch.ActiveTo >= currentDate));
     }
 
     // Lấy các chi nhánh hiện đang hoạt động và chưa bị xóa
     public async Task<List<Branch>> GetActiveNotDeletedAsync()
     {
-        return await Context.Branches
-            .AsNoTracking()
-            .Where(branch => branch.IsActive && !branch.Deleted)
-            .OrderBy(branch => branch.Id)
-            .ToListAsync();
+        return await Context.Branches.AsNoTracking().Where(branch => branch.IsActive && !branch.Deleted).OrderBy(branch => branch.Id).ToListAsync();
     }
 }

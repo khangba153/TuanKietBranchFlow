@@ -8,10 +8,8 @@ public class EmployeeDetailDTO
     public string FullName { get; set; } = string.Empty;
     public DateOnly? DateOfBirth { get; set; }
     public DateOnly HireDate { get; set; }
-
     // Cho biết tài khoản nhân viên còn hoạt động hay không
     public bool IsActive { get; set; }
-
     // Ngày nhân viên bắt đầu nghỉ
     public DateOnly? LeaveDate { get; set; }
     public string? Position { get; set; }
@@ -20,8 +18,6 @@ public class EmployeeDetailDTO
     public string? Email { get; set; }
     public string? Address { get; set; }
     public string? AvatarUrl { get; set; }
-
     // Lịch sử các chi nhánh nhân viên từng được phân công
     public List<EmployeeBranchHistoryDTO> BranchHistory { get; set; } = new List<EmployeeBranchHistoryDTO>();
-
 }

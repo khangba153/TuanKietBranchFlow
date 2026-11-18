@@ -1,64 +1,61 @@
 @page "/login"
 @layout AuthLayout
 @attribute [ExcludeFromInteractiveRouting]
-
-<PageTitle>Đăng nhập</PageTitle>
-
+<PageTitle>
+    Đăng nhập
+</PageTitle>
 <div class="login-page">
     <div class="login-shell">
         <section class="login-intro" aria-label="BranchFlow">
             <h1 class="login-brand">
-                <span class="login-brand-mark" aria-hidden="true">B</span>
-                <span>BranchFlow</span>
+                <span class="login-brand-mark" aria-hidden="true">
+                    B
+                </span>
+                <span>
+                    BranchFlow
+                </span>
             </h1>
         </section>
-
         <section class="login-form-panel" aria-labelledby="login-form-title">
             <div class="login-form-content">
                 <span class="login-form-eyebrow">
                     Chào mừng trở lại
                 </span>
-
-                <h2 id="login-form-title">Đăng nhập</h2>
-
+                <h2 id="login-form-title">
+                    Đăng nhập
+                </h2>
                 <p class="login-form-description">
                     Nhập thông tin tài khoản để tiếp tục công việc của bạn.
                 </p>
-
                 @if (!string.IsNullOrWhiteSpace(_errorMessage))
                 {
                     <div class="alert alert-danger login-alert" role="alert" aria-live="polite">
                         @_errorMessage
                     </div>
                 }
-
                 @* Gửi form bằng HTTP thông thường đến controller Web. *@
                 <form method="post" action="/auth/login" data-enhance="false">
                     <AntiforgeryToken />
-
                     <div class="login-field">
                         <label for="username" class="form-label">
                             Tên đăng nhập
                         </label>
-
                         <input id="username" name="Username" type="text" class="form-control"
-                               placeholder="Nhập tên đăng nhập" autocomplete="username" maxlength="100" required />
+                            placeholder="Nhập tên đăng nhập" autocomplete="username" maxlength="100" required />
                     </div>
-
                     <div class="login-field">
                         <label for="password" class="form-label">
                             Mật khẩu
                         </label>
-
                         <input id="password" name="Password" type="password" class="form-control"
-                               placeholder="Nhập mật khẩu" autocomplete="current-password" maxlength="100" required />
+                            placeholder="Nhập mật khẩu" autocomplete="current-password" maxlength="100" required />
                     </div>
-
                     <button type="submit" class="btn btn-primary login-submit">
-                        <span>Đăng nhập</span>
+                        <span>
+                            Đăng nhập
+                        </span>
                     </button>
                 </form>
-
                 <p class="login-help">
                     Nếu bạn chưa có tài khoản hoặc không thể đăng nhập,
                     hãy liên hệ người quản lý.
@@ -68,34 +65,29 @@
     </div>
 </div>
 
-@code {
+@code
+{
     // Nhận mã lỗi từ query string trên URL.
     [SupplyParameterFromQuery(Name = "error")]
     private string? ErrorCode { get; set; }
 
     // Chứa thông báo cố định để hiển thị trên giao diện.
     private string? _errorMessage;
-
     // Chuyển mã lỗi được hỗ trợ thành thông báo cố định cho người dùng.
     protected override void OnParametersSet()
     {
         _errorMessage = null;
-
         if (ErrorCode == "invalid-input")
         {
-            _errorMessage =
-                "Thông tin đăng nhập không hợp lệ. Vui lòng kiểm tra lại.";
+            _errorMessage = "Thông tin đăng nhập không hợp lệ. Vui lòng kiểm tra lại.";
         }
         else if (ErrorCode == "rejected")
         {
-            _errorMessage =
-                "Không thể đăng nhập. Vui lòng kiểm tra tài khoản và mật khẩu.";
+            _errorMessage = "Không thể đăng nhập. Vui lòng kiểm tra tài khoản và mật khẩu.";
         }
         else if (ErrorCode == "logout-unconfirmed")
         {
-            _errorMessage =
-                "Phiên đăng nhập Web hiện tại đã kết thúc. "
-                + "Hệ thống chưa xác nhận được việc thu hồi tất cả phiên API.";
+            _errorMessage = "Phiên đăng nhập Web hiện tại đã kết thúc. " + "Hệ thống chưa xác nhận được việc thu hồi tất cả phiên API.";
         }
     }
 }

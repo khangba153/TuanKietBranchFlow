@@ -9,9 +9,7 @@ namespace TuanKietBranchFlow.Web.Services.Auth;
 public class WebCookieSignInService
 {
     private readonly IWebAuthSessionStore _sessionStore;
-
-    public WebCookieSignInService(
-        IWebAuthSessionStore sessionStore)
+    public WebCookieSignInService(IWebAuthSessionStore sessionStore)
     {
         _sessionStore = sessionStore;
     }
@@ -23,43 +21,31 @@ public class WebCookieSignInService
     {
         if (_sessionStore.GetById(session.Id) != session)
         {
-            throw new InvalidOperationException(
-                "Phiên Web chưa được lưu hoặc đã hết hạn.");
+            throw new InvalidOperationException("Phiên Web chưa được lưu hoặc đã hết hạn.");
         }
 
         List<Claim> claims = new List<Claim>
+
         {
-            new Claim(
-                WebCookieAuthenticationEvents.WebSessionIdClaim,
-                session.Id.ToString()),
 
-            new Claim(
-                ClaimTypes.NameIdentifier,
-                session.UserId.ToString()),
-
+            new Claim(WebCookieAuthenticationEvents.WebSessionIdClaim, session.Id.ToString()),
+            new Claim(ClaimTypes.NameIdentifier, session.UserId.ToString()),
             new Claim(ClaimTypes.Name, session.Username),
             new Claim(ClaimTypes.Role, session.Role)
+
         };
-
-        ClaimsIdentity identity = new ClaimsIdentity(
-            claims,
-            CookieAuthenticationDefaults.AuthenticationScheme);
-
+        ClaimsIdentity identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
         ClaimsPrincipal principal = new ClaimsPrincipal(identity);
+        AuthenticationProperties properties = new AuthenticationProperties
 
-        AuthenticationProperties properties =
-            new AuthenticationProperties
-            {
-                IsPersistent = false,
-                AllowRefresh = false,
-                ExpiresUtc = new DateTimeOffset(
-                    session.RefreshTokenExpiresAt)
-            };
+        {
 
-        await httpContext.SignInAsync(
-            CookieAuthenticationDefaults.AuthenticationScheme,
-            principal,
-            properties);
+            IsPersistent = false,
+            AllowRefresh = false,
+            ExpiresUtc = new DateTimeOffset(session.RefreshTokenExpiresAt)
+
+        };
+        await httpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, properties);
     }
 
     // Xóa cookie đăng nhập thông qua HTTP response của Web.
@@ -67,11 +53,9 @@ public class WebCookieSignInService
     {
         if (httpContext.Response.HasStarted)
         {
-            throw new InvalidOperationException(
-                "Không thể xóa cookie khi HTTP response đã bắt đầu.");
+            throw new InvalidOperationException("Không thể xóa cookie khi HTTP response đã bắt đầu.");
         }
 
-        await httpContext.SignOutAsync(
-            CookieAuthenticationDefaults.AuthenticationScheme);
+        await httpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
     }
 }

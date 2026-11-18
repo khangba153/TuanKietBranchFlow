@@ -4,7 +4,6 @@
 @using System.Text.Json
 @inject NoteGroupApiService NoteGroupApiService
 @inject NoteOptionApiService NoteOptionApiService
-
 <AuthorizeView Roles="OWNER,ADMIN">
     <Authorized>
         <section class="bf-surface-card overflow-hidden" aria-labelledby="note-group-title">
@@ -18,76 +17,73 @@
                         Cấu hình dùng chung; mỗi món chỉ chọn tối đa một lựa chọn trong mỗi nhóm.
                     </p>
                 </div>
-
                 <AuthorizeView Roles="ADMIN">
                     <Authorized Context="addGroupAuthorization">
                         <button type="button" class="btn btn-outline-primary align-self-start align-self-sm-auto"
-                                @onclick="ShowCreateNoteGroupForm" disabled="@(HasOpenNoteOperation || _isCreateNoteGroupFormVisible
-                                || _isCreatingNoteGroup
-                                || _editingNoteGroupId.HasValue
-                                || _isUpdatingNoteGroup
-                                || _noteGroupPendingDelete != null
-                                || _deletingNoteGroupId.HasValue
-                                || _creatingNoteGroupId.HasValue
-                                || _isCreatingNoteOption
-                                || _editingNoteOptionId.HasValue
-                                || _isUpdatingNoteOption
-                                                || _noteOptionPendingDelete != null
-                                                || _deletingNoteOptionId.HasValue)">
+                            @onclick="ShowCreateNoteGroupForm" disabled="@(HasOpenNoteOperation || _isCreateNoteGroupFormVisible
+                            || _isCreatingNoteGroup
+                            || _editingNoteGroupId.HasValue
+                            || _isUpdatingNoteGroup
+                            || _noteGroupPendingDelete != null
+                            || _deletingNoteGroupId.HasValue
+                            || _creatingNoteGroupId.HasValue
+                            || _isCreatingNoteOption
+                            || _editingNoteOptionId.HasValue
+                            || _isUpdatingNoteOption
+                            || _noteOptionPendingDelete != null
+                            || _deletingNoteOptionId.HasValue)">
                             Thêm nhóm
                         </button>
                     </Authorized>
                 </AuthorizeView>
             </header>
-
             <AuthorizeView Roles="ADMIN">
                 <Authorized Context="createGroupAuthorization">
                     @if (_isCreateNoteGroupFormVisible)
                     {
                         <section class="p-3 p-md-4 border-bottom bg-body-tertiary"
-                                 aria-labelledby="create-note-group-title">
+                            aria-labelledby="create-note-group-title">
                             <h3 id="create-note-group-title" class="h6 mb-3">
                                 Thêm nhóm ghi chú
                             </h3>
-
                             @if (!string.IsNullOrWhiteSpace(_createNoteGroupErrorMessage))
                             {
                                 <div class="alert alert-danger" role="alert">
                                     @_createNoteGroupErrorMessage
                                 </div>
                             }
-
                             <div class="row g-3 align-items-end">
                                 <div class="col-12 col-md">
                                     <label for="note-group-name" class="form-label">
                                         Tên nhóm ghi chú
                                     </label>
-
                                     <input id="note-group-name" type="text" class="form-control" maxlength="100"
-                                           placeholder="Ví dụ: Đường" aria-describedby="note-group-name-help"
-                                           @bind="_newNoteGroupName" disabled="@_isCreatingNoteGroup" />
-
+                                        placeholder="Ví dụ: Đường" aria-describedby="note-group-name-help"
+                                        @bind="_newNoteGroupName" disabled="@_isCreatingNoteGroup" />
                                     <div id="note-group-name-help" class="form-text">
                                         Tên nhóm ghi chú tối đa 100 ký tự.
                                     </div>
                                 </div>
-
                                 <div class="col-12 col-md-auto d-flex gap-2">
                                     <button type="button" class="btn btn-outline-secondary"
-                                            @onclick="CancelCreateNoteGroup" disabled="@_isCreatingNoteGroup">
+                                        @onclick="CancelCreateNoteGroup" disabled="@_isCreatingNoteGroup">
                                         Hủy
                                     </button>
-
                                     <button type="button" class="btn btn-primary" @onclick="CreateNoteGroupAsync"
-                                            disabled="@_isCreatingNoteGroup">
+                                        disabled="@_isCreatingNoteGroup">
                                         @if (_isCreatingNoteGroup)
                                         {
-                                            <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
-                                            <span>Đang lưu...</span>
+                                            <span class="spinner-border spinner-border-sm me-2" aria-hidden="true">
+                                            </span>
+                                            <span>
+                                                Đang lưu...
+                                            </span>
                                         }
                                         else
                                         {
-                                            <span>Lưu nhóm ghi chú</span>
+                                            <span>
+                                                Lưu nhóm ghi chú
+                                            </span>
                                         }
                                     </button>
                                 </div>
@@ -96,12 +92,14 @@
                     }
                 </Authorized>
             </AuthorizeView>
-
             @if (_isLoadingNoteGroups)
             {
                 <div class="p-3 p-md-4" role="status">
-                    <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
-                    <span>Đang tải nhóm ghi chú...</span>
+                    <span class="spinner-border spinner-border-sm me-2" aria-hidden="true">
+                    </span>
+                    <span>
+                        Đang tải nhóm ghi chú...
+                    </span>
                 </div>
             }
             else if (!string.IsNullOrWhiteSpace(_noteGroupsErrorMessage))
@@ -109,9 +107,8 @@
                 <div class="p-3 p-md-4">
                     <div class="alert alert-danger mb-0" role="alert">
                         @_noteGroupsErrorMessage
-
                         <button type="button" class="btn btn-outline-danger btn-sm ms-2"
-                                @onclick="LoadNoteGroupsAsync" disabled="@HasOpenNoteOperation">
+                            @onclick="LoadNoteGroupsAsync" disabled="@HasOpenNoteOperation">
                             Thử lại
                         </button>
                     </div>
@@ -134,8 +131,9 @@
                             <div class="d-flex flex-column flex-lg-row
                                 align-items-lg-center gap-3">
                                 <div class="d-flex align-items-center gap-2 flex-shrink-0">
-                                    <h3 class="h6 mb-0">@noteGroup.Name</h3>
-
+                                    <h3 class="h6 mb-0">
+                                        @noteGroup.Name
+                                    </h3>
                                     @if (noteGroup.IsActive)
                                     {
                                         <span class="badge rounded-pill text-bg-success">
@@ -149,27 +147,26 @@
                                         </span>
                                     }
                                 </div>
-
                                 <AuthorizeView Roles="ADMIN">
                                     <Authorized Context="editGroupAuthorization">
                                         <div class="d-flex flex-wrap gap-2">
-                                        <button type="button"
+                                            <button type="button"
                                                 class="btn btn-outline-primary btn-sm align-self-start align-self-lg-center"
                                                 @onclick="() => ShowCreateNoteOptionForm(noteGroup)" disabled="@(HasOpenNoteOperation || _creatingNoteGroupId.HasValue
-                                                            || _isCreatingNoteOption
-                                                            || _isCreateNoteGroupFormVisible
-                                                            || _isCreatingNoteGroup
-                                                            || _editingNoteGroupId.HasValue
-                                                            || _isUpdatingNoteGroup
-                                                            || _noteGroupPendingDelete != null
-                                                            || _deletingNoteGroupId.HasValue
-                                                            || _editingNoteOptionId.HasValue
-                                                            || _isUpdatingNoteOption
+                                                || _isCreatingNoteOption
+                                                || _isCreateNoteGroupFormVisible
+                                                || _isCreatingNoteGroup
+                                                || _editingNoteGroupId.HasValue
+                                                || _isUpdatingNoteGroup
+                                                || _noteGroupPendingDelete != null
+                                                || _deletingNoteGroupId.HasValue
+                                                || _editingNoteOptionId.HasValue
+                                                || _isUpdatingNoteOption
                                                 || _noteOptionPendingDelete != null
                                                 || _deletingNoteOptionId.HasValue)">
-                                            Thêm lựa chọn
-                                        </button>
-                                        <button type="button"
+                                                Thêm lựa chọn
+                                            </button>
+                                            <button type="button"
                                                 class="btn btn-outline-primary btn-sm align-self-start align-self-lg-center"
                                                 @onclick="() => StartEditNoteGroup(noteGroup)" disabled="@(HasOpenNoteOperation || _isUpdatingNoteGroup
                                                 || _isCreatingNoteGroup
@@ -181,25 +178,24 @@
                                                 || _isUpdatingNoteOption
                                                 || _noteOptionPendingDelete != null
                                                 || _deletingNoteOptionId.HasValue)">
-                                            Sửa
-                                        </button>
-
-                                        <button type="button"
+                                                Sửa
+                                            </button>
+                                            <button type="button"
                                                 class="btn btn-outline-danger btn-sm align-self-start align-self-lg-center"
                                                 @onclick="() => RequestNoteGroupDelete(noteGroup)" disabled="@(HasOpenNoteOperation || _noteGroupPendingDelete != null
-                                                            || _deletingNoteGroupId.HasValue
-                                                            || _isCreatingNoteGroup
-                                                            || _isCreateNoteGroupFormVisible
-                                                            || _isUpdatingNoteGroup
-                                                            || _editingNoteGroupId.HasValue
-                                                            || _creatingNoteGroupId.HasValue
-                                                            || _isCreatingNoteOption
-                                                            || _editingNoteOptionId.HasValue
-                                                            || _isUpdatingNoteOption
+                                                || _deletingNoteGroupId.HasValue
+                                                || _isCreatingNoteGroup
+                                                || _isCreateNoteGroupFormVisible
+                                                || _isUpdatingNoteGroup
+                                                || _editingNoteGroupId.HasValue
+                                                || _creatingNoteGroupId.HasValue
+                                                || _isCreatingNoteOption
+                                                || _editingNoteOptionId.HasValue
+                                                || _isUpdatingNoteOption
                                                 || _noteOptionPendingDelete != null
                                                 || _deletingNoteOptionId.HasValue)">
-                                            Xóa
-                                        </button>
+                                                Xóa
+                                            </button>
                                         </div>
                                     </Authorized>
                                 </AuthorizeView>
@@ -219,10 +215,9 @@
                                             <div class="list-group-item">
                                                 <div class="d-flex flex-column flex-sm-row
                                                     align-items-sm-center justify-content-between gap-3">
-                                                    <div class="fw-semibold">@noteOption.Name</div>
-
-
-
+                                                    <div class="fw-semibold">
+                                                        @noteOption.Name
+                                                    </div>
                                                     <div class="d-flex flex-wrap align-items-center gap-2">
                                                         @if (noteOption.IsActive)
                                                         {
@@ -236,37 +231,35 @@
                                                                 Tạm ngừng
                                                             </span>
                                                         }
-
                                                         <AuthorizeView Roles="ADMIN">
                                                             <Authorized Context="noteOptionActionsAuthorization">
                                                                 <button type="button" class="btn btn-outline-primary btn-sm"
-                                                                        @onclick="() => StartEditNoteOption(noteGroup, noteOption)"
-                                                                        disabled="@(HasOpenNoteOperation || _isUpdatingNoteOption
-                                                                                    || _isCreatingNoteOption
-                                                                                    || _creatingNoteGroupId.HasValue
-                                                                                    || _isCreateNoteGroupFormVisible
-                                                                                    || _isCreatingNoteGroup
-                                                                                    || _editingNoteGroupId.HasValue
-                                                                                    || _isUpdatingNoteGroup
-                                                                                    || _noteGroupPendingDelete != null
-                                                                                    || _deletingNoteGroupId.HasValue)">
+                                                                    @onclick="() => StartEditNoteOption(noteGroup, noteOption)"
+                                                                    disabled="@(HasOpenNoteOperation || _isUpdatingNoteOption
+                                                                    || _isCreatingNoteOption
+                                                                    || _creatingNoteGroupId.HasValue
+                                                                    || _isCreateNoteGroupFormVisible
+                                                                    || _isCreatingNoteGroup
+                                                                    || _editingNoteGroupId.HasValue
+                                                                    || _isUpdatingNoteGroup
+                                                                    || _noteGroupPendingDelete != null
+                                                                    || _deletingNoteGroupId.HasValue)">
                                                                     Sửa
                                                                 </button>
-
                                                                 <button type="button" class="btn btn-outline-danger btn-sm"
-                                                                        @onclick="() => RequestNoteOptionDelete(noteGroup, noteOption)"
-                                                                        disabled="@(HasOpenNoteOperation || _noteOptionPendingDelete != null
-                                                                                    || _deletingNoteOptionId.HasValue
-                                                                                    || _isCreatingNoteOption
-                                                                                    || _creatingNoteGroupId.HasValue
-                                                                                    || _isUpdatingNoteOption
-                                                                                    || _editingNoteOptionId.HasValue
-                                                                                    || _isCreatingNoteGroup
-                                                                                    || _isCreateNoteGroupFormVisible
-                                                                                    || _isUpdatingNoteGroup
-                                                                                    || _editingNoteGroupId.HasValue
-                                                                                    || _noteGroupPendingDelete != null
-                                                                                    || _deletingNoteGroupId.HasValue)">
+                                                                    @onclick="() => RequestNoteOptionDelete(noteGroup, noteOption)"
+                                                                    disabled="@(HasOpenNoteOperation || _noteOptionPendingDelete != null
+                                                                    || _deletingNoteOptionId.HasValue
+                                                                    || _isCreatingNoteOption
+                                                                    || _creatingNoteGroupId.HasValue
+                                                                    || _isUpdatingNoteOption
+                                                                    || _editingNoteOptionId.HasValue
+                                                                    || _isCreatingNoteGroup
+                                                                    || _isCreateNoteGroupFormVisible
+                                                                    || _isUpdatingNoteGroup
+                                                                    || _editingNoteGroupId.HasValue
+                                                                    || _noteGroupPendingDelete != null
+                                                                    || _deletingNoteGroupId.HasValue)">
                                                                     Xóa
                                                                 </button>
                                                             </Authorized>
@@ -278,7 +271,7 @@
                                                         @if (_editingNoteOptionId == noteOption.Id)
                                                         {
                                                             <section class="mt-3 p-3 border rounded bg-body-tertiary"
-                                                                     aria-labelledby="@($"edit-noteOption-title-{noteOption.Id}")">
+                                                                aria-labelledby="@($"edit-noteOption-title-{noteOption.Id}")">
                                                                 <h4 id="@($"edit-noteOption-title-{noteOption.Id}")" class="h6 mb-3">
                                                                     Thông tin lựa chọn
                                                                 </h4>
@@ -291,45 +284,53 @@
                                                                 <div class="row g-3">
                                                                     <div class="col-12 col-md-7">
                                                                         <label for="@($"edit-noteOption-name-{noteOption.Id}")"
-                                                                               class="form-label">Tên lựa chọn</label>
+                                                                            class="form-label">
+                                                                            Tên lựa chọn
+                                                                        </label>
                                                                         <input id="@($"edit-noteOption-name-{noteOption.Id}")"
-                                                                               type="text" class="form-control" maxlength="100" @bind="_editedNoteOptionName"
-                                                                               disabled="@_isUpdatingNoteOption" />
+                                                                            type="text" class="form-control" maxlength="100" @bind="_editedNoteOptionName"
+                                                                            disabled="@_isUpdatingNoteOption" />
                                                                     </div>
-
-
-
                                                                     <div class="col-12 col-md-5">
                                                                         <label for="@($"edit-noteOption-status-{noteOption.Id}")"
-                                                                               class="form-label">Trạng thái</label>
+                                                                            class="form-label">
+                                                                            Trạng thái
+                                                                        </label>
                                                                         <select id="@($"edit-noteOption-status-{noteOption.Id}")"
-                                                                                class="form-select"
-                                                                                value="@(_editedNoteOptionIsActive ? "true" : "false")"
-                                                                                @onchange="OnEditedNoteOptionStatusChanged"
-                                                                                disabled="@_isUpdatingNoteOption">
-                                                                            <option value="true">Đang hoạt động</option>
-                                                                            <option value="false">Tạm ngừng</option>
+                                                                            class="form-select"
+                                                                            value="@(_editedNoteOptionIsActive ? "true" : "false")"
+                                                                            @onchange="OnEditedNoteOptionStatusChanged"
+                                                                            disabled="@_isUpdatingNoteOption">
+                                                                            <option value="true">
+                                                                                Đang hoạt động
+                                                                            </option>
+                                                                            <option value="false">
+                                                                                Tạm ngừng
+                                                                            </option>
                                                                         </select>
                                                                     </div>
-
                                                                     <div class="col-12 d-flex justify-content-end gap-2">
                                                                         <button type="button" class="btn btn-outline-secondary"
-                                                                                @onclick="CancelEditNoteOption" disabled="@_isUpdatingNoteOption">
+                                                                            @onclick="CancelEditNoteOption" disabled="@_isUpdatingNoteOption">
                                                                             Hủy
                                                                         </button>
-
                                                                         <button type="button" class="btn btn-primary"
-                                                                                @onclick="SaveNoteOptionChangesAsync"
-                                                                                disabled="@_isUpdatingNoteOption">
+                                                                            @onclick="SaveNoteOptionChangesAsync"
+                                                                            disabled="@_isUpdatingNoteOption">
                                                                             @if (_isUpdatingNoteOption)
                                                                             {
                                                                                 <span class="spinner-border spinner-border-sm me-2"
-                                                                                      aria-hidden="true"></span>
-                                                                                <span>Đang lưu...</span>
+                                                                                    aria-hidden="true">
+                                                                                </span>
+                                                                                <span>
+                                                                                    Đang lưu...
+                                                                                </span>
                                                                             }
                                                                             else
                                                                             {
-                                                                                <span>Lưu thay đổi</span>
+                                                                                <span>
+                                                                                    Lưu thay đổi
+                                                                                </span>
                                                                             }
                                                                         </button>
                                                                     </div>
@@ -338,58 +339,60 @@
                                                         }
                                                     </Authorized>
                                                 </AuthorizeView>
-
                                                 <AuthorizeView Roles="ADMIN">
                                                     <Authorized Context="deleteNoteOptionFormAuthorization">
                                                         @if (_noteOptionPendingDelete?.Id == noteOption.Id
-                                                             && _noteGroupIdForDelete == noteGroup.Id)
+                                                        && _noteGroupIdForDelete == noteGroup.Id)
                                                         {
                                                             <section class="mt-3 p-3 border rounded bg-body-tertiary"
-                                                                     aria-labelledby="@($"delete-noteOption-title-{noteOption.Id}")">
+                                                                aria-labelledby="@($"delete-noteOption-title-{noteOption.Id}")">
                                                                 <h4 id="@($"delete-noteOption-title-{noteOption.Id}")"
                                                                     class="h6 mb-2">
                                                                     Xác nhận xóa lựa chọn ghi chú
                                                                 </h4>
-
                                                                 <p>
                                                                     Bạn có chắc muốn xóa lựa chọn ghi chú
-                                                                    <strong>@noteOption.Name</strong>?
+                                                                    <strong>
+                                                                        @noteOption.Name
+                                                                    </strong>
+                                                                    ?
                                                                 </p>
-
                                                                 <div class="alert alert-warning" role="alert">
                                                                     Lựa chọn ghi chú sẽ bị ẩn khỏi menu nhân viên.
                                                                     Dữ liệu và lịch sử đơn hàng vẫn được giữ trong database.
                                                                 </div>
-
                                                                 @if (!string.IsNullOrWhiteSpace(_deleteNoteOptionErrorMessage))
                                                                 {
                                                                     <div class="alert alert-danger" role="alert">
                                                                         @_deleteNoteOptionErrorMessage
                                                                     </div>
                                                                 }
-
                                                                 <div class="d-flex flex-column flex-sm-row
                                                                     justify-content-sm-end gap-2">
                                                                     <button type="button"
-                                                                            class="btn btn-outline-secondary"
-                                                                            @onclick="CancelNoteOptionDelete"
-                                                                            disabled="@_deletingNoteOptionId.HasValue">
+                                                                        class="btn btn-outline-secondary"
+                                                                        @onclick="CancelNoteOptionDelete"
+                                                                        disabled="@_deletingNoteOptionId.HasValue">
                                                                         Hủy
                                                                     </button>
-
                                                                     <button type="button"
-                                                                            class="btn btn-danger"
-                                                                            @onclick="ConfirmNoteOptionDeleteAsync"
-                                                                            disabled="@_deletingNoteOptionId.HasValue">
+                                                                        class="btn btn-danger"
+                                                                        @onclick="ConfirmNoteOptionDeleteAsync"
+                                                                        disabled="@_deletingNoteOptionId.HasValue">
                                                                         @if (_deletingNoteOptionId == noteOption.Id)
                                                                         {
                                                                             <span class="spinner-border spinner-border-sm me-2"
-                                                                                  aria-hidden="true"></span>
-                                                                            <span>Đang xóa...</span>
+                                                                                aria-hidden="true">
+                                                                            </span>
+                                                                            <span>
+                                                                                Đang xóa...
+                                                                            </span>
                                                                         }
                                                                         else
                                                                         {
-                                                                            <span>Xác nhận xóa</span>
+                                                                            <span>
+                                                                                Xác nhận xóa
+                                                                            </span>
                                                                         }
                                                                     </button>
                                                                 </div>
@@ -407,7 +410,7 @@
                                     @if (_creatingNoteGroupId == noteGroup.Id)
                                     {
                                         <section class="mt-3 p-3 border rounded bg-body-tertiary"
-                                                 aria-labelledby="@($"create-noteOption-title-{noteGroup.Id}")">
+                                            aria-labelledby="@($"create-noteOption-title-{noteGroup.Id}")">
                                             <h4 id="@($"create-noteOption-title-{noteGroup.Id}")" class="h6 mb-3">
                                                 Thêm lựa chọn vào nhóm @noteGroup.Name
                                             </h4>
@@ -422,31 +425,31 @@
                                                     <label for="@($"new-noteOption-name-{noteGroup.Id}")" class="form-label">
                                                         Tên lựa chọn ghi chú
                                                     </label>
-
                                                     <input id="@($"new-noteOption-name-{noteGroup.Id}")" type="text"
-                                                           class="form-control" maxlength="100" placeholder="Ví dụ: Ít đường"
-                                                           @bind="_newNoteOptionName" disabled="@_isCreatingNoteOption" />
+                                                        class="form-control" maxlength="100" placeholder="Ví dụ: Ít đường"
+                                                        @bind="_newNoteOptionName" disabled="@_isCreatingNoteOption" />
                                                 </div>
-
-
-
                                                 <div class="col-12 d-flex justify-content-end gap-2">
                                                     <button type="button" class="btn btn-outline-secondary"
-                                                            @onclick="CancelCreateNoteOption" disabled="@_isCreatingNoteOption">
+                                                        @onclick="CancelCreateNoteOption" disabled="@_isCreatingNoteOption">
                                                         Hủy
                                                     </button>
-
                                                     <button type="button" class="btn btn-primary" @onclick="CreateNoteOptionAsync"
-                                                            disabled="@_isCreatingNoteOption">
+                                                        disabled="@_isCreatingNoteOption">
                                                         @if (_isCreatingNoteOption)
                                                         {
                                                             <span class="spinner-border spinner-border-sm me-2"
-                                                                  aria-hidden="true"></span>
-                                                            <span>Đang lưu...</span>
+                                                                aria-hidden="true">
+                                                            </span>
+                                                            <span>
+                                                                Đang lưu...
+                                                            </span>
                                                         }
                                                         else
                                                         {
-                                                            <span>Lưu lựa chọn</span>
+                                                            <span>
+                                                                Lưu lựa chọn
+                                                            </span>
                                                         }
                                                     </button>
                                                 </div>
@@ -460,64 +463,65 @@
                                     @if (_editingNoteGroupId == noteGroup.Id)
                                     {
                                         <section class="mt-3 p-3 border rounded bg-body-tertiary"
-                                                 aria-labelledby="@($"edit-note-group-title-{noteGroup.Id}")">
+                                            aria-labelledby="@($"edit-note-group-title-{noteGroup.Id}")">
                                             <h4 id="@($"edit-note-group-title-{noteGroup.Id}")" class="h6 mb-3">
                                                 Thông tin nhóm ghi chú
                                             </h4>
-
                                             @if (!string.IsNullOrWhiteSpace(_updateNoteGroupErrorMessage))
                                             {
                                                 <div class="alert alert-danger" role="alert">
                                                     @_updateNoteGroupErrorMessage
                                                 </div>
                                             }
-
                                             <div class="row g-3">
                                                 <div class="col-12 col-md-7">
                                                     <label for="@($"edit-note-group-name-{noteGroup.Id}")" class="form-label">
                                                         Tên nhóm ghi chú
                                                     </label>
-
                                                     <input id="@($"edit-note-group-name-{noteGroup.Id}")" type="text"
-                                                           class="form-control" maxlength="100" @bind="_editedNoteGroupName"
-                                                           disabled="@_isUpdatingNoteGroup" />
-
+                                                        class="form-control" maxlength="100" @bind="_editedNoteGroupName"
+                                                        disabled="@_isUpdatingNoteGroup" />
                                                 </div>
-
                                                 <div class="col-12 col-md-5">
                                                     <label for="@($"edit-note-group-status-{noteGroup.Id}")"
-                                                           class="form-label">
+                                                        class="form-label">
                                                         Trạng thái
                                                     </label>
-
                                                     <select id="@($"edit-note-group-status-{noteGroup.Id}")"
-                                                            class="form-select"
-                                                            value="@(_editedNoteGroupIsActive ? "true" : "false")"
-                                                            @onchange="OnEditedNoteGroupStatusChanged"
-                                                            disabled="@_isUpdatingNoteGroup">
-                                                        <option value="true">Đang hoạt động</option>
-                                                        <option value="false">Tạm ngừng</option>
+                                                        class="form-select"
+                                                        value="@(_editedNoteGroupIsActive ? "true" : "false")"
+                                                        @onchange="OnEditedNoteGroupStatusChanged"
+                                                        disabled="@_isUpdatingNoteGroup">
+                                                        <option value="true">
+                                                            Đang hoạt động
+                                                        </option>
+                                                        <option value="false">
+                                                            Tạm ngừng
+                                                        </option>
                                                     </select>
                                                 </div>
-
                                                 <div class="col-12 d-flex justify-content-end gap-2">
                                                     <button type="button" class="btn btn-outline-secondary"
-                                                            @onclick="CancelEditNoteGroup" disabled="@_isUpdatingNoteGroup">
+                                                        @onclick="CancelEditNoteGroup" disabled="@_isUpdatingNoteGroup">
                                                         Hủy
                                                     </button>
-
                                                     <button type="button" class="btn btn-primary"
-                                                            @onclick="SaveNoteGroupChangesAsync"
-                                                            disabled="@(_isUpdatingNoteGroup || _isCreatingNoteGroup)">
+                                                        @onclick="SaveNoteGroupChangesAsync"
+                                                        disabled="@(_isUpdatingNoteGroup || _isCreatingNoteGroup)">
                                                         @if (_isUpdatingNoteGroup)
                                                         {
                                                             <span class="spinner-border spinner-border-sm me-2"
-                                                                  aria-hidden="true"></span>
-                                                            <span>Đang lưu...</span>
+                                                                aria-hidden="true">
+                                                            </span>
+                                                            <span>
+                                                                Đang lưu...
+                                                            </span>
                                                         }
                                                         else
                                                         {
-                                                            <span>Lưu thay đổi</span>
+                                                            <span>
+                                                                Lưu thay đổi
+                                                            </span>
                                                         }
                                                     </button>
                                                 </div>
@@ -526,53 +530,55 @@
                                     }
                                 </Authorized>
                             </AuthorizeView>
-
                             <AuthorizeView Roles="ADMIN">
                                 <Authorized Context="deleteGroupFormAuthorization">
                                     @if (_noteGroupPendingDelete?.Id == noteGroup.Id)
                                     {
                                         <section class="mt-3 p-3 border rounded bg-body-tertiary"
-                                                 aria-labelledby="@($"delete-note-group-title-{noteGroup.Id}")">
+                                            aria-labelledby="@($"delete-note-group-title-{noteGroup.Id}")">
                                             <h4 id="@($"delete-note-group-title-{noteGroup.Id}")" class="h6 mb-2">
                                                 Xác nhận xóa nhóm ghi chú
                                             </h4>
-
                                             <p>
                                                 Bạn có chắc muốn xóa nhóm
-                                                <strong>@noteGroup.Name</strong>?
+                                                <strong>
+                                                    @noteGroup.Name
+                                                </strong>
+                                                ?
                                             </p>
-
                                             <div class="alert alert-warning">
                                                 Nhóm và các lựa chọn ghi chú thuộc nhóm sẽ bị ẩn khỏi menu nhân viên.
                                                 Dữ liệu vẫn được giữ trong database;
                                                 trạng thái riêng của lựa chọn ghi chú không thay đổi.
                                             </div>
-
                                             @if (!string.IsNullOrWhiteSpace(_deleteNoteGroupErrorMessage))
                                             {
                                                 <div class="alert alert-danger" role="alert">
                                                     @_deleteNoteGroupErrorMessage
                                                 </div>
                                             }
-
                                             <div class="d-flex justify-content-end gap-2">
                                                 <button type="button" class="btn btn-outline-secondary"
-                                                        @onclick="CancelNoteGroupDelete"
-                                                        disabled="@_deletingNoteGroupId.HasValue">
+                                                    @onclick="CancelNoteGroupDelete"
+                                                    disabled="@_deletingNoteGroupId.HasValue">
                                                     Hủy
                                                 </button>
-
                                                 <button type="button" class="btn btn-danger"
-                                                        @onclick="ConfirmNoteGroupDeleteAsync"
-                                                        disabled="@_deletingNoteGroupId.HasValue">
+                                                    @onclick="ConfirmNoteGroupDeleteAsync"
+                                                    disabled="@_deletingNoteGroupId.HasValue">
                                                     @if (_deletingNoteGroupId == noteGroup.Id)
                                                     {
-                                                        <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
-                                                        <span>Đang xóa...</span>
+                                                        <span class="spinner-border spinner-border-sm me-2" aria-hidden="true">
+                                                        </span>
+                                                        <span>
+                                                            Đang xóa...
+                                                        </span>
                                                     }
                                                     else
                                                     {
-                                                        <span>Xác nhận xóa</span>
+                                                        <span>
+                                                            Xác nhận xóa
+                                                        </span>
                                                     }
                                                 </button>
                                             </div>
@@ -581,7 +587,6 @@
                                 </Authorized>
                             </AuthorizeView>
                         </article>
-
                     }
                 </div>
             }
@@ -589,50 +594,39 @@
     </Authorized>
 </AuthorizeView>
 
-@code {
-    [Parameter] public EventCallback<bool> OnBusyChanged { get; set; }
-    private bool _lastBusyState;
+@code
+{
+    [Parameter]
+    public EventCallback<bool> OnBusyChanged { get; set; }
 
+    private bool _lastBusyState;
     // Có form hoặc xác nhận đang mở thì không cho chuyển tab hay mở thao tác khác
-    private bool HasOpenNoteOperation =>
-        _isLoadingNoteGroups || _isCreateNoteGroupFormVisible || _isCreatingNoteGroup
-        || _editingNoteGroupId.HasValue || _isUpdatingNoteGroup
-        || _noteGroupPendingDelete != null || _deletingNoteGroupId.HasValue
-        || _creatingNoteGroupId.HasValue || _isCreatingNoteOption
-        || _editingNoteOptionId.HasValue || _isUpdatingNoteOption
-        || _noteOptionPendingDelete != null || _deletingNoteOptionId.HasValue;
+    private bool HasOpenNoteOperation => _isLoadingNoteGroups || _isCreateNoteGroupFormVisible || _isCreatingNoteGroup || _editingNoteGroupId.HasValue || _isUpdatingNoteGroup || _noteGroupPendingDelete != null || _deletingNoteGroupId.HasValue || _creatingNoteGroupId.HasValue || _isCreatingNoteOption || _editingNoteOptionId.HasValue || _isUpdatingNoteOption || _noteOptionPendingDelete != null || _deletingNoteOptionId.HasValue;
 
     // State của danh sách nhóm ghi chú và quá trình tải dữ liệu
-    private List<MenuNoteGroupDTO> _noteGroups =
-        new List<MenuNoteGroupDTO>();
-
+    private List<MenuNoteGroupDTO> _noteGroups = new List<MenuNoteGroupDTO>();
     private bool _isLoadingNoteGroups = true;
     private string? _noteGroupsErrorMessage;
-
     // State của form tạo nhóm ghi chú
     private bool _isCreateNoteGroupFormVisible;
     private bool _isCreatingNoteGroup;
     private string _newNoteGroupName = string.Empty;
     private string? _createNoteGroupErrorMessage;
-
     // State của form sửa nhóm ghi chú
     private int? _editingNoteGroupId;
     private string _editedNoteGroupName = string.Empty;
     private bool _editedNoteGroupIsActive;
     private bool _isUpdatingNoteGroup;
     private string? _updateNoteGroupErrorMessage;
-
     // State của xác nhận và quá trình xóa nhóm ghi chú
     private MenuNoteGroupDTO? _noteGroupPendingDelete;
     private int? _deletingNoteGroupId;
     private string? _deleteNoteGroupErrorMessage;
-
     // State của form tạo lựa chọn ghi chú trong nhóm được chọn
     private int? _creatingNoteGroupId;
     private string _newNoteOptionName = string.Empty;
     private bool _isCreatingNoteOption;
     private string? _createNoteOptionErrorMessage;
-
     // State của form sửa lựa chọn ghi chú trong nhóm hiện tại
     private int? _editingNoteGroupIdForNoteOption;
     private int? _editingNoteOptionId;
@@ -640,13 +634,11 @@
     private bool _editedNoteOptionIsActive;
     private bool _isUpdatingNoteOption;
     private string? _updateNoteOptionErrorMessage;
-
     // State của xác nhận và quá trình xóa lựa chọn ghi chú
     private int? _noteGroupIdForDelete;
     private MenuNoteOptionDTO? _noteOptionPendingDelete;
     private int? _deletingNoteOptionId;
     private string? _deleteNoteOptionErrorMessage;
-
     // Đọc token và tải dữ liệu sau khi component render
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -674,16 +666,12 @@
     {
         _isLoadingNoteGroups = true;
         _noteGroupsErrorMessage = null;
-
         try
         {
-            List<MenuNoteGroupDTO>? noteGroups =
-                await NoteGroupApiService.GetMenuNoteGroupsAsync();
-
+            List<MenuNoteGroupDTO>? noteGroups = await NoteGroupApiService.GetMenuNoteGroupsAsync();
             if (noteGroups is null)
             {
-                _noteGroupsErrorMessage =
-                    "Không thể tải nhóm ghi chú. Vui lòng thử lại.";
+                _noteGroupsErrorMessage = "Không thể tải nhóm ghi chú. Vui lòng thử lại.";
                 return;
             }
 
@@ -699,8 +687,7 @@
         }
         catch (JsonException)
         {
-            _noteGroupsErrorMessage =
-                "Dữ liệu nhóm ghi chú từ API không hợp lệ.";
+            _noteGroupsErrorMessage = "Dữ liệu nhóm ghi chú từ API không hợp lệ.";
         }
         finally
         {
@@ -711,18 +698,7 @@
     // Mở form tạo nhóm ghi chú và xóa dữ liệu/lỗi cũ
     private void ShowCreateNoteGroupForm()
     {
-        if (HasOpenNoteOperation
-            || _isCreatingNoteGroup
-            || _isUpdatingNoteGroup
-            || _editingNoteGroupId.HasValue
-            || _noteGroupPendingDelete != null
-            || _deletingNoteGroupId.HasValue
-            || _creatingNoteGroupId.HasValue
-            || _isCreatingNoteOption
-            || _editingNoteOptionId.HasValue
-            || _isUpdatingNoteOption
-            || _noteOptionPendingDelete != null
-            || _deletingNoteOptionId.HasValue)
+        if (HasOpenNoteOperation || _isCreatingNoteGroup || _isUpdatingNoteGroup || _editingNoteGroupId.HasValue || _noteGroupPendingDelete != null || _deletingNoteGroupId.HasValue || _creatingNoteGroupId.HasValue || _isCreatingNoteOption || _editingNoteOptionId.HasValue || _isUpdatingNoteOption || _noteOptionPendingDelete != null || _deletingNoteOptionId.HasValue)
         {
             return;
         }
@@ -748,23 +724,12 @@
     // Kiểm tra dữ liệu rồi gửi yêu cầu tạo nhóm ghi chú lên API
     private async Task CreateNoteGroupAsync()
     {
-        if (_isCreatingNoteGroup
-            || _isUpdatingNoteGroup
-            || _editingNoteGroupId.HasValue
-            || _noteGroupPendingDelete != null
-            || _deletingNoteGroupId.HasValue
-            || _creatingNoteGroupId.HasValue
-            || _isCreatingNoteOption
-            || _editingNoteOptionId.HasValue
-            || _isUpdatingNoteOption
-            || _noteOptionPendingDelete != null
-            || _deletingNoteOptionId.HasValue)
+        if (_isCreatingNoteGroup || _isUpdatingNoteGroup || _editingNoteGroupId.HasValue || _noteGroupPendingDelete != null || _deletingNoteGroupId.HasValue || _creatingNoteGroupId.HasValue || _isCreatingNoteOption || _editingNoteOptionId.HasValue || _isUpdatingNoteOption || _noteOptionPendingDelete != null || _deletingNoteOptionId.HasValue)
         {
             return;
         }
 
         _createNoteGroupErrorMessage = null;
-
         if (string.IsNullOrWhiteSpace(_newNoteGroupName))
         {
             _createNoteGroupErrorMessage = "Vui lòng nhập tên nhóm ghi chú.";
@@ -772,34 +737,26 @@
         }
 
         string groupName = _newNoteGroupName.Trim();
-
         if (groupName.Length > 100)
         {
-            _createNoteGroupErrorMessage =
-                "Tên nhóm ghi chú không được vượt quá 100 ký tự.";
+            _createNoteGroupErrorMessage = "Tên nhóm ghi chú không được vượt quá 100 ký tự.";
             return;
         }
 
         _isCreatingNoteGroup = true;
-
         try
         {
-            CreateNoteGroupRequestDTO request =
-                new CreateNoteGroupRequestDTO
-                {
-                    Name = groupName
-                };
+            CreateNoteGroupRequestDTO request = new CreateNoteGroupRequestDTO
 
-            NoteGroupCreateApiResult result =
-                await NoteGroupApiService.CreateNoteGroupAsync(request);
+            {
 
+                Name = groupName
+
+            };
+            NoteGroupCreateApiResult result = await NoteGroupApiService.CreateNoteGroupAsync(request);
             if (!result.IsSuccess || result.NoteGroup == null)
             {
-                _createNoteGroupErrorMessage =
-                    string.IsNullOrWhiteSpace(result.ErrorMessage)
-                    ? "Không thể tạo nhóm ghi chú. Vui lòng thử lại."
-                    : result.ErrorMessage;
-
+                _createNoteGroupErrorMessage = string.IsNullOrWhiteSpace(result.ErrorMessage) ? "Không thể tạo nhóm ghi chú. Vui lòng thử lại." : result.ErrorMessage;
                 return;
             }
 
@@ -818,8 +775,7 @@
         }
         catch (JsonException)
         {
-            _createNoteGroupErrorMessage =
-                "Dữ liệu nhóm ghi chú từ API không hợp lệ.";
+            _createNoteGroupErrorMessage = "Dữ liệu nhóm ghi chú từ API không hợp lệ.";
         }
         finally
         {
@@ -830,17 +786,7 @@
     // Mở form sửa và sao chép dữ liệu hiện tại sang state riêng
     private void StartEditNoteGroup(MenuNoteGroupDTO noteGroup)
     {
-        if (HasOpenNoteOperation
-            || _isUpdatingNoteGroup
-        || _isCreatingNoteGroup
-        || _noteGroupPendingDelete != null
-        || _deletingNoteGroupId.HasValue
-        || _creatingNoteGroupId.HasValue
-        || _isCreatingNoteOption
-            || _editingNoteOptionId.HasValue
-            || _isUpdatingNoteOption
-            || _noteOptionPendingDelete != null
-            || _deletingNoteOptionId.HasValue)
+        if (HasOpenNoteOperation || _isUpdatingNoteGroup || _isCreatingNoteGroup || _noteGroupPendingDelete != null || _deletingNoteGroupId.HasValue || _creatingNoteGroupId.HasValue || _isCreatingNoteOption || _editingNoteOptionId.HasValue || _isUpdatingNoteOption || _noteOptionPendingDelete != null || _deletingNoteOptionId.HasValue)
         {
             return;
         }
@@ -882,23 +828,12 @@
     // Gửi thay đổi lên API và cập nhật đúng nhóm trong danh sách
     private async Task SaveNoteGroupChangesAsync()
     {
-        if (_editingNoteGroupId == null
-            || _isUpdatingNoteGroup
-            || _isCreatingNoteGroup
-            || _noteGroupPendingDelete != null
-            || _deletingNoteGroupId.HasValue
-            || _creatingNoteGroupId.HasValue
-            || _isCreatingNoteOption
-            || _editingNoteOptionId.HasValue
-            || _isUpdatingNoteOption
-            || _noteOptionPendingDelete != null
-            || _deletingNoteOptionId.HasValue)
+        if (_editingNoteGroupId == null || _isUpdatingNoteGroup || _isCreatingNoteGroup || _noteGroupPendingDelete != null || _deletingNoteGroupId.HasValue || _creatingNoteGroupId.HasValue || _isCreatingNoteOption || _editingNoteOptionId.HasValue || _isUpdatingNoteOption || _noteOptionPendingDelete != null || _deletingNoteOptionId.HasValue)
         {
             return;
         }
 
         _updateNoteGroupErrorMessage = null;
-
         if (string.IsNullOrWhiteSpace(_editedNoteGroupName))
         {
             _updateNoteGroupErrorMessage = "Vui lòng nhập tên nhóm ghi chú.";
@@ -906,37 +841,27 @@
         }
 
         string groupName = _editedNoteGroupName.Trim();
-
         if (groupName.Length > 100)
         {
-            _updateNoteGroupErrorMessage =
-                "Tên nhóm ghi chú không được vượt quá 100 ký tự.";
+            _updateNoteGroupErrorMessage = "Tên nhóm ghi chú không được vượt quá 100 ký tự.";
             return;
         }
 
         _isUpdatingNoteGroup = true;
-
         try
         {
-            UpdateNoteGroupRequestDTO request =
-                new UpdateNoteGroupRequestDTO
-                {
-                    Name = groupName,
-                    IsActive = _editedNoteGroupIsActive
-                };
+            UpdateNoteGroupRequestDTO request = new UpdateNoteGroupRequestDTO
 
-            NoteGroupUpdateApiResult result =
-                await NoteGroupApiService.UpdateNoteGroupAsync(
-                    _editingNoteGroupId.Value,
-                    request);
+            {
 
+                Name = groupName,
+                IsActive = _editedNoteGroupIsActive
+
+            };
+            NoteGroupUpdateApiResult result = await NoteGroupApiService.UpdateNoteGroupAsync(_editingNoteGroupId.Value, request);
             if (!result.IsSuccess || result.NoteGroup == null)
             {
-                _updateNoteGroupErrorMessage =
-                    string.IsNullOrWhiteSpace(result.ErrorMessage)
-                    ? "Không thể cập nhật nhóm ghi chú. Vui lòng thử lại."
-                    : result.ErrorMessage;
-
+                _updateNoteGroupErrorMessage = string.IsNullOrWhiteSpace(result.ErrorMessage) ? "Không thể cập nhật nhóm ghi chú. Vui lòng thử lại." : result.ErrorMessage;
                 return;
             }
 
@@ -966,8 +891,7 @@
         }
         catch (JsonException)
         {
-            _updateNoteGroupErrorMessage =
-                "Dữ liệu nhóm ghi chú từ API không hợp lệ.";
+            _updateNoteGroupErrorMessage = "Dữ liệu nhóm ghi chú từ API không hợp lệ.";
         }
         finally
         {
@@ -978,18 +902,7 @@
     // Mở xác nhận xóa cho nhóm được chọn, chưa gửi request
     private void RequestNoteGroupDelete(MenuNoteGroupDTO noteGroup)
     {
-        if (HasOpenNoteOperation
-            || _deletingNoteGroupId.HasValue
-            || _isCreatingNoteGroup
-            || _isCreateNoteGroupFormVisible
-            || _isUpdatingNoteGroup
-            || _editingNoteGroupId.HasValue
-            || _creatingNoteGroupId.HasValue
-            || _isCreatingNoteOption
-            || _editingNoteOptionId.HasValue
-            || _isUpdatingNoteOption
-            || _noteOptionPendingDelete != null
-            || _deletingNoteOptionId.HasValue)
+        if (HasOpenNoteOperation || _deletingNoteGroupId.HasValue || _isCreatingNoteGroup || _isCreateNoteGroupFormVisible || _isUpdatingNoteGroup || _editingNoteGroupId.HasValue || _creatingNoteGroupId.HasValue || _isCreatingNoteOption || _editingNoteOptionId.HasValue || _isUpdatingNoteOption || _noteOptionPendingDelete != null || _deletingNoteOptionId.HasValue)
         {
             return;
         }
@@ -1014,39 +927,19 @@
     private async Task ConfirmNoteGroupDeleteAsync()
     {
         MenuNoteGroupDTO? noteGroup = _noteGroupPendingDelete;
-
-        if (noteGroup == null
-            || _deletingNoteGroupId.HasValue
-            || _isCreatingNoteGroup
-            || _isCreateNoteGroupFormVisible
-            || _isUpdatingNoteGroup
-            || _editingNoteGroupId.HasValue
-            || _creatingNoteGroupId.HasValue
-            || _isCreatingNoteOption
-            || _editingNoteOptionId.HasValue
-            || _isUpdatingNoteOption
-            || _noteOptionPendingDelete != null
-            || _deletingNoteOptionId.HasValue)
+        if (noteGroup == null || _deletingNoteGroupId.HasValue || _isCreatingNoteGroup || _isCreateNoteGroupFormVisible || _isUpdatingNoteGroup || _editingNoteGroupId.HasValue || _creatingNoteGroupId.HasValue || _isCreatingNoteOption || _editingNoteOptionId.HasValue || _isUpdatingNoteOption || _noteOptionPendingDelete != null || _deletingNoteOptionId.HasValue)
         {
             return;
         }
 
         _deleteNoteGroupErrorMessage = null;
         _deletingNoteGroupId = noteGroup.Id;
-
         try
         {
-            NoteGroupDeleteApiResult result =
-                await NoteGroupApiService.DeleteNoteGroupAsync(
-                    noteGroup.Id);
-
+            NoteGroupDeleteApiResult result = await NoteGroupApiService.DeleteNoteGroupAsync(noteGroup.Id);
             if (!result.IsSuccess)
             {
-                _deleteNoteGroupErrorMessage =
-                    string.IsNullOrWhiteSpace(result.ErrorMessage)
-                    ? "Không thể xóa nhóm ghi chú. Vui lòng thử lại."
-                    : result.ErrorMessage;
-
+                _deleteNoteGroupErrorMessage = string.IsNullOrWhiteSpace(result.ErrorMessage) ? "Không thể xóa nhóm ghi chú. Vui lòng thử lại." : result.ErrorMessage;
                 return;
             }
 
@@ -1064,8 +957,7 @@
         }
         catch (JsonException)
         {
-            _deleteNoteGroupErrorMessage =
-                "Dữ liệu phản hồi từ API không hợp lệ.";
+            _deleteNoteGroupErrorMessage = "Dữ liệu phản hồi từ API không hợp lệ.";
         }
         finally
         {
@@ -1076,18 +968,7 @@
     // Mở form thêm lựa chọn ghi chú cho đúng nhóm và xóa dữ liệu cũ
     private void ShowCreateNoteOptionForm(MenuNoteGroupDTO noteGroup)
     {
-        if (HasOpenNoteOperation
-            || _isCreatingNoteOption
-            || _isCreatingNoteGroup
-            || _isCreateNoteGroupFormVisible
-            || _isUpdatingNoteGroup
-            || _editingNoteGroupId.HasValue
-            || _noteGroupPendingDelete != null
-            || _deletingNoteGroupId.HasValue
-            || _editingNoteOptionId.HasValue
-            || _isUpdatingNoteOption
-            || _noteOptionPendingDelete != null
-            || _deletingNoteOptionId.HasValue)
+        if (HasOpenNoteOperation || _isCreatingNoteOption || _isCreatingNoteGroup || _isCreateNoteGroupFormVisible || _isUpdatingNoteGroup || _editingNoteGroupId.HasValue || _noteGroupPendingDelete != null || _deletingNoteGroupId.HasValue || _editingNoteOptionId.HasValue || _isUpdatingNoteOption || _noteOptionPendingDelete != null || _deletingNoteOptionId.HasValue)
         {
             return;
         }
@@ -1113,22 +994,12 @@
     // Kiểm tra dữ liệu, tạo lựa chọn ghi chú và thêm vào đúng nhóm trên giao diện
     private async Task CreateNoteOptionAsync()
     {
-        if (!_creatingNoteGroupId.HasValue
-            || _isCreatingNoteOption
-            || _isCreatingNoteGroup
-            || _isUpdatingNoteGroup
-            || _noteGroupPendingDelete != null
-            || _deletingNoteGroupId.HasValue
-            || _editingNoteOptionId.HasValue
-            || _isUpdatingNoteOption
-            || _noteOptionPendingDelete != null
-            || _deletingNoteOptionId.HasValue)
+        if (!_creatingNoteGroupId.HasValue || _isCreatingNoteOption || _isCreatingNoteGroup || _isUpdatingNoteGroup || _noteGroupPendingDelete != null || _deletingNoteGroupId.HasValue || _editingNoteOptionId.HasValue || _isUpdatingNoteOption || _noteOptionPendingDelete != null || _deletingNoteOptionId.HasValue)
         {
             return;
         }
 
         _createNoteOptionErrorMessage = null;
-
         if (string.IsNullOrWhiteSpace(_newNoteOptionName))
         {
             _createNoteOptionErrorMessage = "Vui lòng nhập tên lựa chọn ghi chú.";
@@ -1136,18 +1007,13 @@
         }
 
         string noteOptionName = _newNoteOptionName.Trim();
-
         if (noteOptionName.Length > 100)
         {
-            _createNoteOptionErrorMessage =
-                "Tên lựa chọn ghi chú không được vượt quá 100 ký tự.";
+            _createNoteOptionErrorMessage = "Tên lựa chọn ghi chú không được vượt quá 100 ký tự.";
             return;
         }
 
-
-        MenuNoteGroupDTO? noteGroup = _noteGroups
-            .FirstOrDefault(group => group.Id == _creatingNoteGroupId.Value);
-
+        MenuNoteGroupDTO? noteGroup = _noteGroups.FirstOrDefault(group => group.Id == _creatingNoteGroupId.Value);
         if (noteGroup == null)
         {
             _createNoteOptionErrorMessage = "Không tìm thấy nhóm ghi chú đang chọn.";
@@ -1155,31 +1021,24 @@
         }
 
         _isCreatingNoteOption = true;
-
         try
         {
             CreateNoteOptionRequestDTO request = new CreateNoteOptionRequestDTO
+
             {
+
                 NoteGroupId = noteGroup.Id,
                 Name = noteOptionName,
             };
-
-            NoteOptionCreateApiResult result =
-                await NoteOptionApiService.CreateNoteOptionAsync(request);
-
+            NoteOptionCreateApiResult result = await NoteOptionApiService.CreateNoteOptionAsync(request);
             if (!result.IsSuccess || result.NoteOption == null)
             {
-                _createNoteOptionErrorMessage =
-                    string.IsNullOrWhiteSpace(result.ErrorMessage)
-                    ? "Không thể tạo lựa chọn ghi chú. Vui lòng thử lại."
-                    : result.ErrorMessage;
-
+                _createNoteOptionErrorMessage = string.IsNullOrWhiteSpace(result.ErrorMessage) ? "Không thể tạo lựa chọn ghi chú. Vui lòng thử lại." : result.ErrorMessage;
                 return;
             }
 
             // Chỉ thêm dữ liệu vào nhóm sau khi API xác nhận thành công
             noteGroup.NoteOptions.Add(result.NoteOption);
-
             _creatingNoteGroupId = null;
             _newNoteOptionName = string.Empty;
         }
@@ -1206,18 +1065,7 @@
         MenuNoteGroupDTO noteGroup,
         MenuNoteOptionDTO noteOption)
     {
-        if (HasOpenNoteOperation
-            || _isUpdatingNoteOption
-            || _isCreatingNoteOption
-            || _creatingNoteGroupId.HasValue
-            || _isCreatingNoteGroup
-            || _isCreateNoteGroupFormVisible
-            || _isUpdatingNoteGroup
-            || _editingNoteGroupId.HasValue
-            || _noteGroupPendingDelete != null
-            || _deletingNoteGroupId.HasValue
-            || _noteOptionPendingDelete != null
-            || _deletingNoteOptionId.HasValue)
+        if (HasOpenNoteOperation || _isUpdatingNoteOption || _isCreatingNoteOption || _creatingNoteGroupId.HasValue || _isCreatingNoteGroup || _isCreateNoteGroupFormVisible || _isUpdatingNoteGroup || _editingNoteGroupId.HasValue || _noteGroupPendingDelete != null || _deletingNoteGroupId.HasValue || _noteOptionPendingDelete != null || _deletingNoteOptionId.HasValue)
         {
             return;
         }
@@ -1261,20 +1109,12 @@
     // Gửi thay đổi lên API và cập nhật đúng lựa chọn ghi chú trong nhóm
     private async Task SaveNoteOptionChangesAsync()
     {
-        if (!_editingNoteOptionId.HasValue
-            || !_editingNoteGroupIdForNoteOption.HasValue
-            || _isUpdatingNoteOption
-            || _isCreatingNoteOption
-            || _isCreatingNoteGroup
-            || _isUpdatingNoteGroup
-            || _noteGroupPendingDelete != null
-            || _deletingNoteGroupId.HasValue)
+        if (!_editingNoteOptionId.HasValue || !_editingNoteGroupIdForNoteOption.HasValue || _isUpdatingNoteOption || _isCreatingNoteOption || _isCreatingNoteGroup || _isUpdatingNoteGroup || _noteGroupPendingDelete != null || _deletingNoteGroupId.HasValue)
         {
             return;
         }
 
         _updateNoteOptionErrorMessage = null;
-
         if (string.IsNullOrWhiteSpace(_editedNoteOptionName))
         {
             _updateNoteOptionErrorMessage = "Vui lòng nhập tên lựa chọn ghi chú.";
@@ -1282,19 +1122,13 @@
         }
 
         string noteOptionName = _editedNoteOptionName.Trim();
-
         if (noteOptionName.Length > 100)
         {
-            _updateNoteOptionErrorMessage =
-                "Tên lựa chọn ghi chú không được vượt quá 100 ký tự.";
+            _updateNoteOptionErrorMessage = "Tên lựa chọn ghi chú không được vượt quá 100 ký tự.";
             return;
         }
 
-
-        MenuNoteGroupDTO? noteGroup = _noteGroups
-            .FirstOrDefault(group =>
-                group.Id == _editingNoteGroupIdForNoteOption.Value);
-
+        MenuNoteGroupDTO? noteGroup = _noteGroups.FirstOrDefault(group => group.Id == _editingNoteGroupIdForNoteOption.Value);
         if (noteGroup == null)
         {
             _updateNoteOptionErrorMessage = "Không tìm thấy nhóm ghi chú đang sửa.";
@@ -1302,27 +1136,20 @@
         }
 
         _isUpdatingNoteOption = true;
-
         try
         {
             UpdateNoteOptionRequestDTO request = new UpdateNoteOptionRequestDTO
+
             {
+
                 Name = noteOptionName,
                 IsActive = _editedNoteOptionIsActive
+
             };
-
-            NoteOptionUpdateApiResult result =
-                await NoteOptionApiService.UpdateNoteOptionAsync(
-                    _editingNoteOptionId.Value,
-                    request);
-
+            NoteOptionUpdateApiResult result = await NoteOptionApiService.UpdateNoteOptionAsync(_editingNoteOptionId.Value, request);
             if (!result.IsSuccess || result.NoteOption == null)
             {
-                _updateNoteOptionErrorMessage =
-                    string.IsNullOrWhiteSpace(result.ErrorMessage)
-                    ? "Không thể cập nhật lựa chọn ghi chú. Vui lòng thử lại."
-                    : result.ErrorMessage;
-
+                _updateNoteOptionErrorMessage = string.IsNullOrWhiteSpace(result.ErrorMessage) ? "Không thể cập nhật lựa chọn ghi chú. Vui lòng thử lại." : result.ErrorMessage;
                 return;
             }
 
@@ -1366,18 +1193,7 @@
         MenuNoteGroupDTO noteGroup,
         MenuNoteOptionDTO noteOption)
     {
-        if (_deletingNoteOptionId.HasValue
-            || _noteOptionPendingDelete != null
-            || _isCreatingNoteOption
-            || _creatingNoteGroupId.HasValue
-            || _isUpdatingNoteOption
-            || _editingNoteOptionId.HasValue
-            || _isCreatingNoteGroup
-            || _isCreateNoteGroupFormVisible
-            || _isUpdatingNoteGroup
-            || _editingNoteGroupId.HasValue
-            || _noteGroupPendingDelete != null
-            || _deletingNoteGroupId.HasValue)
+        if (_deletingNoteOptionId.HasValue || _noteOptionPendingDelete != null || _isCreatingNoteOption || _creatingNoteGroupId.HasValue || _isUpdatingNoteOption || _editingNoteOptionId.HasValue || _isCreatingNoteGroup || _isCreateNoteGroupFormVisible || _isUpdatingNoteGroup || _editingNoteGroupId.HasValue || _noteGroupPendingDelete != null || _deletingNoteGroupId.HasValue)
         {
             return;
         }
@@ -1404,58 +1220,31 @@
     private async Task ConfirmNoteOptionDeleteAsync()
     {
         MenuNoteOptionDTO? noteOption = _noteOptionPendingDelete;
-
-        if (noteOption == null
-            || !_noteGroupIdForDelete.HasValue
-            || _deletingNoteOptionId.HasValue
-            || _isCreatingNoteOption
-            || _creatingNoteGroupId.HasValue
-            || _isUpdatingNoteOption
-            || _editingNoteOptionId.HasValue
-            || _isCreatingNoteGroup
-            || _isCreateNoteGroupFormVisible
-            || _isUpdatingNoteGroup
-            || _editingNoteGroupId.HasValue
-            || _noteGroupPendingDelete != null
-            || _deletingNoteGroupId.HasValue)
+        if (noteOption == null || !_noteGroupIdForDelete.HasValue || _deletingNoteOptionId.HasValue || _isCreatingNoteOption || _creatingNoteGroupId.HasValue || _isUpdatingNoteOption || _editingNoteOptionId.HasValue || _isCreatingNoteGroup || _isCreateNoteGroupFormVisible || _isUpdatingNoteGroup || _editingNoteGroupId.HasValue || _noteGroupPendingDelete != null || _deletingNoteGroupId.HasValue)
         {
             return;
         }
 
         _deleteNoteOptionErrorMessage = null;
-
-        MenuNoteGroupDTO? noteGroup =
-            _noteGroups.FirstOrDefault(
-                group => group.Id == _noteGroupIdForDelete.Value);
-
+        MenuNoteGroupDTO? noteGroup = _noteGroups.FirstOrDefault(group => group.Id == _noteGroupIdForDelete.Value);
         if (noteGroup == null)
         {
-            _deleteNoteOptionErrorMessage =
-                "Không tìm thấy nhóm chứa lựa chọn ghi chú. Vui lòng tải lại danh sách.";
+            _deleteNoteOptionErrorMessage = "Không tìm thấy nhóm chứa lựa chọn ghi chú. Vui lòng tải lại danh sách.";
             return;
         }
 
         _deletingNoteOptionId = noteOption.Id;
-
         try
         {
-            NoteOptionDeleteApiResult result =
-                await NoteOptionApiService.DeleteNoteOptionAsync(noteOption.Id);
-
+            NoteOptionDeleteApiResult result = await NoteOptionApiService.DeleteNoteOptionAsync(noteOption.Id);
             if (!result.IsSuccess)
             {
-                _deleteNoteOptionErrorMessage =
-                    string.IsNullOrWhiteSpace(result.ErrorMessage)
-                    ? "Không thể xóa lựa chọn ghi chú. Vui lòng thử lại."
-                    : result.ErrorMessage;
-
+                _deleteNoteOptionErrorMessage = string.IsNullOrWhiteSpace(result.ErrorMessage) ? "Không thể xóa lựa chọn ghi chú. Vui lòng thử lại." : result.ErrorMessage;
                 return;
             }
 
             // Chỉ bỏ lựa chọn ghi chú khỏi danh sách khi API xác nhận thành công
-            noteGroup.NoteOptions.RemoveAll(
-                item => item.Id == noteOption.Id);
-
+            noteGroup.NoteOptions.RemoveAll(item => item.Id == noteOption.Id);
             _noteGroupIdForDelete = null;
             _noteOptionPendingDelete = null;
         }
@@ -1469,8 +1258,7 @@
         }
         catch (JsonException)
         {
-            _deleteNoteOptionErrorMessage =
-                "Dữ liệu phản hồi từ API không hợp lệ.";
+            _deleteNoteOptionErrorMessage = "Dữ liệu phản hồi từ API không hợp lệ.";
         }
         finally
         {

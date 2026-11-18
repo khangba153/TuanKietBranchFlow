@@ -11,11 +11,10 @@ namespace TuanKietBranchFlow.Api.Controllers.Employees;
 [Authorize(Roles = "ADMIN,OWNER")]
 public class EmployeeTransfersController : ControllerBase
 {
-    private readonly IEmployeeTransferService _transferService;
-
+    private readonly IEmployeeTransferService _employeeTransferService;
     public EmployeeTransfersController(IEmployeeTransferService transferService)
     {
-        _transferService = transferService;
+        _employeeTransferService = transferService;
     }
 
     [HttpGet("targets")]
@@ -26,37 +25,45 @@ public class EmployeeTransfersController : ControllerBase
         {
             return Problem(statusCode: 400, detail: "Chi nhánh nguồn không hợp lệ.");
         }
-        List<EmployeeTransferTargetDTO>? targets = await _transferService.GetTargetsAsync(UserId, sourceBranchId);
+
+        List<EmployeeTransferTargetDTO>? targets = await _employeeTransferService.GetTargetsAsync(UserId, sourceBranchId);
         if (targets == null)
         {
             return Problem(statusCode: 403, detail: "Bạn không quản lý chi nhánh nguồn.");
         }
+
         return Ok(targets);
     }
 
     // Trả tối đa 21 mục: Web dùng mục thứ 21 để biết còn trang sau, mỗi trang 20 mục.
     [HttpGet]
-    public async Task<IActionResult> GetRequestsAsync([FromQuery] bool incoming = false, [FromQuery] int page = 1)
+    public async Task<IActionResult> GetRequestsAsync(
+        [FromQuery] bool incoming = false,
+        [FromQuery] int page = 1)
     {
         if (page < 1 || page > 10000)
         {
             return Problem(statusCode: 400, detail: "Trang không hợp lệ.");
         }
-        return Ok(await _transferService.GetRequestsAsync(UserId, User.IsInRole("OWNER"), incoming, page));
+
+        return Ok(await _employeeTransferService.GetRequestsAsync(UserId, User.IsInRole("OWNER"), incoming, page));
     }
 
     [HttpPost]
     [Authorize(Roles = "ADMIN")]
     public async Task<IActionResult> CreateAsync(EmployeeTransferCreateDTO input)
     {
-        return ToResponse(await _transferService.CreateAsync(UserId, input));
+        return ToResponse(await _employeeTransferService.CreateAsync(UserId, input));
     }
 
     [HttpPost("{requestId:int}/{decision:regex(^(accept|reject|cancel)$)}")]
     [Authorize(Roles = "ADMIN")]
-    public async Task<IActionResult> DecideAsync(int requestId, string decision, EmployeeTransferDecisionDTO input)
+    public async Task<IActionResult> DecideAsync(
+        int requestId,
+        string decision,
+        EmployeeTransferDecisionDTO input)
     {
-        return ToResponse(await _transferService.DecideAsync(UserId, requestId, decision, input.Reason));
+        return ToResponse(await _employeeTransferService.DecideAsync(UserId, requestId, decision, input.Reason));
     }
 
     private int UserId => int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId) ? userId : 0;
@@ -67,6 +74,7 @@ public class EmployeeTransfersController : ControllerBase
         {
             return Ok(result.Request);
         }
+
         int statusCode = result.ErrorCode switch
         {
             "Forbidden" => 403,
@@ -74,6 +82,9 @@ public class EmployeeTransfersController : ControllerBase
             "Conflict" => 409,
             _ => 400
         };
-        return Problem(statusCode: statusCode, title: "Không thể xử lý chuyển chi nhánh", detail: result.ErrorMessage);
+        return Problem(
+            statusCode: statusCode,
+            title: "Không thể xử lý chuyển chi nhánh",
+            detail: result.ErrorMessage);
     }
 }

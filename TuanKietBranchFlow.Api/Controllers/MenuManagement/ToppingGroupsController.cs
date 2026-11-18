@@ -11,9 +11,7 @@ namespace TuanKietBranchFlow.Api.Controllers.MenuManagement;
 public class ToppingGroupsController : ControllerBase
 {
     private readonly IToppingGroupService _toppingGroupService;
-
-    public ToppingGroupsController(
-        IToppingGroupService toppingGroupService)
+    public ToppingGroupsController(IToppingGroupService toppingGroupService)
     {
         _toppingGroupService = toppingGroupService;
     }
@@ -27,9 +25,7 @@ public class ToppingGroupsController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<List<MenuToppingGroupDTO>>> GetAllToppingGroupsAsync()
     {
-        List<MenuToppingGroupDTO> toppingGroups =
-            await _toppingGroupService.GetAllToppingGroupsAsync();
-
+        List<MenuToppingGroupDTO> toppingGroups = await _toppingGroupService.GetAllToppingGroupsAsync();
         return Ok(toppingGroups);
     }
 
@@ -44,12 +40,9 @@ public class ToppingGroupsController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<MenuToppingGroupDTO>> CreateToppingGroupAsync(
-        [FromBody] CreateToppingGroupRequestDTO request)
+    public async Task<ActionResult<MenuToppingGroupDTO>> CreateToppingGroupAsync([FromBody] CreateToppingGroupRequestDTO request)
     {
-        CreateToppingGroupResultDTO result =
-            await _toppingGroupService.CreateToppingGroupAsync(request);
-
+        CreateToppingGroupResultDTO result = await _toppingGroupService.CreateToppingGroupAsync(request);
         if (result.IsNameInvalid)
         {
             return Problem(
@@ -95,11 +88,7 @@ public class ToppingGroupsController : ControllerBase
         int toppingGroupId,
         [FromBody] UpdateToppingGroupRequestDTO request)
     {
-        UpdateToppingGroupResultDTO result =
-            await _toppingGroupService.UpdateToppingGroupAsync(
-                toppingGroupId,
-                request);
-
+        UpdateToppingGroupResultDTO result = await _toppingGroupService.UpdateToppingGroupAsync(toppingGroupId, request);
         if (result.IsRequestInvalid)
         {
             return Problem(
@@ -148,9 +137,7 @@ public class ToppingGroupsController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> DeleteToppingGroupAsync(int toppingGroupId)
     {
-        DeleteToppingGroupResultDTO result =
-            await _toppingGroupService.DeleteToppingGroupAsync(toppingGroupId);
-
+        DeleteToppingGroupResultDTO result = await _toppingGroupService.DeleteToppingGroupAsync(toppingGroupId);
         if (result.IsToppingGroupNotFound)
         {
             return Problem(

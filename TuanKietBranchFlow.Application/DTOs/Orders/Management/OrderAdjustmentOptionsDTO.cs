@@ -2,9 +2,9 @@ namespace TuanKietBranchFlow.Application.DTOs.Orders.Management;
 
 public class OrderAdjustmentOptionsDTO
 {
-    public List<OrderAdjustmentSizeDTO> Sizes { get; set; } = new();
-    public List<OrderAdjustmentToppingDTO> Toppings { get; set; } = new();
-    public List<OrderAdjustmentNoteDTO> Notes { get; set; } = new();
+    public List<OrderAdjustmentSizeDTO> Sizes { get; set; } = new List<OrderAdjustmentSizeDTO>();
+    public List<OrderAdjustmentToppingDTO> Toppings { get; set; } = new List<OrderAdjustmentToppingDTO>();
+    public List<OrderAdjustmentNoteDTO> Notes { get; set; } = new List<OrderAdjustmentNoteDTO>();
 }
 
 public class OrderAdjustmentSizeDTO

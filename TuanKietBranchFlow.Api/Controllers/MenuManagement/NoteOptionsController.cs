@@ -11,7 +11,6 @@ namespace TuanKietBranchFlow.Api.Controllers.MenuManagement;
 public class NoteOptionsController : ControllerBase
 {
     private readonly INoteOptionService _noteOptionService;
-
     public NoteOptionsController(INoteOptionService noteOptionService)
     {
         _noteOptionService = noteOptionService;
@@ -28,12 +27,9 @@ public class NoteOptionsController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<MenuNoteOptionDTO>> CreateNoteOptionAsync(
-        [FromBody] CreateNoteOptionRequestDTO request)
+    public async Task<ActionResult<MenuNoteOptionDTO>> CreateNoteOptionAsync([FromBody] CreateNoteOptionRequestDTO request)
     {
-        CreateNoteOptionResultDTO result =
-            await _noteOptionService.CreateNoteOptionAsync(request);
-
+        CreateNoteOptionResultDTO result = await _noteOptionService.CreateNoteOptionAsync(request);
         if (result.IsRequestInvalid)
         {
             return Problem(
@@ -86,9 +82,7 @@ public class NoteOptionsController : ControllerBase
         int noteOptionId,
         [FromBody] UpdateNoteOptionRequestDTO request)
     {
-        UpdateNoteOptionResultDTO result =
-            await _noteOptionService.UpdateNoteOptionAsync(noteOptionId, request);
-
+        UpdateNoteOptionResultDTO result = await _noteOptionService.UpdateNoteOptionAsync(noteOptionId, request);
         if (result.IsRequestInvalid)
         {
             return Problem(
@@ -136,9 +130,7 @@ public class NoteOptionsController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> DeleteNoteOptionAsync(int noteOptionId)
     {
-        DeleteNoteOptionResultDTO result =
-            await _noteOptionService.DeleteNoteOptionAsync(noteOptionId);
-
+        DeleteNoteOptionResultDTO result = await _noteOptionService.DeleteNoteOptionAsync(noteOptionId);
         if (result.IsNoteOptionNotFound)
         {
             return Problem(

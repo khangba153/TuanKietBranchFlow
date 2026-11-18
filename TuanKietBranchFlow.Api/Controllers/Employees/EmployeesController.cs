@@ -12,7 +12,6 @@ namespace TuanKietBranchFlow.Api.Controllers.Employees;
 public class EmployeesController : ControllerBase
 {
     private readonly IEmployeeService _employeeService;
-
     // Nhận IEmployeeService từ Di
     public EmployeesController(IEmployeeService employeeService)
     {
@@ -28,11 +27,10 @@ public class EmployeesController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<List<EmployeeListItemDTO>>>
-        GetEmployeesByBranchAsync(
-            [FromQuery] int branchId,
-            [FromQuery] string keyword = "",
-            [FromQuery] bool? isActive = null)
+    public async Task<ActionResult<List<EmployeeListItemDTO>>> GetEmployeesByBranchAsync(
+        [FromQuery] int branchId,
+        [FromQuery] string keyword = "",
+        [FromQuery] bool? isActive = null)
     {
         // BranchId phải là 1 số nguyên dương
         if (branchId <= 0)
@@ -47,7 +45,6 @@ public class EmployeesController : ControllerBase
         string? userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
         string? role = User.FindFirstValue(ClaimTypes.Role);
         bool isValidUserId = int.TryParse(userIdValue, out int currentUserId);
-
         if (!isValidUserId || string.IsNullOrWhiteSpace(role))
         {
             return Problem(
@@ -57,14 +54,7 @@ public class EmployeesController : ControllerBase
         }
 
         // Service kiểm tra chi nhánh, quyền truy cập và lấy nhân viên
-        EmployeeListResultDTO result =
-            await _employeeService.GetEmployeesByBranchAsync(
-                currentUserId,
-                role,
-                branchId,
-                keyword,
-                isActive);
-
+        EmployeeListResultDTO result = await _employeeService.GetEmployeesByBranchAsync(currentUserId, role, branchId, keyword, isActive);
         // Chi nhánh không tồn tại hoặc bị xóa
         if (!result.IsBranchFound)
         {
@@ -112,7 +102,6 @@ public class EmployeesController : ControllerBase
         string? userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
         string? role = User.FindFirstValue(ClaimTypes.Role);
         bool isValidUser = int.TryParse(userIdValue, out int currentUserId);
-
         if (!isValidUser || string.IsNullOrWhiteSpace(role))
         {
             return Problem(
@@ -122,13 +111,7 @@ public class EmployeesController : ControllerBase
         }
 
         // Gọi service để kiểm tra quyền và lấy chi tiết nhân viên
-        EmployeeDetailResultDTO result =
-            await _employeeService.GetEmployeeDetailAsync(
-                currentUserId,
-                role,
-                employeeId,
-                branchId);
-
+        EmployeeDetailResultDTO result = await _employeeService.GetEmployeeDetailAsync(currentUserId, role, employeeId, branchId);
         // Chi nhánh không tồn tại hoặc đã xóa
         if (!result.IsBranchFound)
         {
@@ -171,8 +154,7 @@ public class EmployeesController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<EmployeeDetailDTO>> CreateEmployeeAsync(
-        [FromBody] EmployeeCreateDTO request)
+    public async Task<ActionResult<EmployeeDetailDTO>> CreateEmployeeAsync([FromBody] EmployeeCreateDTO request)
     {
         // DateOnly mặc định không được xem là ngày vào làm hợp lệ
         if (request.HireDate == default)
@@ -186,7 +168,6 @@ public class EmployeesController : ControllerBase
         // Lấy Id của ADMIN đang thực hiện request từ JWT
         string? userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
         bool isValidUserId = int.TryParse(userIdValue, out int currentAdminId);
-
         if (!isValidUserId)
         {
             return Problem(
@@ -196,9 +177,7 @@ public class EmployeesController : ControllerBase
         }
 
         // Service kiểm tra nghiệp vụ và tạo nhân viên
-        EmployeeCreateResultDTO result =
-            await _employeeService.CreateEmployeeAsync(currentAdminId, request);
-
+        EmployeeCreateResultDTO result = await _employeeService.CreateEmployeeAsync(currentAdminId, request);
         // Ngày vào làm trong tương lai không hợp lệ với MVP hiện tại
         if (result.IsHireDateInFuture)
         {
@@ -234,7 +213,9 @@ public class EmployeesController : ControllerBase
 
         if (result.IsBranchInactive)
         {
-            return Problem(statusCode: 409, title: "Chi nhánh ngừng hoạt động",
+            return Problem(
+                statusCode: 409,
+                title: "Chi nhánh ngừng hoạt động",
                 detail: "Không thể tạo nhân viên mới tại chi nhánh ngừng hoạt động.");
         }
 
@@ -272,12 +253,10 @@ public class EmployeesController : ControllerBase
         }
 
         // Trả 201 và đường dẫn để xem nhân viên vừa tạo
-        return CreatedAtRoute("GetEmployeeDetail",
-            new
-            {
-                employeeId = result.Employee.Id,
-                branchId = request.BranchId
-            }, result.Employee);
+        return CreatedAtRoute(
+            "GetEmployeeDetail",
+            new { employeeId = result.Employee.Id, branchId = request.BranchId },
+            result.Employee);
     }
 
     /// <summary>
@@ -318,7 +297,6 @@ public class EmployeesController : ControllerBase
         // Lấy Id của ADMIN đang thực hiện request từ JWT
         string? userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
         bool isValidUserId = int.TryParse(userIdValue, out int currentAdminId);
-
         if (!isValidUserId)
         {
             return Problem(
@@ -328,13 +306,7 @@ public class EmployeesController : ControllerBase
         }
 
         // Gọi Service để kiểm tra nghiệp vụ và cập nhật nhân viên
-        EmployeeUpdateResultDTO result =
-            await _employeeService.UpdateEmployeeAsync(
-                currentAdminId,
-                employeeId,
-                branchId,
-                request);
-
+        EmployeeUpdateResultDTO result = await _employeeService.UpdateEmployeeAsync(currentAdminId, employeeId, branchId, request);
         // Chi nhánh không tồn tại hoặc bị xóa
         if (!result.IsBranchFound)
         {
@@ -365,31 +337,45 @@ public class EmployeesController : ControllerBase
         // Email đang được 1 tài khoản khác sử dụng
         if (result.IsEmailDuplicated)
         {
-            return StatusCode(StatusCodes.Status409Conflict, new ValidationProblemDetails(
-                new Dictionary<string, string[]>
-                {
-                    { nameof(request.Email), new[] { "Email đã được tài khoản khác sử dụng." } }
-                })
+            return StatusCode(
+                StatusCodes.Status409Conflict,
+                new ValidationProblemDetails(new Dictionary<string, string[]>
             {
-                Status = StatusCodes.Status409Conflict,
-                Title = "Email đã tồn tại",
-                Detail = "Vui lòng sử dụng Email khác."
-            });
+                {
+                nameof(request.Email),
+                new[]
+            {
+                "Email đã được tài khoản khác sử dụng."
+            }
+            }
+            })
+                {
+                    Status = StatusCodes.Status409Conflict,
+                    Title = "Email đã tồn tại",
+                    Detail = "Vui lòng sử dụng Email khác."
+                });
         }
 
         // Mã nhân viên đang được 1 hồ sơ khác sử dụng
         if (result.IsEmployeeCodeDuplicated)
         {
-            return StatusCode(StatusCodes.Status409Conflict, new ValidationProblemDetails(
-                new Dictionary<string, string[]>
-                {
-                    { nameof(request.EmployeeCode), new[] { "Mã nhân viên đã được hồ sơ khác sử dụng." } }
-                })
+            return StatusCode(
+                StatusCodes.Status409Conflict,
+                new ValidationProblemDetails(new Dictionary<string, string[]>
             {
-                Status = StatusCodes.Status409Conflict,
-                Title = "Mã nhân viên đã tồn tại",
-                Detail = "Vui lòng sử dụng mã nhân viên khác."
-            });
+                {
+                nameof(request.EmployeeCode),
+                new[]
+            {
+                "Mã nhân viên đã được hồ sơ khác sử dụng."
+            }
+            }
+            })
+                {
+                    Status = StatusCodes.Status409Conflict,
+                    Title = "Mã nhân viên đã tồn tại",
+                    Detail = "Vui lòng sử dụng mã nhân viên khác."
+                });
         }
 
         // Bảo vệ trường hợp kết quả từ Service không nhất quán
@@ -443,7 +429,6 @@ public class EmployeesController : ControllerBase
         // Lấy Id của ADMIN đang thực hiện request từ JWT
         string? userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
         bool isValidUserId = int.TryParse(userIdValue, out int currentAdminId);
-
         if (!isValidUserId)
         {
             return Problem(
@@ -453,13 +438,7 @@ public class EmployeesController : ControllerBase
         }
 
         // Gọi Service để kiểm tra nghiệp vụ chuyển chi nhánh
-        EmployeeChangeBranchResultDTO result =
-            await _employeeService.ChangeEmployeeBranchAsync(
-                currentAdminId,
-                employeeId,
-                currentBranchId,
-                request);
-
+        EmployeeChangeBranchResultDTO result = await _employeeService.ChangeEmployeeBranchAsync(currentAdminId, employeeId, currentBranchId, request);
         if (result.ErrorCode != null)
         {
             int statusCode = result.ErrorCode switch
@@ -469,7 +448,10 @@ public class EmployeesController : ControllerBase
                 "Conflict" => 409,
                 _ => 400
             };
-            return Problem(statusCode: statusCode, title: "Không thể chuyển chi nhánh", detail: result.ErrorMessage);
+            return Problem(
+                statusCode: statusCode,
+                title: "Không thể chuyển chi nhánh",
+                detail: result.ErrorMessage);
         }
 
         // Chi nhánh hiện tại không tồn tại hoặc đã bị xóa
@@ -538,6 +520,7 @@ public class EmployeesController : ControllerBase
         // Trả thông tin nhân viên cùng lịch sử phân công mới nhất
         return Ok(result.Employee);
     }
+
     /// <summary>
     /// Cập nhật trạng thái hoạt động hoặc nghỉ việc của nhân viên
     /// </summary>
@@ -574,12 +557,8 @@ public class EmployeesController : ControllerBase
         }
 
         // Lấy Id của ADMIN đang đăng nhập từ JWT
-        string? userIdValue =
-            User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-        bool isValidUserId =
-            int.TryParse(userIdValue, out int currentAdminId);
-
+        string? userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        bool isValidUserId = int.TryParse(userIdValue, out int currentAdminId);
         if (!isValidUserId)
         {
             return Problem(
@@ -589,13 +568,7 @@ public class EmployeesController : ControllerBase
         }
 
         // Gọi Service để kiểm tra nghiệp vụ và cập nhật trạng thái
-        EmployeeStatusUpdateResultDTO result =
-            await _employeeService.UpdateEmployeeStatusAsync(
-                currentAdminId,
-                employeeId,
-                branchId,
-                request);
-
+        EmployeeStatusUpdateResultDTO result = await _employeeService.UpdateEmployeeStatusAsync(currentAdminId, employeeId, branchId, request);
         // Chi nhánh không tồn tại hoặc đã bị xóa
         if (!result.IsBranchFound)
         {
@@ -634,15 +607,16 @@ public class EmployeesController : ControllerBase
 
         if (result.IsBranchInactive)
         {
-            return Problem(statusCode: 409, title: "Chi nhánh ngừng hoạt động",
+            return Problem(
+                statusCode: 409,
+                title: "Chi nhánh ngừng hoạt động",
                 detail: "Không thể cho nhân viên quay lại làm tại chi nhánh ngừng hoạt động.");
         }
 
         // Không cập nhật khi trạng thái mới giống trạng thái trong db
         if (result.IsSameStatus)
         {
-            return Problem
-            (
+            return Problem(
                 statusCode: StatusCodes.Status409Conflict,
                 title: "Trạng thái không thay đổi",
                 detail: "Trạng thái mới đang trùng với trạng thái hiện tại");
@@ -669,5 +643,4 @@ public class EmployeesController : ControllerBase
         // Trả dữ liệu nhân viên sau khi cập nhật thành công
         return Ok(result.Employee);
     }
-
 }

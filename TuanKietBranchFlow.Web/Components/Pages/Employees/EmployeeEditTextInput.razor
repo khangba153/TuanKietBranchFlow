@@ -1,5 +1,4 @@
 @inherits InputText
-
 @* Cập nhật ngay khi gõ, vẫn dùng validation và EditContext chuẩn của Blazor. *@
 <input @attributes="AdditionalAttributes" name="@NameAttributeValue" class="@CssClass"
-       @bind="CurrentValueAsString" @bind:event="oninput" />
+    @bind="CurrentValueAsString" @bind:event="oninput" />

@@ -18,5 +18,5 @@ public class CreateProductRequestDTO
 
     // Một sản phẩm phải có ít nhất hai lựa chọn size và giá
     [MinLength(2, ErrorMessage = "Sản phẩm phải có ít nhất hai size.")]
-    public List<CreateProductSizeRequestDTO> ProductSizes { get; set; } = new();
+    public List<CreateProductSizeRequestDTO> ProductSizes { get; set; } = new List<CreateProductSizeRequestDTO>();
 }

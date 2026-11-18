@@ -5,175 +5,254 @@
 @using TuanKietBranchFlow.Application.DTOs.Orders
 @using TuanKietBranchFlow.Web.Services.Orders
 @inject OrderManagementApiService OrderManagementApiService
-
 <section class="card mb-3 border-primary" aria-labelledby="adjust-order-title">
     <div class="card-body">
-        <h2 id="adjust-order-title" class="h5">Điều chỉnh đơn</h2>
-        <p class="small text-body-secondary">Đổi size: giá hiện tại. Giữ size/topping cũ: giá snapshot. Topping thêm mới: giá hiện tại. Không thêm món mới.</p>
+        <h2 id="adjust-order-title" class="h5">
+            Điều chỉnh đơn
+        </h2>
+        <p class="small text-body-secondary">
+            Đổi size: giá hiện tại. Giữ size/topping cũ: giá snapshot. Topping thêm mới: giá hiện tại. Không thêm món mới.
+        </p>
         @if (_errorMessage != null)
         {
-            <div class="alert alert-danger text-break" role="alert">@_errorMessage</div>
+            <div class="alert alert-danger text-break" role="alert">
+                @_errorMessage
+            </div>
         }
-
         @if (_mustReload)
         {
-            <button class="btn btn-outline-primary" @onclick="ReloadAsync">Tải lại đơn</button>
+            <button class="btn btn-outline-primary" @onclick="ReloadAsync">
+                Tải lại đơn
+            </button>
         }
         else if (_options == null)
         {
             @if (_isBusy)
             {
-                <p role="status">Đang tải lựa chọn...</p>
+                <p role="status">
+                    Đang tải lựa chọn...
+                </p>
             }
             else
             {
-                <button class="btn btn-outline-primary" @onclick="LoadAsync">Thử tải lại lựa chọn</button>
+                <button class="btn btn-outline-primary" @onclick="LoadAsync">
+                    Thử tải lại lựa chọn
+                </button>
             }
-
-            <button class="btn btn-link" @onclick="CancelAsync">Quay lại</button>
+            <button class="btn btn-link" @onclick="CancelAsync">
+                Quay lại
+            </button>
         }
         else if (_preview?.After != null && _preview.Before != null)
         {
-            <p class="alert alert-info">Kiểm tra trước/sau rồi xác nhận. Chưa có thay đổi nào được lưu.</p>
+            <p class="alert alert-info">
+                Kiểm tra trước/sau rồi xác nhận. Chưa có thay đổi nào được lưu.
+            </p>
             @foreach (var before in _preview.Before.Items)
             {
                 var after = _preview.After.Items.FirstOrDefault(item => item.Id == before.Id);
                 <article class="border rounded p-3 mb-3" @key="before.Id">
-                    <h3 class="h6 text-break">@before.ProductName</h3>
+                    <h3 class="h6 text-break">
+                        @before.ProductName
+                    </h3>
                     <div class="row g-3">
                         <div class="col-12 col-md-6">
-                            <strong class="small">Trước</strong>
+                            <strong class="small">
+                                Trước
+                            </strong>
                             <OrderAdjustmentItemSummary Item="before" />
                         </div>
                         <div class="col-12 col-md-6">
-                            <strong class="small">Sau</strong>
+                            <strong class="small">
+                                Sau
+                            </strong>
                             @if (after == null)
                             {
-                                <p class="text-danger mb-0">Bỏ dòng món này</p>
+                                <p class="text-danger mb-0">
+                                    Bỏ dòng món này
+                                </p>
                             }
                             else
                             {
                                 <OrderAdjustmentItemSummary Item="after" />
                             }
-
                         </div>
                     </div>
                 </article>
             }
-
-            <p class="fs-5">Trước: <del class="text-body-secondary">@Money(_preview.Before.TotalAmount)</del>; sau: <strong>@Money(_preview.After.TotalAmount)</strong>
+            <p class="fs-5">
+                Trước:
+                <del class="text-body-secondary">
+                    @Money(_preview.Before.TotalAmount)
+                </del>
+                ; sau:
+                <strong>
+                    @Money(_preview.After.TotalAmount)
+                </strong>
             </p>
             <p class="text-break">
-                <strong>Lý do:</strong> @_reason.Trim()</p>
-            <p class="small text-body-secondary">Sau xác nhận đơn chuyển sang Đã điều chỉnh; bản gốc được lưu trong lịch sử.</p>
+                <strong>
+                    Lý do:
+                </strong>
+                @_reason.Trim()
+            </p>
+            <p class="small text-body-secondary">
+                Sau xác nhận đơn chuyển sang Đã điều chỉnh; bản gốc được lưu trong lịch sử.
+            </p>
             <div class="d-flex flex-wrap gap-2">
-                <button class="btn btn-primary flex-grow-1" disabled="@_isBusy" @onclick="ConfirmAsync">@(_isBusy ? "Đang lưu..." : "Xác nhận điều chỉnh")</button>
-                <button class="btn btn-outline-secondary" disabled="@_isBusy" @onclick="EditAgain">Sửa lại</button>
+                <button class="btn btn-primary flex-grow-1" disabled="@_isBusy" @onclick="ConfirmAsync">
+                    @(_isBusy ? "Đang lưu..." : "Xác nhận điều chỉnh")
+                </button>
+                <button class="btn btn-outline-secondary" disabled="@_isBusy" @onclick="EditAgain">
+                    Sửa lại
+                </button>
             </div>
         }
         else
         {
             <fieldset disabled="@_isBusy">
-                <legend class="visually-hidden">Nội dung điều chỉnh</legend>
+                <legend class="visually-hidden">
+                    Nội dung điều chỉnh
+                </legend>
                 @foreach (var draft in _drafts)
                 {
                     var original = Order.Items.First(item => item.Id == draft.Data.OrderItemId);
                     <article class="border rounded p-3 mb-3" @key="original.Id">
                         <div class="d-flex justify-content-between gap-2 align-items-start">
-                            <h3 class="h6 text-break">@original.ProductName</h3>
-                            <button type="button" class="btn btn-sm @(draft.Removed ? "btn-outline-primary" : "btn-outline-danger") text-nowrap" @onclick="() => draft.Removed = !draft.Removed">@(draft.Removed ? "Giữ lại" : "Bỏ dòng")</button>
+                            <h3 class="h6 text-break">
+                                @original.ProductName
+                            </h3>
+                            <button type="button" class="btn btn-sm @(draft.Removed ? "btn-outline-primary" : "btn-outline-danger") text-nowrap" @onclick="() => draft.Removed = !draft.Removed">
+                                @(draft.Removed ? "Giữ lại" : "Bỏ dòng")
+                            </button>
                         </div>
                         @if (draft.Removed)
                         {
-                            <p class="text-danger small mb-0">Dòng món sẽ được bỏ khỏi đơn hiện hành, vẫn giữ trong lịch sử.</p>
+                            <p class="text-danger small mb-0">
+                                Dòng món sẽ được bỏ khỏi đơn hiện hành, vẫn giữ trong lịch sử.
+                            </p>
                         }
                         else
                         {
                             <div class="row g-2 mt-1">
                                 <div class="col-8">
-                                    <label class="form-label" for="@($"size-{original.Id}")">Size</label>
+                                    <label class="form-label" for="@($"size-{original.Id}")">
+                                        Size
+                                    </label>
                                     <select class="form-select" id="@($"size-{original.Id}")" @bind="draft.Data.ProductSizeId">
-                                        <option value="@original.ProductSizeId">@original.SizeName — giá cũ @Money(original.UnitPrice)</option>
+                                        <option value="@original.ProductSizeId">
+                                            @original.SizeName — giá cũ @Money(original.UnitPrice)
+                                        </option>
                                         @foreach (var size in _options.Sizes.Where(size => size.ProductId == original.ProductId && size.Id != original.ProductSizeId))
                                         {
-                                            <option value="@size.Id">@size.Name — @Money(size.Price) (hiện tại)</option>
+                                            <option value="@size.Id">
+                                                @size.Name — @Money(size.Price) (hiện tại)
+                                            </option>
                                         }
-
                                     </select>
                                 </div>
                                 <div class="col-4">
-                                    <label class="form-label" for="@($"qty-{original.Id}")">Số lượng</label>
+                                    <label class="form-label" for="@($"qty-{original.Id}")">
+                                        Số lượng
+                                    </label>
                                     <input class="form-control" id="@($"qty-{original.Id}")" type="number" min="1" max="999" @bind="draft.Data.Quantity" @bind:event="oninput" />
                                 </div>
                             </div>
-                            <h4 class="h6 mt-3">Topping</h4>
+                            <h4 class="h6 mt-3">
+                                Topping
+                            </h4>
                             @foreach (var top in draft.Data.Toppings.ToList())
                             {
                                 var current = _options.Toppings.FirstOrDefault(option => option.Id == top.ToppingId);
                                 var old = original.Toppings.FirstOrDefault(option => option.ToppingId == top.ToppingId);
                                 <div class="d-flex gap-2 align-items-center mb-2">
-                                    <label class="small flex-grow-1 text-break" for="@($"top-{original.Id}-{top.ToppingId}")">@(old?.Name ?? current?.Name ?? "Topping") @(current == null ? "(không còn hợp lệ — cần bỏ)" : "")<br />@(old != null ? Money(old.UnitPrice) + " / giá cũ" : Money(current?.Price ?? 0) + " / hiện tại")</label>
+                                    <label class="small flex-grow-1 text-break" for="@($"top-{original.Id}-{top.ToppingId}")">
+                                        @(old?.Name ?? current?.Name ?? "Topping") @(current == null ? "(không còn hợp lệ — cần bỏ)" : "")
+                                        <br />
+                                        @(old != null ? Money(old.UnitPrice) + " / giá cũ" : Money(current?.Price ?? 0) + " / hiện tại")
+                                    </label>
                                     <input id="@($"top-{original.Id}-{top.ToppingId}")" class="form-control adjustment-quantity" type="number" min="1" max="@(current?.MaxQuantity ?? 3)" @bind="top.Quantity" @bind:event="oninput" />
-                                    <button class="btn btn-outline-danger" aria-label="Bỏ topping @(old?.Name ?? current?.Name)" @onclick="() => draft.Data.Toppings.Remove(top)">Bỏ</button>
+                                    <button class="btn btn-outline-danger" aria-label="Bỏ topping @(old?.Name ?? current?.Name)" @onclick="() => draft.Data.Toppings.Remove(top)">
+                                        Bỏ
+                                    </button>
                                 </div>
                             }
-
                             <div class="d-flex gap-2">
-                                <label class="visually-hidden" for="@($"add-top-{original.Id}")">Thêm topping cho @original.ProductName</label>
+                                <label class="visually-hidden" for="@($"add-top-{original.Id}")">
+                                    Thêm topping cho @original.ProductName
+                                </label>
                                 <select id="@($"add-top-{original.Id}")" class="form-select" @bind="draft.NewToppingId">
-                                    <option value="0">Chọn topping...</option>
+                                    <option value="0">
+                                        Chọn topping...
+                                    </option>
                                     @foreach (var top in _options.Toppings.Where(top => !draft.Data.Toppings.Any(selected => selected.ToppingId == top.Id)))
                                     {
-                                        <option value="@top.Id">@top.Name — @Money(original.Toppings.FirstOrDefault(old => old.ToppingId == top.Id)?.UnitPrice ?? top.Price)</option>
+                                        <option value="@top.Id">
+                                            @top.Name — @Money(original.Toppings.FirstOrDefault(old => old.ToppingId == top.Id)?.UnitPrice ?? top.Price)
+                                        </option>
                                     }
-
                                 </select>
-                                <button class="btn btn-outline-primary" @onclick="() => AddTopping(draft)">Thêm</button>
+                                <button class="btn btn-outline-primary" @onclick="() => AddTopping(draft)">
+                                    Thêm
+                                </button>
                             </div>
-                            <h4 class="h6 mt-3">Ghi chú</h4>
+                            <h4 class="h6 mt-3">
+                                Ghi chú
+                            </h4>
                             @foreach (var id in draft.Data.NoteOptionIds.Where(id => !_options.Notes.Any(note => note.Id == id)).ToList())
                             {
-                                <p class="small text-danger">Ghi chú cũ không còn hợp lệ. <button class="btn btn-sm btn-outline-danger" @onclick="() => draft.Data.NoteOptionIds.Remove(id)">Bỏ ghi chú cũ</button>
+                                <p class="small text-danger">
+                                    Ghi chú cũ không còn hợp lệ.
+                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => draft.Data.NoteOptionIds.Remove(id)">
+                                        Bỏ ghi chú cũ
+                                    </button>
                                 </p>
                             }
-
                             <div class="row g-2">
                                 @foreach (int group in _options.Notes.Select(note => note.GroupId).Distinct())
                                 {
                                     var notes = _options.Notes.Where(note => note.GroupId == group).ToList();
                                     <div class="col-12 col-sm-6">
-                                        <label for="@($"note-{original.Id}-{group}")" class="form-label small">@notes[0].GroupName</label>
+                                        <label for="@($"note-{original.Id}-{group}")" class="form-label small">
+                                            @notes[0].GroupName
+                                        </label>
                                         <select id="@($"note-{original.Id}-{group}")" class="form-select" value="@draft.Data.NoteOptionIds.FirstOrDefault(id => notes.Any(note => note.Id == id))" @onchange="e => SetNote(draft, group, e)">
-                                            <option value="0">Không chọn</option>
+                                            <option value="0">
+                                                Không chọn
+                                            </option>
                                             @foreach (var note in notes)
                                             {
-                                                <option value="@note.Id">@note.Name</option>
+                                                <option value="@note.Id">
+                                                    @note.Name
+                                                </option>
                                             }
-
                                         </select>
                                     </div>
                                 }
-
                             </div>
                         }
-
                     </article>
                 }
-
-                <label for="adjustment-reason" class="form-label">Lý do điều chỉnh *</label>
+                <label for="adjustment-reason" class="form-label">
+                    Lý do điều chỉnh *
+                </label>
                 <textarea id="adjustment-reason" class="form-control mb-3" rows="3" maxlength="500" @bind="_reason" @bind:event="oninput">
                 </textarea>
                 <div class="d-flex flex-wrap gap-2">
-                    <button class="btn btn-primary flex-grow-1" @onclick="PreviewAsync">@(_isBusy ? "Đang tính..." : "Xem trước thay đổi")</button>
-                    <button class="btn btn-outline-secondary" @onclick="CancelAsync">Quay lại</button>
+                    <button class="btn btn-primary flex-grow-1" @onclick="PreviewAsync">
+                        @(_isBusy ? "Đang tính..." : "Xem trước thay đổi")
+                    </button>
+                    <button class="btn btn-outline-secondary" @onclick="CancelAsync">
+                        Quay lại
+                    </button>
                 </div>
             </fieldset>
         }
-
     </div>
 </section>
 
-@code {
+@code
+{
     [Parameter, EditorRequired]
     public OrderManagementDetailDTO Order { get; set; } = default!;
 
@@ -184,7 +263,7 @@
     public EventCallback OnCancel { get; set; }
 
     private OrderAdjustmentOptionsDTO? _options;
-    private List<DraftRow> _drafts = new();
+    private List<DraftRow> _drafts = new List<DraftRow>();
     private string _reason = "";
     private string? _errorMessage;
     private bool _isBusy;
@@ -218,17 +297,18 @@
 
             _options = data.Options ?? throw new InvalidOperationException();
             _drafts = new List<DraftRow>();
-
             foreach (OrderManagementItemDTO item in Order.Items)
             {
                 AdjustOrderItemRequestDTO request = new AdjustOrderItemRequestDTO
+
                 {
+
                     OrderItemId = item.Id,
                     ProductSizeId = item.ProductSizeId,
                     Quantity = item.Quantity,
                     NoteOptionIds = item.NoteOptionIds.ToList()
-                };
 
+                };
                 foreach (OrderManagementToppingDTO topping in item.Toppings)
                 {
                     request.Toppings.Add(new CreateOrderItemToppingRequestDTO
@@ -272,7 +352,10 @@
         row.NewToppingId = 0;
     }
 
-    private void SetNote(DraftRow row, int group, ChangeEventArgs e)
+    private void SetNote(
+        DraftRow row,
+        int group,
+        ChangeEventArgs e)
     {
         row.Data.NoteOptionIds.RemoveAll(id => _options!.Notes.Any(note => note.Id == id && note.GroupId == group));
         if (int.TryParse(e.Value?.ToString(), out int id) && id > 0)
@@ -306,15 +389,15 @@
         try
         {
             AdjustOrderRequestDTO request = new AdjustOrderRequestDTO
+
             {
+
                 Reason = _reason.Trim(),
                 ExpectedReportedAt = Order.ReportedAt,
                 ExpectedHistoryId = Order.LatestHistoryId,
-                Items = _drafts.Where(row => !row.Removed)
-                    .Select(row => row.Data)
-                    .ToList()
-            };
+                Items = _drafts.Where(row => !row.Removed).Select(row => row.Data).ToList()
 
+            };
             string requestJson = JsonSerializer.Serialize(request);
             _submitted = JsonSerializer.Deserialize<AdjustOrderRequestDTO>(requestJson);
             _preview = await OrderManagementApiService.AdjustAsync(Order.Id, _submitted!, true);
@@ -364,7 +447,9 @@
         }
     }
 
-    private void HandleError(HttpRequestException ex, bool writing)
+    private void HandleError(
+        HttpRequestException ex,
+        bool writing)
     {
         if (ex.StatusCode == HttpStatusCode.Conflict)
         {
@@ -396,7 +481,7 @@
     private async Task CancelAsync() => await OnCancel.InvokeAsync();
     private class DraftRow
     {
-        public AdjustOrderItemRequestDTO Data { get; set; } = new();
+        public AdjustOrderItemRequestDTO Data { get; set; } = new AdjustOrderItemRequestDTO();
         public bool Removed { get; set; }
         public int NewToppingId { get; set; }
     }

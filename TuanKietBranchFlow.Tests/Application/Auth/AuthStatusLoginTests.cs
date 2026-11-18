@@ -17,34 +17,45 @@ public class AuthStatusLoginTests
     public async Task Login_RequiresUnchangedActiveAccountLockBeforeCreatingSession(int lockedRows)
     {
         AppUser user = new AppUser
+
         {
+
             Id = 20,
             Username = "test",
             PasswordHash = "testhash",
             FullName = "Test",
             IsActive = true,
             UpdatedAt = DateTime.UtcNow,
-            Role = new Role { Code = "EMPLOYEE", Name = "Employee" }
+            Role = new Role
+
+            {
+
+                Code = "EMPLOYEE",
+                Name = "Employee"
+
+            }
+
         };
         Mock<IUserRepository> users = new Mock<IUserRepository>();
         users.Setup(repository => repository.GetByUsernameWithRoleAsync("test")).ReturnsAsync(user);
         users.Setup(repository => repository.LockActiveAccountForLoginAsync(20, user.UpdatedAt)).ReturnsAsync(lockedRows);
         Mock<IPasswordHasher<AppUser>> hasher = new Mock<IPasswordHasher<AppUser>>();
-        hasher.Setup(service => service.VerifyHashedPassword(user, "testhash", "testpassword"))
-            .Returns(PasswordVerificationResult.Success);
+        hasher.Setup(service => service.VerifyHashedPassword(user, "testhash", "testpassword")).Returns(PasswordVerificationResult.Success);
         Mock<IAuthSessionRepository> sessions = new Mock<IAuthSessionRepository>();
         Mock<IRefreshTokenRepository> tokens = new Mock<IRefreshTokenRepository>();
         Mock<IUnitOfWork> unitOfWork = new Mock<IUnitOfWork>();
-        AuthService service = new AuthService(users.Object, hasher.Object,
+        AuthService service = new AuthService(
+            users.Object,
+            hasher.Object,
             new JwtTokenService(new string('a', 64), "unit-test", "unit-test", 15),
-            sessions.Object, tokens.Object, unitOfWork.Object);
-
+            sessions.Object,
+            tokens.Object,
+            unitOfWork.Object);
         LoginResponseDTO? result = await service.LoginAsync(new LoginRequestDTO
         {
             Username = "test",
             Password = "testpassword"
         });
-
         unitOfWork.Verify(unit => unit.BeginTransactionAsync(), Times.Once);
         if (lockedRows == 0)
         {

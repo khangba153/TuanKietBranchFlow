@@ -10,19 +10,20 @@ namespace TuanKietBranchFlow.Tests.Application.Orders;
 
 public class EmployeeOrderReadRegressionTests
 {
-    private readonly Mock<IOrderRepository> _orders = new(MockBehavior.Strict);
-    private readonly Mock<IBranchRepository> _branches = new(MockBehavior.Strict);
-    private readonly Mock<IUnitOfWork> _work = new(MockBehavior.Strict);
+    private readonly Mock<IOrderRepository> _orders = new Mock<IOrderRepository>(MockBehavior.Strict);
+    private readonly Mock<IBranchRepository> _branches = new Mock<IBranchRepository>(MockBehavior.Strict);
+    private readonly Mock<IUnitOfWork> _work = new Mock<IUnitOfWork>(MockBehavior.Strict);
     private OrderService CreateService() => new(_branches.Object, _orders.Object, _work.Object);
-
     [Fact]
     public async Task MyOrders_UsesActingEmployeeAndNormalizesKeywordWithoutSaving()
     {
-        DateOnly date = new(2026, 11, 7);
-        _orders.Setup(x => x.GetOrdersCreatedByUserAsync(7, "CN02", date))
-            .ReturnsAsync(new List<SalesOrder> { MakeOrder() });
-        var rows = await CreateService().GetMyOrdersAsync(7, " CN02 ", date);
-        var row = Assert.Single(rows);
+        DateOnly date = new DateOnly(2026, 11, 7);
+        _orders.Setup(x => x.GetOrdersCreatedByUserAsync(7, "CN02", date)).ReturnsAsync(new List<SalesOrder>
+        {
+            MakeOrder()
+        });
+        List<MyOrderListItemDTO> rows = await CreateService().GetMyOrdersAsync(7, " CN02 ", date);
+        MyOrderListItemDTO row = Assert.Single(rows);
         Assert.Equal("TEST-ORDER", row.Code);
         Assert.Equal(3, row.TotalQuantity);
         Assert.Equal(54000m, row.TotalAmount);
@@ -45,10 +46,10 @@ public class EmployeeOrderReadRegressionTests
     public async Task MyDetail_UsesEmployeeScopedQueryAndStoredSnapshots()
     {
         _orders.Setup(x => x.GetOrderDetailCreatedByUserAsync(42, 7)).ReturnsAsync(MakeOrder());
-        var detail = await CreateService().GetMyOrderDetailAsync(7, 42);
+        MyOrderDetailDTO? detail = await CreateService().GetMyOrderDetailAsync(7, 42);
         Assert.NotNull(detail);
         Assert.Equal("CN02", detail.BranchCode);
-        var item = Assert.Single(detail.Items);
+        MyOrderDetailItemDTO item = Assert.Single(detail.Items);
         Assert.Equal("Tên món lúc bán", item.ProductName);
         Assert.Equal(18000m, item.UnitPrice);
         Assert.Equal(54000m, item.SubtotalAmount);
@@ -71,7 +72,10 @@ public class EmployeeOrderReadRegressionTests
     [InlineData("   ")]
     public async Task Report_BlankReason_DoesNotQueryOrSave(string reason)
     {
-        var result = await CreateService().ReportOrderAsync(7, 42, new ReportOrderRequestDTO { Reason = reason });
+        ReportOrderResult result = await CreateService().ReportOrderAsync(7, 42, new ReportOrderRequestDTO
+        {
+            Reason = reason
+        });
         Assert.False(result.IsReportValid);
         _orders.VerifyNoOtherCalls();
         _work.VerifyNoOtherCalls();
@@ -81,7 +85,10 @@ public class EmployeeOrderReadRegressionTests
     public async Task Report_AnotherEmployeesOrder_IsNotFoundAndDoesNotSave()
     {
         _orders.Setup(x => x.GetOrderForReportAsync(42, 8)).ReturnsAsync((SalesOrder?)null);
-        var result = await CreateService().ReportOrderAsync(8, 42, new ReportOrderRequestDTO { Reason = "Sai món" });
+        ReportOrderResult result = await CreateService().ReportOrderAsync(8, 42, new ReportOrderRequestDTO
+        {
+            Reason = "Sai món"
+        });
         Assert.True(result.IsReportValid);
         Assert.False(result.IsOrderFound);
         _orders.VerifyAll();
@@ -89,11 +96,40 @@ public class EmployeeOrderReadRegressionTests
     }
 
     private static SalesOrder MakeOrder() => new()
+
     {
-        Id = 42, Code = "TEST-ORDER", BranchId = 2, CreatedByUserId = 7,
-        Branch = new Branch { Code = "CN02", Name = "Chi nhánh 2" },
-        TotalAmount = 54000m, Status = "COMPLETED",
+
+        Id = 42,
+        Code = "TEST-ORDER",
+        BranchId = 2,
+        CreatedByUserId = 7,
+        Branch = new Branch
+
+        {
+
+            Code = "CN02",
+            Name = "Chi nhánh 2"
+
+        },
+        TotalAmount = 54000m,
+        Status = "COMPLETED",
         OrderItems = new List<OrderItem>
-        { new() { ProductNameSnapshot = "Tên món lúc bán", SizeNameSnapshot = "M", Quantity = 3, UnitPriceSnapshot = 18000m, SubtotalAmount = 54000m } }
+
+    {
+
+        new()
+
+    {
+
+        ProductNameSnapshot = "Tên món lúc bán",
+        SizeNameSnapshot = "M",
+        Quantity = 3,
+        UnitPriceSnapshot = 18000m,
+        SubtotalAmount = 54000m
+
+    }
+
+    }
+
     };
 }

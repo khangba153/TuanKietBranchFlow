@@ -10,12 +10,10 @@ public class CreateToppingRequestDTO
 
     // Tên topping theo giới hạn của database
     [Required(ErrorMessage = "Tên topping không được để trống.")]
-    [StringLength(150,
-        ErrorMessage = "Tên topping không được vượt quá 150 ký tự.")]
+    [StringLength(150, ErrorMessage = "Tên topping không được vượt quá 150 ký tự.")]
     public string Name { get; set; } = string.Empty;
 
     // Giá dùng chung, cùng quy tắc giá dương như ProductSize
-    [Range(typeof(decimal), "0.01", "9999999999999999.99",
-        ErrorMessage = "Giá topping phải lớn hơn 0.")]
+    [Range(typeof(decimal), "0.01", "9999999999999999.99", ErrorMessage = "Giá topping phải lớn hơn 0.")]
     public decimal Price { get; set; }
 }

@@ -8,18 +8,15 @@ public interface IOrderService
     Task<CreateOrderResultDTO> CreateOrderAsync(
         int currentUserId,
         CreateOrderRequestDTO request);
-
     // Lấy lịch sử đơn do employee hiện tại tạo
     Task<List<MyOrderListItemDTO>> GetMyOrdersAsync(
         int currentUserId,
         string keyword,
         DateOnly? businessDate);
-
     // Lấy chi tiết 1 đơn do employee hiện tại tạo
     Task<MyOrderDetailDTO?> GetMyOrderDetailAsync(
         int currentUserId,
         int orderId);
-
     // Báo sai đơn do chính employee hiện tại tạo
     Task<ReportOrderResult> ReportOrderAsync(
         int currentUserId,

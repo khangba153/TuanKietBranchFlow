@@ -2,6 +2,7 @@ using System.Text.Json;
 using TuanKietBranchFlow.Application.DTOs.Orders.Management;
 
 namespace TuanKietBranchFlow.Application.Services.Orders;
+
 // Snapshot không lồng history cũ để tránh JSON tăng theo từng lần xử lý.
 public static class OrderSnapshot
 {

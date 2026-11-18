@@ -14,14 +14,11 @@ public class AuthService : IAuthService
     private readonly IUserRepository _userRepository;
     private readonly IPasswordHasher<AppUser> _passwordHasher;
     private readonly JwtTokenService _jwtTokenService;
-
     // Quản lý phiên đăng nhập và refresh token
     private readonly IAuthSessionRepository _authSessionRepository;
     private readonly IRefreshTokenRepository _refreshTokenRepository;
-
     // Lưu các thay đổi của nghiệp vụ xác thực
     private readonly IUnitOfWork _unitOfWork;
-
     // Nhận các dependency phục vụ đăng nhập và quản lý token
     public AuthService(
         IUserRepository userRepository,
@@ -44,10 +41,7 @@ public class AuthService : IAuthService
     {
         // Chuẩn hóa username để tìm tài khoản
         string username = request.Username.Trim();
-
-        AppUser? user =
-            await _userRepository.GetByUsernameWithRoleAsync(username);
-
+        AppUser? user = await _userRepository.GetByUsernameWithRoleAsync(username);
         if (user == null)
         {
             return null;
@@ -65,12 +59,7 @@ public class AuthService : IAuthService
         }
 
         // Kiểm tra mật khẩu trước khi tạo phiên
-        PasswordVerificationResult passwordResult =
-            _passwordHasher.VerifyHashedPassword(
-                user,
-                user.PasswordHash,
-                request.Password);
-
+        PasswordVerificationResult passwordResult = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
         if (passwordResult == PasswordVerificationResult.Failed)
         {
             return null;
@@ -80,45 +69,39 @@ public class AuthService : IAuthService
         DateTime now = DateTime.UtcNow;
         DateTime sessionExpiresAt = now.AddDays(7);
         DateTime accessTokenExpiresAt = now.AddMinutes(15);
-
         // Tạo phiên mới cho lần đăng nhập này
         AuthSession session = new AuthSession
+
         {
+
             Id = Guid.NewGuid(),
             UserId = user.Id,
             CreatedAt = now,
             ExpiresAt = sessionExpiresAt
-        };
 
+        };
         // Chỉ lưu hash; token gốc được trả cho client
         string refreshToken = RefreshTokenHelper.GenerateToken();
         string tokenHash = RefreshTokenHelper.HashToken(refreshToken);
-
         RefreshToken refreshTokenEntity = new RefreshToken
+
         {
+
             Id = Guid.NewGuid(),
             SessionId = session.Id,
             Session = session,
             TokenHash = tokenHash,
             CreatedAt = now,
             ExpiresAt = sessionExpiresAt
+
         };
-
         // Gắn JWT với đúng phiên vừa tạo
-        string accessToken = _jwtTokenService.GenerateSessionToken(
-            user.Id,
-            user.Username,
-            user.Role.Code,
-            session.Id,
-            accessTokenExpiresAt);
-
+        string accessToken = _jwtTokenService.GenerateSessionToken(user.Id, user.Username, user.Role.Code, session.Id, accessTokenExpiresAt);
         // Giữ cùng khóa tài khoản với nghiệp vụ nghỉ việc để không tạo phiên lọt qua lúc thu hồi.
         await _unitOfWork.BeginTransactionAsync();
-
         try
         {
             int lockedRows = await _userRepository.LockActiveAccountForLoginAsync(user.Id, user.UpdatedAt);
-
             if (lockedRows != 1)
             {
                 await _unitOfWork.RollbackTransactionAsync();
@@ -140,11 +123,14 @@ public class AuthService : IAuthService
 
         // Chỉ trả cặp token khi dữ liệu đã lưu thành công
         return new LoginResponseDTO
+
         {
+
             AccessToken = accessToken,
             RefreshToken = refreshToken,
             AccessTokenExpiresAt = accessTokenExpiresAt,
             RefreshTokenExpiresAt = sessionExpiresAt
+
         };
     }
 
@@ -154,16 +140,12 @@ public class AuthService : IAuthService
         int userId,
         string roleCode)
     {
-        if (sessionId == Guid.Empty ||
-            userId <= 0 ||
-            string.IsNullOrWhiteSpace(roleCode))
+        if (sessionId == Guid.Empty || userId <= 0 || string.IsNullOrWhiteSpace(roleCode))
         {
             return false;
         }
 
-        AuthSession? session =
-            await _authSessionRepository.GetByIdWithUserAsync(sessionId);
-
+        AuthSession? session = await _authSessionRepository.GetByIdWithUserAsync(sessionId);
         // Phiên phải tồn tại và thuộc đúng tài khoản trong JWT
         if (session == null || session.UserId != userId)
         {
@@ -171,23 +153,19 @@ public class AuthService : IAuthService
         }
 
         // Phiên đã thu hồi hoặc hết hạn không được sử dụng
-        if (session.RevokedAt != null ||
-            session.ExpiresAt <= DateTime.UtcNow)
+        if (session.RevokedAt != null || session.ExpiresAt <= DateTime.UtcNow)
         {
             return false;
         }
 
         AppUser? user = session.User;
-
         if (user == null || user.Deleted || !user.IsActive)
         {
             return false;
         }
 
         // Không tiếp tục chấp nhận quyền cũ khi role đã thay đổi
-        if (user.Role == null ||
-            user.Role.Deleted ||
-            user.Role.Code != roleCode)
+        if (user.Role == null || user.Role.Deleted || user.Role.Code != roleCode)
         {
             return false;
         }
@@ -200,31 +178,23 @@ public class AuthService : IAuthService
     {
         if (userId <= 0)
         {
-            throw new ArgumentException(
-                "Id tài khoản không hợp lệ.",
-                nameof(userId));
+            throw new ArgumentException("Id tài khoản không hợp lệ.", nameof(userId));
         }
 
         const int maxAttempts = 3;
-
         for (int attempt = 1; attempt <= maxAttempts; attempt++)
         {
-            List<AuthSession> sessions =
-                await _authSessionRepository
-                    .GetNotRevokedByUserIdAsync(userId);
-
+            List<AuthSession> sessions = await _authSessionRepository.GetNotRevokedByUserIdAsync(userId);
             if (sessions.Count == 0)
             {
                 return;
             }
 
             DateTime now = DateTime.UtcNow;
-
             // Thu hồi phiên và token, không thay đổi lịch sử UsedAt.
             foreach (AuthSession session in sessions)
             {
                 session.RevokedAt = now;
-
                 foreach (RefreshToken refreshToken in session.RefreshTokens)
                 {
                     if (refreshToken.RevokedAt == null)
@@ -239,8 +209,7 @@ public class AuthService : IAuthService
                 await _unitOfWork.SaveChangesAsync();
                 return;
             }
-            catch (DbUpdateConcurrencyException)
-                when (attempt < maxAttempts)
+            catch (DbUpdateConcurrencyException) when (attempt < maxAttempts)
             {
                 // Bỏ state cũ để vòng tiếp theo đọc dữ liệu mới nhất.
                 _unitOfWork.ClearTracking();
@@ -249,24 +218,16 @@ public class AuthService : IAuthService
     }
 
     // Làm mới token và thu hồi các phiên khi phát hiện token bị dùng lại.
-    public async Task<LoginResponseDTO?> RefreshAsync(
-        RefreshTokenRequestDTO request)
+    public async Task<LoginResponseDTO?> RefreshAsync(RefreshTokenRequestDTO request)
     {
-        if (request == null ||
-            string.IsNullOrWhiteSpace(request.RefreshToken) ||
-            request.RefreshToken.Length != 44)
+        if (request == null || string.IsNullOrWhiteSpace(request.RefreshToken) || request.RefreshToken.Length != 44)
         {
             return null;
         }
 
         // Đối chiếu đúng token gốc, không Trim hoặc đổi chữ hoa/thường.
-        string tokenHash =
-            RefreshTokenHelper.HashToken(request.RefreshToken);
-
-        RefreshToken? currentToken =
-            await _refreshTokenRepository
-                .GetByHashWithSessionAsync(tokenHash);
-
+        string tokenHash = RefreshTokenHelper.HashToken(request.RefreshToken);
+        RefreshToken? currentToken = await _refreshTokenRepository.GetByHashWithSessionAsync(tokenHash);
         if (currentToken == null)
         {
             return null;
@@ -274,24 +235,14 @@ public class AuthService : IAuthService
 
         DateTime nowUtc = DateTime.UtcNow;
         AuthSession? session = currentToken.Session;
-
         // Token của phiên đã kết thúc không được ảnh hưởng phiên mới.
-        if (session == null ||
-            currentToken.RevokedAt != null ||
-            currentToken.ExpiresAt <= nowUtc ||
-            session.RevokedAt != null ||
-            session.ExpiresAt <= nowUtc)
+        if (session == null || currentToken.RevokedAt != null || currentToken.ExpiresAt <= nowUtc || session.RevokedAt != null || session.ExpiresAt <= nowUtc)
         {
             return null;
         }
 
         AppUser? user = session.User;
-
-        if (user == null ||
-            user.Deleted ||
-            !user.IsActive ||
-            user.Role == null ||
-            user.Role.Deleted)
+        if (user == null || user.Deleted || !user.IsActive || user.Role == null || user.Role.Deleted)
         {
             return null;
         }
@@ -300,10 +251,8 @@ public class AuthService : IAuthService
         if (currentToken.UsedAt != null)
         {
             int userId = session.UserId;
-
             _unitOfWork.ClearTracking();
             await LogoutAllAsync(userId);
-
             return null;
         }
 
@@ -315,24 +264,12 @@ public class AuthService : IAuthService
         {
             // Bỏ R1 đang sửa và R2 chưa lưu của lần rotation thất bại.
             _unitOfWork.ClearTracking();
-
-            RefreshToken? latestToken =
-                await _refreshTokenRepository
-                    .GetByHashWithSessionAsync(tokenHash);
-
+            RefreshToken? latestToken = await _refreshTokenRepository.GetByHashWithSessionAsync(tokenHash);
             DateTime latestNowUtc = DateTime.UtcNow;
-
             // Đọc lại để phân biệt reuse với token vừa bị logout/thu hồi.
-            if (latestToken != null &&
-                latestToken.Session != null &&
-                latestToken.UsedAt != null &&
-                latestToken.RevokedAt == null &&
-                latestToken.ExpiresAt > latestNowUtc &&
-                latestToken.Session.RevokedAt == null &&
-                latestToken.Session.ExpiresAt > latestNowUtc)
+            if (latestToken != null && latestToken.Session != null && latestToken.UsedAt != null && latestToken.RevokedAt == null && latestToken.ExpiresAt > latestNowUtc && latestToken.Session.RevokedAt == null && latestToken.Session.ExpiresAt > latestNowUtc)
             {
                 int userId = latestToken.Session.UserId;
-
                 _unitOfWork.ClearTracking();
                 await LogoutAllAsync(userId);
             }
@@ -350,50 +287,39 @@ public class AuthService : IAuthService
     {
         if (nowUtc.Kind != DateTimeKind.Utc)
         {
-            throw new ArgumentException(
-                "Thời điểm hiện tại phải theo UTC.",
-                nameof(nowUtc));
+            throw new ArgumentException("Thời điểm hiện tại phải theo UTC.", nameof(nowUtc));
         }
 
         if (user.Role == null)
         {
-            throw new InvalidOperationException(
-                "Tài khoản chưa có thông tin quyền.");
+            throw new InvalidOperationException("Tài khoản chưa có thông tin quyền.");
         }
 
         // ExpiresAt được lưu theo UTC nhưng datetime2 không giữ DateTime.Kind.
-        DateTime sessionExpiresAtUtc =
-            DateTime.SpecifyKind(session.ExpiresAt, DateTimeKind.Utc);
-
+        DateTime sessionExpiresAtUtc = DateTime.SpecifyKind(session.ExpiresAt, DateTimeKind.Utc);
         if (session.RevokedAt != null || sessionExpiresAtUtc <= nowUtc)
         {
-            throw new InvalidOperationException(
-                "Không thể cấp token cho phiên đã thu hồi hoặc hết hạn.");
+            throw new InvalidOperationException("Không thể cấp token cho phiên đã thu hồi hoặc hết hạn.");
         }
 
         // Access token tối đa 15 phút và không vượt thời hạn phiên.
         DateTime accessTokenExpiresAt = nowUtc.AddMinutes(15);
-
         if (accessTokenExpiresAt > sessionExpiresAtUtc)
         {
             accessTokenExpiresAt = sessionExpiresAtUtc;
         }
 
         string refreshToken = RefreshTokenHelper.GenerateToken();
-
-        string accessToken = _jwtTokenService.GenerateSessionToken(
-            user.Id,
-            user.Username,
-            user.Role.Code,
-            session.Id,
-            accessTokenExpiresAt);
-
+        string accessToken = _jwtTokenService.GenerateSessionToken(user.Id, user.Username, user.Role.Code, session.Id, accessTokenExpiresAt);
         return new LoginResponseDTO
+
         {
+
             AccessToken = accessToken,
             RefreshToken = refreshToken,
             AccessTokenExpiresAt = accessTokenExpiresAt,
             RefreshTokenExpiresAt = sessionExpiresAtUtc
+
         };
     }
 
@@ -402,39 +328,32 @@ public class AuthService : IAuthService
         RefreshToken currentToken,
         DateTime nowUtc)
     {
-        if (currentToken.UsedAt != null ||
-            currentToken.RevokedAt != null ||
-            currentToken.ExpiresAt <= nowUtc)
+        if (currentToken.UsedAt != null || currentToken.RevokedAt != null || currentToken.ExpiresAt <= nowUtc)
         {
-            throw new InvalidOperationException(
-                "Refresh token không còn hợp lệ để rotation.");
+            throw new InvalidOperationException("Refresh token không còn hợp lệ để rotation.");
         }
 
         AuthSession session = currentToken.Session;
         AppUser user = session.User;
-
         // Tạo cặp token mới nhưng chưa gửi ra client.
-        LoginResponseDTO response =
-            CreateTokenResponse(user, session, nowUtc);
-
+        LoginResponseDTO response = CreateTokenResponse(user, session, nowUtc);
         RefreshToken newToken = new RefreshToken
+
         {
+
             Id = Guid.NewGuid(),
             SessionId = session.Id,
             Session = session,
             TokenHash = RefreshTokenHelper.HashToken(response.RefreshToken),
             CreatedAt = nowUtc,
             ExpiresAt = response.RefreshTokenExpiresAt
-        };
 
+        };
         // Entity token cũ đang được Repository truy vấn có tracking.
         currentToken.UsedAt = nowUtc;
-
         await _refreshTokenRepository.AddAsync(newToken);
-
         // Lưu UsedAt của R1 và thêm R2 cùng nhau.
         await _unitOfWork.SaveChangesAsync();
-
         return response;
     }
 }

@@ -2,36 +2,42 @@
 @using TuanKietBranchFlow.Web.Services.Orders
 @page "/my-orders/{OrderId:int}"
 @implements IAsyncDisposable
-
 @using System.Text.Json
 @using TuanKietBranchFlow.Application.DTOs.Orders
-
 @inject OrderApiService OrderApiService
-
-<PageTitle>Chi tiết đơn</PageTitle>
+<PageTitle>
+    Chi tiết đơn
+</PageTitle>
 <div class="my-order-detail-page bf-page">
     @if (_isLoading)
     {
         <section class="my-order-detail-state bf-surface" aria-live="polite">
             <div class="spinner-border text-success" role="status">
-                <span class="visually-hidden">Đang tải chi tiết đơn</span>
+                <span class="visually-hidden">
+                    Đang tải chi tiết đơn
+                </span>
             </div>
-
-            <h1 class="h5 mb-0">Đang tải chi tiết đơn</h1>
-            <p>Vui lòng chờ trong giây lát.</p>
+            <h1 class="h5 mb-0">
+                Đang tải chi tiết đơn
+            </h1>
+            <p>
+                Vui lòng chờ trong giây lát.
+            </p>
         </section>
     }
     else if (!string.IsNullOrWhiteSpace(_errorMessage))
     {
         <section class="my-order-detail-state my-order-detail-state-error bf-surface" role="alert">
-            <h1 class="h5 mb-0">Không thể tải đơn hàng</h1>
-            <p>@_errorMessage</p>
-
+            <h1 class="h5 mb-0">
+                Không thể tải đơn hàng
+            </h1>
+            <p>
+                @_errorMessage
+            </p>
             <div class="d-flex flex-wrap justify-content-center gap-2">
                 <a href="/my-orders" class="btn btn-outline-secondary">
                     Quay lại danh sách
                 </a>
-
                 <button type="button" class="btn btn-danger" @onclick="LoadOrderAsync">
                     Thử lại
                 </button>
@@ -41,9 +47,12 @@
     else if (_order is null)
     {
         <section class="my-order-detail-state bf-surface" role="status">
-            <h1 class="h5 mb-0">Không có dữ liệu chi tiết</h1>
-            <p>Đơn hàng này chưa có dữ liệu để hiển thị.</p>
-
+            <h1 class="h5 mb-0">
+                Không có dữ liệu chi tiết
+            </h1>
+            <p>
+                Đơn hàng này chưa có dữ liệu để hiển thị.
+            </p>
             <a href="/my-orders" class="btn btn-primary">
                 Quay lại danh sách
             </a>
@@ -56,86 +65,101 @@
                 <a href="/my-orders" class="my-order-detail-back-button" aria-label="Quay lại danh sách đơn">
                     Danh sách đơn
                 </a>
-
                 <div class="my-order-detail-hero-copy">
-                    <p class="my-order-detail-eyebrow">Chi tiết đơn</p>
-                    <h1>@_order.Code</h1>
-                    <p>@_order.BranchName</p>
+                    <p class="my-order-detail-eyebrow">
+                        Chi tiết đơn
+                    </p>
+                    <h1>
+                        @_order.Code
+                    </h1>
+                    <p>
+                        @_order.BranchName
+                    </p>
                 </div>
             </div>
-
             <div class="my-order-detail-hero-summary">
                 <button type="button" class="btn btn-outline-secondary"
-                        disabled="@(_isReporting || _isRefreshing)" @onclick="LoadOrderAsync">
+                    disabled="@(_isReporting || _isRefreshing)" @onclick="LoadOrderAsync">
                     Tải lại
                 </button>
                 <span class="my-order-detail-status badge @(GetStatusClass(_order.Status))">
                     @GetStatusText(_order.Status)
                 </span>
-
             </div>
         </header>
-
         @if (!string.IsNullOrWhiteSpace(_resolutionNotice))
         {
-            <div class="alert alert-info" role="status">@_resolutionNotice</div>
+            <div class="alert alert-info" role="status">
+                @_resolutionNotice
+            </div>
         }
-
-        <p class="small text-body-secondary">Kết quả xử lý được kiểm tra lại mỗi 15 giây khi đang mở trang.</p>
+        <p class="small text-body-secondary">
+            Kết quả xử lý được kiểm tra lại mỗi 15 giây khi đang mở trang.
+        </p>
         @if (!string.IsNullOrWhiteSpace(_refreshErrorMessage))
         {
-            <div class="alert alert-warning" role="status">@_refreshErrorMessage</div>
+            <div class="alert alert-warning" role="status">
+                @_refreshErrorMessage
+            </div>
         }
-
         <MyOrderResolutionHistory History="_order.History" LatestHistoryId="_order.LatestHistoryId" />
-
         <div class="my-order-detail-content">
             <section class="my-order-detail-information bf-surface" aria-labelledby="order-information-title">
                 <div class="my-order-detail-section-heading">
                     <div>
-                        <h2 id="order-information-title">Thông tin đơn</h2>
+                        <h2 id="order-information-title">
+                            Thông tin đơn
+                        </h2>
                     </div>
                 </div>
-
                 <dl class="my-order-detail-description-list">
                     <div>
-                        <dt>Ngày nghiệp vụ</dt>
+                        <dt>
+                            Ngày nghiệp vụ
+                        </dt>
                         <dd>
                             <time datetime="@_order.BusinessDate.ToString("yyyy-MM-dd")">
                                 @_order.BusinessDate.ToString("dd/MM/yyyy")
                             </time>
                         </dd>
                     </div>
-
                     <div>
-                        <dt>Thời gian tạo</dt>
+                        <dt>
+                            Thời gian tạo
+                        </dt>
                         <dd>
                             <time datetime="@_order.CreatedAt.ToString("O")">
                                 @_order.CreatedAt.ToString("dd/MM/yyyy - HH:mm")
                             </time>
                         </dd>
                     </div>
-
                     <div>
-                        <dt>Chi nhánh</dt>
-                        <dd>@_order.BranchCode - @_order.BranchName</dd>
+                        <dt>
+                            Chi nhánh
+                        </dt>
+                        <dd>
+                            @_order.BranchCode - @_order.BranchName
+                        </dd>
                     </div>
                 </dl>
             </section>
-
             <section class="my-order-detail-items" aria-labelledby="order-items-title">
                 <div class="my-order-detail-items-heading">
                     <div>
-                        <h2 id="order-items-title">Các món đã đặt</h2>
+                        <h2 id="order-items-title">
+                            Các món đã đặt
+                        </h2>
                     </div>
-
-                    <span>@_order.Items.Count dòng món</span>
+                    <span>
+                        @_order.Items.Count dòng món
+                    </span>
                 </div>
-
                 @if (_order.Items.Count == 0)
                 {
                     <div class="my-order-detail-empty bf-surface" role="status">
-                        <p class="mb-0">Đơn hàng không có thông tin món.</p>
+                        <p class="mb-0">
+                            Đơn hàng không có thông tin món.
+                        </p>
                     </div>
                 }
                 else
@@ -146,32 +170,43 @@
                             <article class="my-order-detail-item-card">
                                 <header class="my-order-detail-item-header">
                                     <div>
-                                        <h3>@item.ProductName</h3>
-
+                                        <h3>
+                                            @item.ProductName
+                                        </h3>
                                         <div class="my-order-detail-item-meta">
-                                            <span>Size @item.SizeName</span>
-                                            <span>Số lượng @item.Quantity</span>
+                                            <span>
+                                                Size @item.SizeName
+                                            </span>
+                                            <span>
+                                                Số lượng @item.Quantity
+                                            </span>
                                         </div>
                                     </div>
-
-                                    <strong>@item.SubtotalAmount.ToString("N0") đ</strong>
+                                    <strong>
+                                        @item.SubtotalAmount.ToString("N0") đ
+                                    </strong>
                                 </header>
-
                                 <div class="my-order-detail-item-body">
                                     <div class="my-order-detail-price-row">
-                                        <span>Giá size</span>
-                                        <strong>@item.UnitPrice.ToString("N0") đ</strong>
+                                        <span>
+                                            Giá size
+                                        </span>
+                                        <strong>
+                                            @item.UnitPrice.ToString("N0") đ
+                                        </strong>
                                     </div>
-
                                     @if (item.Toppings.Count > 0)
                                     {
                                         <section class="my-order-detail-option-group" aria-label="Topping đã chọn">
-                                            <h4>Topping</h4>
-
+                                            <h4>
+                                                Topping
+                                            </h4>
                                             @foreach (MyOrderDetailToppingDTO topping in item.Toppings)
                                             {
                                                 <div class="my-order-detail-price-row">
-                                                    <span>@topping.Name × @topping.Quantity</span>
+                                                    <span>
+                                                        @topping.Name × @topping.Quantity
+                                                    </span>
                                                     <strong>
                                                         @((topping.UnitPrice * topping.Quantity).ToString("N0")) đ
                                                     </strong>
@@ -179,16 +214,18 @@
                                             }
                                         </section>
                                     }
-
                                     @if (item.Notes.Count > 0)
                                     {
                                         <section class="my-order-detail-option-group" aria-label="Ghi chú đã chọn">
-                                            <h4>Ghi chú</h4>
-
+                                            <h4>
+                                                Ghi chú
+                                            </h4>
                                             <div class="my-order-detail-note-list">
                                                 @foreach (MyOrderDetailNoteDTO note in item.Notes)
                                                 {
-                                                    <span>@note.Name</span>
+                                                    <span>
+                                                        @note.Name
+                                                    </span>
                                                 }
                                             </div>
                                         </section>
@@ -199,20 +236,21 @@
                     </div>
                 }
             </section>
-
             <aside class="my-order-detail-action">
                 <section class="my-order-detail-total bf-surface" aria-label="Tổng tiền đơn hàng">
                     <div>
-                        <span>Tổng cộng</span>
+                        <span>
+                            Tổng cộng
+                        </span>
                     </div>
-
-                    <strong>@_order.TotalAmount.ToString("N0") đ</strong>
+                    <strong>
+                        @_order.TotalAmount.ToString("N0") đ
+                    </strong>
                 </section>
-
                 @if (string.Equals(
-                    _order.Status,
-                    "NEEDS_REVIEW",
-                    StringComparison.OrdinalIgnoreCase))
+                _order.Status,
+                "NEEDS_REVIEW",
+                StringComparison.OrdinalIgnoreCase))
                 {
                     @if (!string.IsNullOrWhiteSpace(_reportSuccessMessage))
                     {
@@ -220,13 +258,17 @@
                             @_reportSuccessMessage
                         </div>
                     }
-
                     <section class="my-order-detail-review-card" aria-labelledby="reported-order-title">
                         <div>
-                            <p class="my-order-detail-section-eyebrow">Đã tiếp nhận</p>
-                            <h2 id="reported-order-title">Đơn đang chờ xem lại</h2>
-                            <p class="my-order-detail-review-reason">@_order.ReportReason</p>
-
+                            <p class="my-order-detail-section-eyebrow">
+                                Đã tiếp nhận
+                            </p>
+                            <h2 id="reported-order-title">
+                                Đơn đang chờ xem lại
+                            </h2>
+                            <p class="my-order-detail-review-reason">
+                                @_order.ReportReason
+                            </p>
                             @if (_order.ReportedAt.HasValue)
                             {
                                 <small>
@@ -244,63 +286,63 @@
                     <section class="my-order-detail-report-card bf-surface" aria-labelledby="report-order-title">
                         <div class="my-order-detail-section-heading">
                             <div>
-                                <h2 id="report-order-title">@(_order.LatestHistoryId > 0 ? "Báo sai lại" : "Báo sai đơn hàng")</h2>
+                                <h2 id="report-order-title">
+                                    @(_order.LatestHistoryId > 0 ? "Báo sai lại" : "Báo sai đơn hàng")
+                                </h2>
                             </div>
                         </div>
-
                         <p class="my-order-detail-report-description">
                             Hãy mô tả thông tin chưa chính xác để quản lý kiểm tra.
                         </p>
-
                         @if (_order.LatestHistoryId > 0)
                         {
                             <div class="form-check mb-3">
                                 <input id="reviewed-resolution" class="form-check-input" type="checkbox"
-                                       @bind="_hasReviewedResolution" disabled="@_isReporting" />
+                                    @bind="_hasReviewedResolution" disabled="@_isReporting" />
                                 <label class="form-check-label" for="reviewed-resolution">
                                     Tôi đã xem kết quả xử lý gần nhất, nhưng đơn vẫn còn sai.
                                 </label>
                             </div>
                         }
-
                         @if (!string.IsNullOrWhiteSpace(_reportErrorMessage))
                         {
                             <div class="alert alert-danger" role="alert">
                                 @_reportErrorMessage
                             </div>
                         }
-
                         <label for="report-reason" class="form-label fw-semibold">
                             Lý do báo sai
                         </label>
-
                         <textarea id="report-reason"
-                                  class="form-control my-order-detail-report-input"
-                                  rows="4"
-                                  maxlength="500"
-                                  placeholder="Ví dụ: Sai size hoặc thiếu topping..."
-                                  @bind="_reportReason"
-                                  @bind:event="oninput"
-                                  disabled="@_isReporting">
+                            class="form-control my-order-detail-report-input"
+                            rows="4"
+                            maxlength="500"
+                            placeholder="Ví dụ: Sai size hoặc thiếu topping..."
+                            @bind="_reportReason"
+                            @bind:event="oninput"
+                            disabled="@_isReporting">
                         </textarea>
-
                         <small class="my-order-detail-character-count">
                             @_reportReason.Length/500 ký tự
                         </small>
-
                         <button type="button"
-                                class="btn btn-outline-danger my-order-detail-report-button"
-                                disabled="@(_isReporting || _reportMustReload || string.IsNullOrWhiteSpace(_reportReason)
-                                    || (_order.LatestHistoryId > 0 && !_hasReviewedResolution))"
-                                @onclick="SubmitReportAsync">
+                            class="btn btn-outline-danger my-order-detail-report-button"
+                            disabled="@(_isReporting || _reportMustReload || string.IsNullOrWhiteSpace(_reportReason)
+                            || (_order.LatestHistoryId > 0 && !_hasReviewedResolution))"
+                            @onclick="SubmitReportAsync">
                             @if (_isReporting)
                             {
-                                <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
-                                <span>Đang gửi...</span>
+                                <span class="spinner-border spinner-border-sm me-2" aria-hidden="true">
+                                </span>
+                                <span>
+                                    Đang gửi...
+                                </span>
                             }
                             else
                             {
-                                <span>@(_order.LatestHistoryId > 0 ? "Gửi báo sai lại" : "Gửi báo sai")</span>
+                                <span>
+                                    @(_order.LatestHistoryId > 0 ? "Gửi báo sai lại" : "Gửi báo sai")
+                                </span>
                             }
                         </button>
                     </section>
@@ -309,18 +351,18 @@
         </div>
     }
 </div>
-@code {
+
+@code
+{
     // ID của đơn được lấy từ URL
     [Parameter]
     public int OrderId { get; set; }
 
     // Dữ liệu chi tiết đơn hàng từ API
     private MyOrderDetailDTO? _order;
-
     // Trạng thái tải dữ liệu
     private bool _isLoading = true;
     private string? _errorMessage;
-
     // Trạng thái form báo sai đơn
     private string _reportReason = string.Empty;
     private bool _isReporting;
@@ -336,7 +378,6 @@
     private bool _disposed;
     private Task? _refreshTask;
     private readonly CancellationTokenSource _refreshCancellation = new CancellationTokenSource();
-
     // Tải lại khi đổi URL đơn; chỉ tạo một vòng kiểm tra cho mỗi component.
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -357,7 +398,6 @@
         _reportSuccessMessage = null;
         _resolutionNotice = null;
         await LoadOrderAsync();
-
         if (!_disposed && _refreshTask is null)
         {
             _refreshTask = RefreshOrderPeriodicallyAsync();
@@ -384,7 +424,6 @@
         int requestedOrderId = OrderId;
         int readVersion = ++_readVersion;
         _isRefreshing = true;
-
         if (!isBackground)
         {
             _isLoading = true;
@@ -393,9 +432,7 @@
 
         try
         {
-            OrderDetailApiResult result =
-                await OrderApiService.GetMyOrderDetailAsync(requestedOrderId);
-
+            OrderDetailApiResult result = await OrderApiService.GetMyOrderDetailAsync(requestedOrderId);
             if (_disposed || readVersion != _readVersion || requestedOrderId != OrderId)
             {
                 return;
@@ -415,11 +452,7 @@
                 return;
             }
 
-            bool hasChanged = _order is null
-                || _order.Id != result.Order.Id
-                || _order.LatestHistoryId != result.Order.LatestHistoryId
-                || _order.Status != result.Order.Status;
-
+            bool hasChanged = _order is null || _order.Id != result.Order.Id || _order.LatestHistoryId != result.Order.LatestHistoryId || _order.Status != result.Order.Status;
             if (hasChanged || !isBackground)
             {
                 if (isBackground && _order is not null)
@@ -444,7 +477,9 @@
         }
         catch (OperationCanceledException)
         {
-            SetReadError(isBackground, "Yêu cầu tải đơn hết thời gian chờ. Hãy tải lại để kiểm tra kết quả mới nhất.");
+            SetReadError(
+                isBackground,
+                "Yêu cầu tải đơn hết thời gian chờ. Hãy tải lại để kiểm tra kết quả mới nhất.");
         }
         finally
         {
@@ -453,7 +488,9 @@
         }
     }
 
-    private void SetReadError(bool isBackground, string message)
+    private void SetReadError(
+        bool isBackground,
+        string message)
     {
         if (_disposed)
         {
@@ -474,7 +511,6 @@
     private async Task RefreshOrderPeriodicallyAsync()
     {
         using PeriodicTimer timer = new PeriodicTimer(TimeSpan.FromSeconds(15));
-
         try
         {
             while (await timer.WaitForNextTickAsync(_refreshCancellation.Token))
@@ -482,7 +518,6 @@
                 await InvokeAsync(async () =>
                 {
                     await ReadOrderAsync(true);
-
                     if (!_disposed)
                     {
                         StateHasChanged();
@@ -490,9 +525,9 @@
                 });
             }
         }
-        catch (OperationCanceledException) when (_refreshCancellation.IsCancellationRequested)
+        catch (OperationCanceledException)when (_refreshCancellation.IsCancellationRequested)
         {
-            // Component đã rời màn hình nên dừng kiểm tra.
+        // Component đã rời màn hình nên dừng kiểm tra.
         }
     }
 
@@ -501,7 +536,6 @@
         _disposed = true;
         _readVersion++;
         _refreshCancellation.Cancel();
-
         if (_refreshTask is not null)
         {
             await _refreshTask;
@@ -545,7 +579,6 @@
         }
 
         string normalizedReason = _reportReason.Trim();
-
         if (_order.LatestHistoryId > 0 && !_hasReviewedResolution)
         {
             _reportErrorMessage = "Vui lòng xem và xác nhận kết quả xử lý gần nhất trước khi báo sai lại.";
@@ -569,22 +602,18 @@
         _reportErrorMessage = null;
         _reportSuccessMessage = null;
         int requestedOrderId = _order.Id;
-
         try
         {
-            ReportOrderRequestDTO request =
-                new ReportOrderRequestDTO
-                {
-                    Reason = normalizedReason,
-                    ExpectedHistoryId = _order.LatestHistoryId,
-                    HasReviewedResolution = _hasReviewedResolution
-                };
+            ReportOrderRequestDTO request = new ReportOrderRequestDTO
 
-            OrderReportApiResult result =
-                await OrderApiService.ReportOrderAsync(
-                    requestedOrderId,
-                    request);
+            {
 
+                Reason = normalizedReason,
+                ExpectedHistoryId = _order.LatestHistoryId,
+                HasReviewedResolution = _hasReviewedResolution
+
+            };
+            OrderReportApiResult result = await OrderApiService.ReportOrderAsync(requestedOrderId, request);
             if (_disposed || requestedOrderId != OrderId)
             {
                 return;
@@ -593,10 +622,7 @@
             if (!result.IsSuccess || result.Order is null)
             {
                 _reportMustReload = result.StatusCode != 400;
-                _reportErrorMessage =
-                    result.ErrorMessage
-                    ?? "Không thể gửi báo sai đơn hàng.";
-
+                _reportErrorMessage = result.ErrorMessage ?? "Không thể gửi báo sai đơn hàng.";
                 return;
             }
 
@@ -604,7 +630,6 @@
             _order.Status = result.Order.Status;
             _order.ReportReason = result.Order.ReportReason;
             _order.ReportedAt = result.Order.ReportedAt;
-
             _reportReason = string.Empty;
             _hasReviewedResolution = false;
             _reportSuccessMessage = "Đã gửi đơn cho quản lý xem lại.";

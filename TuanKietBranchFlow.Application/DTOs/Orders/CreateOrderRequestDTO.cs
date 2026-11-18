@@ -11,6 +11,5 @@ public class CreateOrderRequestDTO
     // Một đơn phải có ít nhất một dòng món
     [Required(ErrorMessage = "Danh sách món không được để trống.")]
     [MinLength(1, ErrorMessage = "Đơn hàng phải có ít nhất một món.")]
-    public List<CreateOrderItemRequestDTO> Items { get; set; } =
-        new List<CreateOrderItemRequestDTO>();
+    public List<CreateOrderItemRequestDTO> Items { get; set; } = new List<CreateOrderItemRequestDTO>();
 }

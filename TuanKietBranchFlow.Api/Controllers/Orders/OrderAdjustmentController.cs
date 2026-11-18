@@ -11,7 +11,6 @@ namespace TuanKietBranchFlow.Api.Controllers.Orders;
 public class OrderAdjustmentController : ControllerBase
 {
     private readonly IOrderAdjustmentService _orderAdjustmentService;
-
     public OrderAdjustmentController(IOrderAdjustmentService orderAdjustmentService)
     {
         _orderAdjustmentService = orderAdjustmentService;
@@ -31,7 +30,9 @@ public class OrderAdjustmentController : ControllerBase
 
     /// <summary>Tính lại bản xem trước, không ghi database.</summary>
     [HttpPost("preview")]
-    public async Task<ActionResult<OrderAdjustmentResultDTO>> PreviewAsync(int orderId, AdjustOrderRequestDTO request)
+    public async Task<ActionResult<OrderAdjustmentResultDTO>> PreviewAsync(
+        int orderId,
+        AdjustOrderRequestDTO request)
     {
         if (!TryGetCurrentUserId(out int id))
         {
@@ -49,7 +50,9 @@ public class OrderAdjustmentController : ControllerBase
     [ProducesResponseType(403)]
     [ProducesResponseType(404)]
     [ProducesResponseType(409)]
-    public async Task<ActionResult<OrderAdjustmentResultDTO>> AdjustAsync(int orderId, AdjustOrderRequestDTO request)
+    public async Task<ActionResult<OrderAdjustmentResultDTO>> AdjustAsync(
+        int orderId,
+        AdjustOrderRequestDTO request)
     {
         if (!TryGetCurrentUserId(out int id))
         {

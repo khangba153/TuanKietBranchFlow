@@ -11,7 +11,6 @@ namespace TuanKietBranchFlow.Api.Controllers.MenuManagement;
 public class SizesController : ControllerBase
 {
     private readonly ISizeService _sizeService;
-
     public SizesController(ISizeService sizeService)
     {
         _sizeService = sizeService;
@@ -26,9 +25,7 @@ public class SizesController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<List<MenuSizeDTO>>> GetAllSizesAsync()
     {
-        List<MenuSizeDTO> sizes =
-            await _sizeService.GetAllSizesAsync();
-
+        List<MenuSizeDTO> sizes = await _sizeService.GetAllSizesAsync();
         return Ok(sizes);
     }
 
@@ -43,12 +40,9 @@ public class SizesController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<MenuSizeDTO>> CreateSizeAsync(
-        [FromBody] CreateSizeRequestDTO request)
+    public async Task<ActionResult<MenuSizeDTO>> CreateSizeAsync([FromBody] CreateSizeRequestDTO request)
     {
-        CreateSizeResultDTO result =
-            await _sizeService.CreateSizeAsync(request);
-
+        CreateSizeResultDTO result = await _sizeService.CreateSizeAsync(request);
         if (result.IsNameInvalid)
         {
             return Problem(
@@ -94,9 +88,7 @@ public class SizesController : ControllerBase
         int sizeId,
         [FromBody] UpdateSizeRequestDTO request)
     {
-        UpdateSizeResultDTO result =
-            await _sizeService.UpdateSizeAsync(sizeId, request);
-
+        UpdateSizeResultDTO result = await _sizeService.UpdateSizeAsync(sizeId, request);
         if (result.IsRequestInvalid)
         {
             return Problem(
@@ -132,6 +124,7 @@ public class SizesController : ControllerBase
 
         return Ok(result.Size);
     }
+
     /// <summary>
     /// Xóa mềm Size. Chỉ ADMIN được phép thực hiện.
     /// </summary>
@@ -144,9 +137,7 @@ public class SizesController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> DeleteSizeAsync(int sizeId)
     {
-        DeleteSizeResultDTO result =
-            await _sizeService.DeleteSizeAsync(sizeId);
-
+        DeleteSizeResultDTO result = await _sizeService.DeleteSizeAsync(sizeId);
         if (result.IsSizeNotFound)
         {
             return Problem(

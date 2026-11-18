@@ -46,9 +46,16 @@ public class EmployeeCreateValidationTests
     private static EmployeeCreateDTO ValidRequest()
     {
         return new EmployeeCreateDTO
+
         {
-            Username = "test", Password = "TestOnly123!", EmployeeCode = "TEST", FullName = "Nhân viên thử",
-            BranchId = 1, HireDate = DateOnly.FromDateTime(DateTime.Today).AddDays(-1)
+
+            Username = "test",
+            Password = "TestOnly123!",
+            EmployeeCode = "TEST",
+            FullName = "Nhân viên thử",
+            BranchId = 1,
+            HireDate = DateOnly.FromDateTime(DateTime.Today).AddDays(-1)
+
         };
     }
 

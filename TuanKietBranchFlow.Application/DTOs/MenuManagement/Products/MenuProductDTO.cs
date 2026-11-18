@@ -8,6 +8,5 @@ public class MenuProductDTO
     public string Name { get; set; } = string.Empty;
     public string? ImageUrl { get; set; }
     public bool IsActive { get; set; }
-
-    public List<MenuProductSizeDTO> ProductSizes { get; set; } = new();
+    public List<MenuProductSizeDTO> ProductSizes { get; set; } = new List<MenuProductSizeDTO>();
 }

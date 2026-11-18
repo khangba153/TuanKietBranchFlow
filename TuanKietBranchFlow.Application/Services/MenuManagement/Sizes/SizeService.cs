@@ -9,7 +9,6 @@ public class SizeService : ISizeService
 {
     private readonly ISizeRepository _sizeRepository;
     private readonly IUnitOfWork _unitOfWork;
-
     public SizeService(
         ISizeRepository sizeRepository,
         IUnitOfWork unitOfWork)
@@ -21,27 +20,20 @@ public class SizeService : ISizeService
     // Chuyển các size chưa xóa thành dữ liệu dành cho API
     public async Task<List<MenuSizeDTO>> GetAllSizesAsync()
     {
-        List<Size> sizes =
-            await _sizeRepository.GetAllNotDeletedAsync();
-
-        List<MenuSizeDTO> result = sizes
-            .Select(size => new MenuSizeDTO
-            {
-                Id = size.Id,
-                Name = size.Name,
-                IsActive = size.IsActive
-            })
-            .ToList();
-
+        List<Size> sizes = await _sizeRepository.GetAllNotDeletedAsync();
+        List<MenuSizeDTO> result = sizes.Select(size => new MenuSizeDTO
+        {
+            Id = size.Id,
+            Name = size.Name,
+            IsActive = size.IsActive
+        }).ToList();
         return result;
     }
 
     // Chuẩn hóa tên, kiểm tra trùng và lưu Size mới
-    public async Task<CreateSizeResultDTO> CreateSizeAsync(
-        CreateSizeRequestDTO request)
+    public async Task<CreateSizeResultDTO> CreateSizeAsync(CreateSizeRequestDTO request)
     {
         CreateSizeResultDTO result = new CreateSizeResultDTO();
-
         if (string.IsNullOrWhiteSpace(request.Name))
         {
             result.IsNameInvalid = true;
@@ -49,16 +41,13 @@ public class SizeService : ISizeService
         }
 
         string sizeName = request.Name.Trim();
-
         if (sizeName.Length > 50)
         {
             result.IsNameInvalid = true;
             return result;
         }
 
-        bool isNameDuplicated =
-            await _sizeRepository.ExistsByNameAsync(sizeName);
-
+        bool isNameDuplicated = await _sizeRepository.ExistsByNameAsync(sizeName);
         if (isNameDuplicated)
         {
             result.IsNameDuplicated = true;
@@ -66,23 +55,26 @@ public class SizeService : ISizeService
         }
 
         Size size = new Size
+
         {
+
             Name = sizeName,
             IsActive = true,
             CreatedAt = DateTime.UtcNow,
             Deleted = false
-        };
 
+        };
         await _sizeRepository.AddAsync(size);
         await _unitOfWork.SaveChangesAsync();
-
         result.Size = new MenuSizeDTO
+
         {
+
             Id = size.Id,
             Name = size.Name,
             IsActive = size.IsActive
-        };
 
+        };
         return result;
     }
 
@@ -92,32 +84,22 @@ public class SizeService : ISizeService
         UpdateSizeRequestDTO request)
     {
         UpdateSizeResultDTO result = new UpdateSizeResultDTO();
-
         // Tên phải hợp lệ và request phải gửi trạng thái IsActive.
-        if (string.IsNullOrWhiteSpace(request.Name)
-            || request.Name.Trim().Length > 50
-            || !request.IsActive.HasValue)
+        if (string.IsNullOrWhiteSpace(request.Name) || request.Name.Trim().Length > 50 || !request.IsActive.HasValue)
         {
             result.IsRequestInvalid = true;
             return result;
         }
 
         string sizeName = request.Name.Trim();
-
-        Size? size =
-            await _sizeRepository.GetNotDeletedByIdAsync(sizeId);
-
+        Size? size = await _sizeRepository.GetNotDeletedByIdAsync(sizeId);
         if (size == null)
         {
             result.IsSizeNotFound = true;
             return result;
         }
 
-        bool isNameDuplicated =
-            await _sizeRepository.ExistsByNameExceptIdAsync(
-                sizeName,
-                sizeId);
-
+        bool isNameDuplicated = await _sizeRepository.ExistsByNameExceptIdAsync(sizeName, sizeId);
         if (isNameDuplicated)
         {
             result.IsNameDuplicated = true;
@@ -127,16 +109,16 @@ public class SizeService : ISizeService
         // Size đang được DbContext theo dõi nên chỉ cần gán giá trị mới.
         size.Name = sizeName;
         size.IsActive = request.IsActive.Value;
-
         await _unitOfWork.SaveChangesAsync();
-
         result.Size = new MenuSizeDTO
+
         {
+
             Id = size.Id,
             Name = size.Name,
             IsActive = size.IsActive
-        };
 
+        };
         return result;
     }
 
@@ -144,10 +126,7 @@ public class SizeService : ISizeService
     public async Task<DeleteSizeResultDTO> DeleteSizeAsync(int sizeId)
     {
         DeleteSizeResultDTO result = new DeleteSizeResultDTO();
-
-        Size? size =
-            await _sizeRepository.GetNotDeletedByIdAsync(sizeId);
-
+        Size? size = await _sizeRepository.GetNotDeletedByIdAsync(sizeId);
         if (size == null)
         {
             result.IsSizeNotFound = true;
@@ -156,9 +135,7 @@ public class SizeService : ISizeService
 
         size.Deleted = true;
         size.UpdatedAt = DateTime.UtcNow;
-
         await _unitOfWork.SaveChangesAsync();
-
         result.IsDeleted = true;
         return result;
     }

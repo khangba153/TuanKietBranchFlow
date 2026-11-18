@@ -12,7 +12,6 @@ namespace TuanKietBranchFlow.Api.Controllers.Branches;
 public class BranchesController : ControllerBase
 {
     private readonly IBranchService _branchService;
-
     public BranchesController(IBranchService branchService)
     {
         _branchService = branchService;
@@ -29,7 +28,6 @@ public class BranchesController : ControllerBase
         string? userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
         string? role = User.FindFirstValue(ClaimTypes.Role);
         bool isValidUserId = int.TryParse(userIdValue, out int userId);
-
         // Không tiếp tục nếu thiếu thông tin người dùng
         if (!isValidUserId || string.IsNullOrWhiteSpace(role))
         {
@@ -40,7 +38,6 @@ public class BranchesController : ControllerBase
         }
 
         List<AccessibleBranchDTO> response = await _branchService.GetAccessibleBranchesAsync(userId, role);
-
         return Ok(response);
     }
 
@@ -56,7 +53,6 @@ public class BranchesController : ControllerBase
         string? userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
         string? role = User.FindFirstValue(ClaimTypes.Role);
         bool isValidUserId = int.TryParse(userIdValue, out int userId);
-
         if (!isValidUserId || string.IsNullOrWhiteSpace(role))
         {
             return Problem(
@@ -66,7 +62,6 @@ public class BranchesController : ControllerBase
         }
 
         BranchAccessResultDTO result = await _branchService.GetAccessibleBranchByIdAsync(userId, role, branchId);
-
         // Branch không tồn tại hoặc đã bị xóa
         if (!result.IsFound)
         {

@@ -15,8 +15,8 @@ public class AdjustOrderItemRequestDTO
     public int Quantity { get; set; }
 
     [Required, MaxLength(100)]
-    public List<CreateOrderItemToppingRequestDTO> Toppings { get; set; } = new();
+    public List<CreateOrderItemToppingRequestDTO> Toppings { get; set; } = new List<CreateOrderItemToppingRequestDTO>();
 
     [Required, MaxLength(100)]
-    public List<int> NoteOptionIds { get; set; } = new();
+    public List<int> NoteOptionIds { get; set; } = new List<int>();
 }

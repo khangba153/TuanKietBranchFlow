@@ -1,12 +1,16 @@
 @using TuanKietBranchFlow.Application.DTOs.Orders
-
 @foreach (MyOrderDetailItemDTO item in Items)
 {
     <div class="border rounded p-2 mb-2">
-        <p class="fw-semibold text-break mb-1">@item.ProductName</p>
-        <p class="small mb-1">Size @item.SizeName; số lượng: @item.Quantity</p>
-        <p class="small mb-1">Giá size: @item.UnitPrice.ToString("N0") đ</p>
-
+        <p class="fw-semibold text-break mb-1">
+            @item.ProductName
+        </p>
+        <p class="small mb-1">
+            Size @item.SizeName; số lượng: @item.Quantity
+        </p>
+        <p class="small mb-1">
+            Giá size: @item.UnitPrice.ToString("N0") đ
+        </p>
         @foreach (MyOrderDetailToppingDTO topping in item.Toppings)
         {
             <p class="small text-break mb-1">
@@ -14,18 +18,20 @@
                 giá: @topping.UnitPrice.ToString("N0") đ/phần
             </p>
         }
-
         @foreach (MyOrderDetailNoteDTO note in item.Notes)
         {
-            <p class="small text-break mb-1">Ghi chú: @note.Name</p>
+            <p class="small text-break mb-1">
+                Ghi chú: @note.Name
+            </p>
         }
-
-        <strong class="small">Thành tiền: @item.SubtotalAmount.ToString("N0") đ</strong>
+        <strong class="small">
+            Thành tiền: @item.SubtotalAmount.ToString("N0") đ
+        </strong>
     </div>
 }
 
-@code {
+@code
+{
     [Parameter, EditorRequired]
-    public List<MyOrderDetailItemDTO> Items { get; set; } =
-        new List<MyOrderDetailItemDTO>();
+    public List<MyOrderDetailItemDTO> Items { get; set; } = new List<MyOrderDetailItemDTO>();
 }

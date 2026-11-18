@@ -1,0 +1,21 @@
+.inventory-page { max-width: 1400px; margin-inline: auto; }
+.inventory-page .btn, .inventory-page .form-control, .inventory-page .form-select { min-height: 44px; }
+.stock-metric { padding: 1rem; background: white; border: 1px solid #dce6e4; border-radius: 12px; height: 100%; }
+.stock-metric span, .stock-metric strong { display: block; }
+.stock-metric span { color: #596c70; font-size: .85rem; }
+.stock-metric strong { font-size: 1.6rem; margin-top: .25rem; }
+.stock-list { display: grid; gap: .65rem; }
+.stock-row { display: grid; grid-template-columns: minmax(180px, 2fr) 1fr 1fr 1.4fr auto; align-items: center; gap: 1rem; padding: 1rem; background: white; border: 1px solid #dce6e4; border-radius: 12px; }
+.stock-row > div { min-width: 0; overflow-wrap: anywhere; }
+.stock-name { display: grid; gap: .3rem; }
+.stock-label { display: block; font-size: .75rem; color: #596c70; margin-bottom: .3rem; }
+.stock-editor { max-width: 680px; }
+@media (max-width: 991.98px) {
+    .stock-row { grid-template-columns: 1fr 1fr; }
+    .stock-name { grid-column: 1 / -1; }
+    .stock-row .btn { width: 100%; }
+}
+@media (max-width: 359.98px) {
+    .stock-row { gap: .75rem; padding: .85rem; }
+    .stock-row > .btn { grid-column: 1 / -1; }
+}

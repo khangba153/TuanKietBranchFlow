@@ -11,9 +11,7 @@ namespace TuanKietBranchFlow.Api.Controllers.MenuManagement;
 public class NoteGroupsController : ControllerBase
 {
     private readonly INoteGroupService _noteGroupService;
-
-    public NoteGroupsController(
-        INoteGroupService noteGroupService)
+    public NoteGroupsController(INoteGroupService noteGroupService)
     {
         _noteGroupService = noteGroupService;
     }
@@ -27,9 +25,7 @@ public class NoteGroupsController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<List<MenuNoteGroupDTO>>> GetAllNoteGroupsAsync()
     {
-        List<MenuNoteGroupDTO> noteGroups =
-            await _noteGroupService.GetAllNoteGroupsAsync();
-
+        List<MenuNoteGroupDTO> noteGroups = await _noteGroupService.GetAllNoteGroupsAsync();
         return Ok(noteGroups);
     }
 
@@ -44,12 +40,9 @@ public class NoteGroupsController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<MenuNoteGroupDTO>> CreateNoteGroupAsync(
-        [FromBody] CreateNoteGroupRequestDTO request)
+    public async Task<ActionResult<MenuNoteGroupDTO>> CreateNoteGroupAsync([FromBody] CreateNoteGroupRequestDTO request)
     {
-        CreateNoteGroupResultDTO result =
-            await _noteGroupService.CreateNoteGroupAsync(request);
-
+        CreateNoteGroupResultDTO result = await _noteGroupService.CreateNoteGroupAsync(request);
         if (result.IsNameInvalid)
         {
             return Problem(
@@ -95,11 +88,7 @@ public class NoteGroupsController : ControllerBase
         int noteGroupId,
         [FromBody] UpdateNoteGroupRequestDTO request)
     {
-        UpdateNoteGroupResultDTO result =
-            await _noteGroupService.UpdateNoteGroupAsync(
-                noteGroupId,
-                request);
-
+        UpdateNoteGroupResultDTO result = await _noteGroupService.UpdateNoteGroupAsync(noteGroupId, request);
         if (result.IsRequestInvalid)
         {
             return Problem(
@@ -148,9 +137,7 @@ public class NoteGroupsController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> DeleteNoteGroupAsync(int noteGroupId)
     {
-        DeleteNoteGroupResultDTO result =
-            await _noteGroupService.DeleteNoteGroupAsync(noteGroupId);
-
+        DeleteNoteGroupResultDTO result = await _noteGroupService.DeleteNoteGroupAsync(noteGroupId);
         if (result.IsNoteGroupNotFound)
         {
             return Problem(

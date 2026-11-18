@@ -9,7 +9,6 @@ public class WebLoginService
     private readonly AuthApiService _authApiService;
     private readonly IWebAuthSessionStore _sessionStore;
     private readonly WebCookieSignInService _cookieSignInService;
-
     public WebLoginService(
         AuthApiService authApiService,
         IWebAuthSessionStore sessionStore,
@@ -27,41 +26,30 @@ public class WebLoginService
     {
         if (httpContext.Response.HasStarted)
         {
-            throw new InvalidOperationException(
-                "Không thể đăng nhập sau khi HTTP response đã bắt đầu.");
+            throw new InvalidOperationException("Không thể đăng nhập sau khi HTTP response đã bắt đầu.");
         }
 
-        LoginResponseDTO? tokenResponse =
-            await _authApiService.LoginAsync(request);
-
+        LoginResponseDTO? tokenResponse = await _authApiService.LoginAsync(request);
         if (tokenResponse == null)
         {
             return false;
         }
 
-        CurrentUserDTO? currentUser =
-            await _authApiService.GetCurrentUserByAccessTokenAsync(
-                tokenResponse.AccessToken);
-
+        CurrentUserDTO? currentUser = await _authApiService.GetCurrentUserByAccessTokenAsync(tokenResponse.AccessToken);
         if (currentUser == null)
         {
             return false;
         }
 
-        WebAuthSession session =
-            WebAuthSessionFactory.Create(tokenResponse, currentUser);
-
+        WebAuthSession session = WebAuthSessionFactory.Create(tokenResponse, currentUser);
         if (!_sessionStore.TryAdd(session))
         {
-            throw new InvalidOperationException(
-                "Không thể thêm phiên đăng nhập vào kho Web.");
+            throw new InvalidOperationException("Không thể thêm phiên đăng nhập vào kho Web.");
         }
 
         try
         {
-            await _cookieSignInService.SignInAsync(
-                httpContext,
-                session);
+            await _cookieSignInService.SignInAsync(httpContext, session);
         }
         catch
         {

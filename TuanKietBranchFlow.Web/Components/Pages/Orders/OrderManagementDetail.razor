@@ -7,55 +7,80 @@
 @using TuanKietBranchFlow.Web.Services.Orders
 @inject OrderManagementApiService OrderApi
 @inject AuthenticationStateProvider AuthenticationStateProvider
-
-<PageTitle>Chi tiết đơn hàng</PageTitle>
+<PageTitle>
+    Chi tiết đơn hàng
+</PageTitle>
 <div class="bf-page order-detail">
-    <a class="btn btn-outline-secondary mb-3" href="/orders">Danh sách đơn</a>
+    <a class="btn btn-outline-secondary mb-3" href="/orders">
+        Danh sách đơn
+    </a>
     <AuthorizeView Roles="ADMIN,OWNER">
         <Authorized>
-            @if (_loading)
+            @if (_isLoading)
             {
-                <div class="py-5 text-center" role="status">Đang tải chi tiết đơn...</div>
+                <div class="py-5 text-center" role="status">
+                    Đang tải chi tiết đơn...
+                </div>
             }
-            else if (_error != null)
+            else if (_errorMessage != null)
             {
                 <div class="alert alert-danger" role="alert">
-                    <p>@_error</p>
-                    <button class="btn btn-outline-danger" @onclick="LoadAsync">Thử lại</button>
+                    <p>
+                        @_errorMessage
+                    </p>
+                    <button class="btn btn-outline-danger" @onclick="LoadAsync">
+                        Thử lại
+                    </button>
                     @if (_needsLogin)
                     {
-                        <a class="btn btn-link" href="/login">Đăng nhập lại</a>
+                        <a class="btn btn-link" href="/login">
+                            Đăng nhập lại
+                        </a>
                     }
-
                 </div>
             }
             else if (_order != null)
             {
                 <header class="d-flex flex-wrap gap-3 align-items-center justify-content-between mb-4">
                     <div>
-                        <h1 class="h3">Đơn @_order.Code</h1>
-                        <p class="mb-0 text-body-secondary">@_order.BranchCode - @_order.BranchName</p>
+                        <h1 class="h3">
+                            Đơn @_order.Code
+                        </h1>
+                        <p class="mb-0 text-body-secondary">
+                            @_order.BranchCode - @_order.BranchName
+                        </p>
                     </div>
                     <OrderManagementStatus Status="@_order.Status" />
                 </header>
                 <section class="card mb-3" aria-label="Tổng tiền đơn">
                     <div class="card-body d-flex justify-content-between align-items-center gap-2">
                         <div>
-                            <span class="small text-body-secondary">Tổng tiền đơn · @_order.TotalQuantity món</span>
-                            <strong class="d-block fs-3">@Money(_order.TotalAmount)</strong>
+                            <span class="small text-body-secondary">
+                                Tổng tiền đơn · @_order.TotalQuantity món
+                            </span>
+                            <strong class="d-block fs-3">
+                                @Money(_order.TotalAmount)
+                            </strong>
                         </div>
-                        <span class="badge text-bg-light border">@(_order.Status == "NEEDS_REVIEW" ? "Cần kiểm tra" : "Đã ghi nhận")</span>
+                        <span class="badge text-bg-light border">
+                            @(_order.Status == "NEEDS_REVIEW" ? "Cần kiểm tra" : "Đã ghi nhận")
+                        </span>
                     </div>
                 </section>
                 @if (!string.IsNullOrWhiteSpace(_order.ReportReason) || _order.ReportedAt.HasValue)
                 {
                     <section class="alert alert-warning text-break" aria-labelledby="report-title">
-                        <h2 id="report-title" class="h5">Thông tin báo sai</h2>
-                        <p class="text-break">@_order.ReportReason</p>
-                        <p class="mb-0">Người báo: @(_order.ReportedByFullName ?? "Không có thông tin") — @_order.ReportedAt?.ToString("dd/MM/yyyy HH:mm")</p>
+                        <h2 id="report-title" class="h5">
+                            Thông tin báo sai
+                        </h2>
+                        <p class="text-break">
+                            @_order.ReportReason
+                        </p>
+                        <p class="mb-0">
+                            Người báo: @(_order.ReportedByFullName ?? "Không có thông tin") — @_order.ReportedAt?.ToString("dd/MM/yyyy HH:mm")
+                        </p>
                     </section>
                 }
-
                 @if (_order.Status == "NEEDS_REVIEW")
                 {
                     <AuthorizeView Roles="ADMIN" Context="reviewAdmin">
@@ -64,134 +89,176 @@
                         </Authorized>
                     </AuthorizeView>
                 }
-
-                <h2 class="h5">Chi tiết món</h2>
-                <p class="small text-body-secondary">Tên và giá được lưu tại thời điểm bán.</p>
+                <h2 class="h5">
+                    Chi tiết món
+                </h2>
+                <p class="small text-body-secondary">
+                    Tên và giá được lưu tại thời điểm bán.
+                </p>
                 @if (_order.Items.Count == 0)
                 {
-                    <p role="status">Đơn không có dòng món.</p>
+                    <p role="status">
+                        Đơn không có dòng món.
+                    </p>
                 }
-
                 @foreach (OrderManagementItemDTO item in _order.Items)
                 {
                     <article class="card mb-3" @key="item.Id">
                         <div class="card-body">
                             <div class="d-flex flex-wrap justify-content-between gap-2">
-                                <h3 class="h6 text-break">@item.ProductName — @item.SizeName</h3>
-                                <strong>@Money(item.SubtotalAmount)</strong>
+                                <h3 class="h6 text-break">
+                                    @item.ProductName — @item.SizeName
+                                </h3>
+                                <strong>
+                                    @Money(item.SubtotalAmount)
+                                </strong>
                             </div>
-                            <p class="small text-body-secondary">@item.Quantity món × @Money(item.UnitPrice) / size</p>
+                            <p class="small text-body-secondary">
+                                @item.Quantity món × @Money(item.UnitPrice) / size
+                            </p>
                             @if (item.Toppings.Count > 0)
                             {
                                 <ul class="mb-2">
                                     @foreach (OrderManagementToppingDTO topping in item.Toppings)
                                     {
-                                        <li class="text-break">@topping.Name × @topping.Quantity — @Money(topping.UnitPrice)/phần</li>
+                                        <li class="text-break">
+                                            @topping.Name × @topping.Quantity — @Money(topping.UnitPrice)/phần
+                                        </li>
                                     }
                                 </ul>
                             }
-
                             @if (item.Notes.Count > 0)
                             {
-                                <p class="mb-0 text-break">Ghi chú: @string.Join(", ", item.Notes)</p>
+                                <p class="mb-0 text-break">
+                                    Ghi chú: @string.Join(", ", item.Notes)
+                                </p>
                             }
-
                         </div>
                     </article>
                 }
-
                 @if (_order.History.Count > 0)
                 {
                     <section class="card mt-4" aria-labelledby="order-history-title">
                         <div class="card-body">
-                            <h2 id="order-history-title" class="h5">Lịch sử xử lý</h2>
+                            <h2 id="order-history-title" class="h5">
+                                Lịch sử xử lý
+                            </h2>
                             @foreach (OrderReviewHistoryDTO history in _order.History)
                             {
                                 <article class="border-top pt-3 mt-3" @key="history.Id">
                                     <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
                                         <OrderManagementStatus Status="@(history.BeforeStatus ?? "Không rõ")" />
-                                        <span class="small text-body-secondary">chuyển sang</span>
+                                        <span class="small text-body-secondary">
+                                            chuyển sang
+                                        </span>
                                         <OrderManagementStatus Status="@(history.AfterStatus ?? "Không rõ")" />
                                     </div>
-                                    <p class="text-break mb-1">@history.Reason</p>
-                                    <p class="small text-body-secondary mb-0">@history.ProcessedByFullName · @history.CreatedAt.ToString("dd/MM/yyyy HH:mm") UTC</p>
+                                    <p class="text-break mb-1">
+                                        @history.Reason
+                                    </p>
+                                    <p class="small text-body-secondary mb-0">
+                                        @history.ProcessedByFullName · @history.CreatedAt.ToString("dd/MM/yyyy HH:mm") UTC
+                                    </p>
                                     @if (history.BeforeItems.Count > 0)
                                     {
                                         <details class="mt-2">
-                                            <summary class="text-primary py-2">Xem nội dung trước / sau</summary>
+                                            <summary class="text-primary py-2">
+                                                Xem nội dung trước / sau
+                                            </summary>
                                             <div class="row g-3 mt-1">
                                                 <div class="col-12 col-md-6">
-                                                    <h3 class="h6">Trước xử lý</h3>
+                                                    <h3 class="h6">
+                                                        Trước xử lý
+                                                    </h3>
                                                     @foreach (var item in history.BeforeItems)
                                                     {
                                                         <div class="border rounded p-2 mb-2">
-                                                            <strong class="small">@item.ProductName</strong>
+                                                            <strong class="small">
+                                                                @item.ProductName
+                                                            </strong>
                                                             <OrderAdjustmentItemSummary Item="item" />
                                                         </div>
                                                     }
-
                                                     @if (history.BeforeTotalAmount.HasValue)
                                                     {
-                                                        <strong>@Money(history.BeforeTotalAmount.Value)</strong>
+                                                        <strong>
+                                                            @Money(history.BeforeTotalAmount.Value)
+                                                        </strong>
                                                     }
-
                                                 </div>
                                                 <div class="col-12 col-md-6">
-                                                    <h3 class="h6">Sau xử lý</h3>
+                                                    <h3 class="h6">
+                                                        Sau xử lý
+                                                    </h3>
                                                     @foreach (var item in history.AfterItems)
                                                     {
                                                         <div class="border rounded p-2 mb-2">
-                                                            <strong class="small">@item.ProductName</strong>
+                                                            <strong class="small">
+                                                                @item.ProductName
+                                                            </strong>
                                                             <OrderAdjustmentItemSummary Item="item" />
                                                         </div>
                                                     }
-
                                                     @if (history.AfterTotalAmount.HasValue)
                                                     {
-                                                        <strong>@Money(history.AfterTotalAmount.Value)</strong>
+                                                        <strong>
+                                                            @Money(history.AfterTotalAmount.Value)
+                                                        </strong>
                                                     }
-
                                                 </div>
                                             </div>
                                         </details>
                                     }
-
                                 </article>
                             }
-
                         </div>
                     </section>
                 }
-
                 <section class="card mt-4" aria-labelledby="order-information-title">
                     <div class="card-body">
-                        <h2 id="order-information-title" class="h6 mb-3">Thông tin bổ sung</h2>
+                        <h2 id="order-information-title" class="h6 mb-3">
+                            Thông tin bổ sung
+                        </h2>
                         <dl class="row small mb-0">
-                            <dt class="col-5">Người tạo</dt>
-                            <dd class="col-7 text-break">@_order.CreatedByFullName</dd>
-                            <dt class="col-5">Ngày nghiệp vụ</dt>
-                            <dd class="col-7">@_order.BusinessDate.ToString("dd/MM/yyyy")</dd>
-                            <dt class="col-5">Thời gian tạo</dt>
-                            <dd class="col-7">@_order.CreatedAt.ToString("dd/MM/yyyy HH:mm")</dd>
+                            <dt class="col-5">
+                                Người tạo
+                            </dt>
+                            <dd class="col-7 text-break">
+                                @_order.CreatedByFullName
+                            </dd>
+                            <dt class="col-5">
+                                Ngày nghiệp vụ
+                            </dt>
+                            <dd class="col-7">
+                                @_order.BusinessDate.ToString("dd/MM/yyyy")
+                            </dd>
+                            <dt class="col-5">
+                                Thời gian tạo
+                            </dt>
+                            <dd class="col-7">
+                                @_order.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                            </dd>
                         </dl>
                     </div>
                 </section>
             }
-
         </Authorized>
         <NotAuthorized>
-            <div class="alert alert-warning">Bạn cần đăng nhập bằng ADMIN hoặc OWNER để xem trang này.</div>
+            <div class="alert alert-warning">
+                Bạn cần đăng nhập bằng ADMIN hoặc OWNER để xem trang này.
+            </div>
         </NotAuthorized>
     </AuthorizeView>
 </div>
 
-@code {
+@code
+{
     [Parameter]
     public int OrderId { get; set; }
 
     private OrderManagementDetailDTO? _order;
-    private string? _error;
-    private bool _loading = true;
+    private string? _errorMessage;
+    private bool _isLoading = true;
     private bool _needsLogin;
     private int? _loadedId;
     private int _requestVersion;
@@ -209,8 +276,8 @@
         {
             _requestVersion++;
             _order = null;
-            _error = null;
-            _loading = true;
+            _errorMessage = null;
+            _isLoading = true;
         }
     }
 
@@ -238,9 +305,9 @@
     {
         int version = ++_requestVersion;
         int requestedId = OrderId;
-        _loading = true;
+        _isLoading = true;
         _order = null;
-        _error = null;
+        _errorMessage = null;
         _needsLogin = false;
         try
         {
@@ -258,7 +325,7 @@
             }
 
             _needsLogin = ex.StatusCode == HttpStatusCode.Unauthorized;
-            _error = ex.StatusCode switch
+            _errorMessage = ex.StatusCode switch
             {
                 HttpStatusCode.Unauthorized => "Phiên đăng nhập đã kết thúc. Vui lòng đăng nhập lại.",
                 HttpStatusCode.Forbidden => "Bạn không có quyền xem đơn hàng.",
@@ -270,14 +337,14 @@
         {
             if (version == _requestVersion && requestedId == OrderId)
             {
-                _error = "Dữ liệu API trả về không hợp lệ.";
+                _errorMessage = "Dữ liệu API trả về không hợp lệ.";
             }
         }
         finally
         {
             if (version == _requestVersion)
             {
-                _loading = false;
+                _isLoading = false;
             }
         }
     }

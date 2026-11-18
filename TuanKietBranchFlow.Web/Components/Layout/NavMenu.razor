@@ -1,165 +1,181 @@
 <input id="bf-navigation-toggle" class="bf-navigation-toggle" type="checkbox"
-       aria-label="Mở hoặc đóng menu điều hướng" />
-
+    aria-label="Mở hoặc đóng menu điều hướng" />
 <div class="bf-navigation-header">
     <a class="bf-navigation-brand" href="/">
-        <span class="bf-navigation-logo">BF</span>
-
+        <span class="bf-navigation-logo">
+            BF
+        </span>
         <span class="bf-navigation-brand-text">
-            <strong>BranchFlow</strong>
+            <strong>
+                BranchFlow
+            </strong>
         </span>
     </a>
-
     <label class="bf-navigation-button" for="bf-navigation-toggle" aria-label="Mở hoặc đóng menu">
-        <span></span>
-        <span></span>
-        <span></span>
+        <span>
+        </span>
+        <span>
+        </span>
+        <span>
+        </span>
     </label>
 </div>
-
 <div class="bf-navigation-content">
     <nav class="bf-navigation" aria-label="Điều hướng chính">
         <AuthorizeView>
             <Authorized>
-                <p class="bf-navigation-section-title">Tổng quan</p>
-
+                <p class="bf-navigation-section-title">
+                    Tổng quan
+                </p>
                 <div class="bf-navigation-item">
                     <NavLink class="bf-navigation-link" href="" Match="NavLinkMatch.All">
-
-                        <span>Trang chủ</span>
+                        <span>
+                            Trang chủ
+                        </span>
                     </NavLink>
                 </div>
             </Authorized>
-
             <NotAuthorized>
-                <p class="bf-navigation-section-title">Tài khoản</p>
-
+                <p class="bf-navigation-section-title">
+                    Tài khoản
+                </p>
                 <div class="bf-navigation-item">
                     <NavLink class="bf-navigation-link" href="login">
-
-                        <span>Đăng nhập</span>
+                        <span>
+                            Đăng nhập
+                        </span>
                     </NavLink>
                 </div>
             </NotAuthorized>
         </AuthorizeView>
-
         <AuthorizeView Roles="EMPLOYEE">
             <Authorized>
-                <p class="bf-navigation-section-title">Công việc</p>
-
+                <p class="bf-navigation-section-title">
+                    Công việc
+                </p>
                 <div class="bf-navigation-item">
                     <NavLink class="bf-navigation-link" href="order-menu">
-
-                        <span>Gọi món</span>
+                        <span>
+                            Gọi món
+                        </span>
                     </NavLink>
                 </div>
-
                 <div class="bf-navigation-item">
                     <NavLink class="bf-navigation-link" href="my-orders">
-
-                        <span>Đơn của tôi</span>
+                        <span>
+                            Đơn của tôi
+                        </span>
                     </NavLink>
                 </div>
-
                 <div class="bf-navigation-item">
-                    <span class="bf-navigation-link-disabled" aria-disabled="true">
-
-                        <span class="bf-navigation-link-text">Kho</span>
-                        <span class="bf-navigation-coming-soon">Sắp có</span>
-                    </span>
+                    <NavLink class="bf-navigation-link" href="inventory">
+                        <span>
+                            Kho
+                        </span>
+                    </NavLink>
                 </div>
-
                 <div class="bf-navigation-item">
                     <span class="bf-navigation-link-disabled" aria-disabled="true">
-
-                        <span class="bf-navigation-link-text">Cá nhân</span>
-                        <span class="bf-navigation-coming-soon">Sắp có</span>
+                        <span class="bf-navigation-link-text">
+                            Cá nhân
+                        </span>
+                        <span class="bf-navigation-coming-soon">
+                            Sắp có
+                        </span>
                     </span>
                 </div>
             </Authorized>
         </AuthorizeView>
-
         <AuthorizeView Roles="ADMIN">
             <Authorized>
-                <p class="bf-navigation-section-title">Điều hành</p>
-
+                <p class="bf-navigation-section-title">
+                    Điều hành
+                </p>
                 <div class="bf-navigation-item">
                     <NavLink class="bf-navigation-link" href="employee-transfers">
-                        <span>Điều chuyển nhân viên</span>
+                        <span>
+                            Điều chuyển nhân viên
+                        </span>
                     </NavLink>
                 </div>
-
                 <div class="bf-navigation-item">
                     <NavLink class="bf-navigation-link" href="branches">
-
-                        <span>Chi nhánh và nhân viên</span>
+                        <span>
+                            Chi nhánh và nhân viên
+                        </span>
                     </NavLink>
                 </div>
-
                 <div class="bf-navigation-item">
                     <NavLink class="bf-navigation-link" href="orders">
-                        <span>Đơn hàng</span>
+                        <span>
+                            Đơn hàng
+                        </span>
                     </NavLink>
                 </div>
-
                 <div class="bf-navigation-item">
                     <NavLink class="bf-navigation-link" href="menu">
-                        <span>Menu</span>
+                        <span>
+                            Menu
+                        </span>
                     </NavLink>
                 </div>
-
                 <div class="bf-navigation-item">
-                    <span class="bf-navigation-link-disabled" aria-disabled="true">
-
-                        <span class="bf-navigation-link-text">Kho</span>
-                        <span class="bf-navigation-coming-soon">Sắp có</span>
-                    </span>
+                    <NavLink class="bf-navigation-link" href="inventory">
+                        <span>
+                            Kho
+                        </span>
+                    </NavLink>
                 </div>
             </Authorized>
         </AuthorizeView>
-
         <AuthorizeView Roles="OWNER">
             <Authorized>
-                <p class="bf-navigation-section-title">Theo dõi</p>
-
+                <p class="bf-navigation-section-title">
+                    Theo dõi
+                </p>
                 <div class="bf-navigation-item">
                     <NavLink class="bf-navigation-link" href="employee-transfers">
-                        <span>Điều chuyển nhân viên</span>
+                        <span>
+                            Điều chuyển nhân viên
+                        </span>
                     </NavLink>
                 </div>
-
                 <div class="bf-navigation-item">
                     <NavLink class="bf-navigation-link" href="branches">
-
-                        <span>Chi nhánh và nhân viên</span>
+                        <span>
+                            Chi nhánh và nhân viên
+                        </span>
                     </NavLink>
                 </div>
-
                 <div class="bf-navigation-item">
                     <NavLink class="bf-navigation-link" href="menu">
-                        <span>Menu</span>
+                        <span>
+                            Menu
+                        </span>
                     </NavLink>
                 </div>
-
                 <div class="bf-navigation-item">
                     <NavLink class="bf-navigation-link" href="orders">
-                        <span>Đơn hàng</span>
+                        <span>
+                            Đơn hàng
+                        </span>
                     </NavLink>
                 </div>
-
                 <div class="bf-navigation-item">
-                    <span class="bf-navigation-link-disabled" aria-disabled="true">
-
-                        <span class="bf-navigation-link-text">Kho</span>
-                        <span class="bf-navigation-coming-soon">Sắp có</span>
-                    </span>
+                    <NavLink class="bf-navigation-link" href="inventory">
+                        <span>
+                            Kho
+                        </span>
+                    </NavLink>
                 </div>
-
                 <div class="bf-navigation-item">
                     <span class="bf-navigation-link-disabled" aria-disabled="true">
-
-                        <span class="bf-navigation-link-text">Báo cáo</span>
-                        <span class="bf-navigation-coming-soon">Sắp có</span>
+                        <span class="bf-navigation-link-text">
+                            Báo cáo
+                        </span>
+                        <span class="bf-navigation-coming-soon">
+                            Sắp có
+                        </span>
                     </span>
                 </div>
             </Authorized>
@@ -167,44 +183,51 @@
         <AuthorizeView Roles="ADMIN,OWNER">
             <Authorized Context="account">
                 <div class="d-md-none border-top border-secondary mt-3 pt-3 px-2">
-                    <p class="small text-white mb-2 text-break">Tài khoản: @account.User.Identity?.Name</p>
+                    <p class="small text-white mb-2 text-break">
+                        Tài khoản: @account.User.Identity?.Name
+                    </p>
                     <form method="post" action="/auth/logout" data-enhance="false" class="m-0">
                         <AntiforgeryToken />
-                        <button type="submit" class="btn btn-outline-light w-100" style="min-height:44px">Đăng xuất</button>
+                        <button type="submit" class="btn btn-outline-light w-100" style="min-height:44px">
+                            Đăng xuất
+                        </button>
                     </form>
                 </div>
             </Authorized>
         </AuthorizeView>
     </nav>
-
 </div>
-
 <AuthorizeView Roles="EMPLOYEE">
     <Authorized>
         <nav class="bf-employee-mobile-navigation"
-             aria-label="Điều hướng nhân viên trên điện thoại">
+            aria-label="Điều hướng nhân viên trên điện thoại">
             <NavLink class="bf-employee-mobile-link"
-                     href=""
-                     Match="NavLinkMatch.All">
-                <span>Trang chủ</span>
+                href=""
+                Match="NavLinkMatch.All">
+                <span>
+                    Trang chủ
+                </span>
             </NavLink>
-
             <NavLink class="bf-employee-mobile-link" href="order-menu">
-                <span>Gọi món</span>
+                <span>
+                    Gọi món
+                </span>
             </NavLink>
-
             <NavLink class="bf-employee-mobile-link" href="my-orders">
-                <span>Đơn hàng</span>
+                <span>
+                    Đơn hàng
+                </span>
             </NavLink>
-
+            <NavLink class="bf-employee-mobile-link" href="inventory">
+                <span>
+                    Kho
+                </span>
+            </NavLink>
             <span class="bf-employee-mobile-link bf-employee-mobile-link-disabled"
-                  aria-disabled="true">
-                <span>Kho</span>
-            </span>
-
-            <span class="bf-employee-mobile-link bf-employee-mobile-link-disabled"
-                  aria-disabled="true">
-                <span>Cá nhân</span>
+                aria-disabled="true">
+                <span>
+                    Cá nhân
+                </span>
             </span>
         </nav>
     </Authorized>

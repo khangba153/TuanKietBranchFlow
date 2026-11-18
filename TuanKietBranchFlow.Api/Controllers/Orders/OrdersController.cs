@@ -13,7 +13,6 @@ namespace TuanKietBranchFlow.Api.Controllers.Orders;
 public class OrdersController : ControllerBase
 {
     private readonly IOrderService _orderService;
-
     public OrdersController(IOrderService orderService)
     {
         _orderService = orderService;
@@ -29,14 +28,11 @@ public class OrdersController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<CreateOrderResponseDTO>> CreateOrderAsync(
-        [FromBody] CreateOrderRequestDTO request)
+    public async Task<ActionResult<CreateOrderResponseDTO>> CreateOrderAsync([FromBody] CreateOrderRequestDTO request)
     {
         // Lấy Id employee hiện tại từ JWT
         string? userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
         bool isValidUserId = int.TryParse(userIdValue, out int currentUserId);
-
         if (!isValidUserId)
         {
             return Problem(
@@ -46,10 +42,7 @@ public class OrdersController : ControllerBase
         }
 
         // Service kiểm tra dữ liệu, tính lại giá trị và lưu đơn
-        CreateOrderResultDTO result =
-            await _orderService.CreateOrderAsync(
-                currentUserId, request);
-
+        CreateOrderResultDTO result = await _orderService.CreateOrderAsync(currentUserId, request);
         if (!result.IsBranchFound)
         {
             return Problem(
@@ -84,10 +77,7 @@ public class OrdersController : ControllerBase
         }
 
         // Dùng route có tên để Location luôn trỏ đúng endpoint chi tiết đơn.
-        return CreatedAtRoute(
-            "GetMyOrderDetail",
-            new { orderId = result.Order.Id },
-            result.Order);
+        return CreatedAtRoute("GetMyOrderDetail", new { orderId = result.Order.Id }, result.Order);
     }
 
     /// <summary>
@@ -103,9 +93,7 @@ public class OrdersController : ControllerBase
     {
         // Lấy Id employee hiện tại từ JWT, không nhận từ client
         string? userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
         bool isValidUser = int.TryParse(userIdValue, out int currentUserId);
-
         if (!isValidUser)
         {
             return Problem(
@@ -114,12 +102,7 @@ public class OrdersController : ControllerBase
                 detail: "Token không chứa mã người dùng hợp lệ.");
         }
 
-        List<MyOrderListItemDTO> orders =
-            await _orderService.GetMyOrdersAsync(
-                currentUserId,
-                keyword,
-                businessDate);
-
+        List<MyOrderListItemDTO> orders = await _orderService.GetMyOrdersAsync(currentUserId, keyword, businessDate);
         return Ok(orders);
     }
 
@@ -132,8 +115,7 @@ public class OrdersController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<MyOrderDetailDTO>> GetMyOrderDetailAsync(
-        int orderId)
+    public async Task<ActionResult<MyOrderDetailDTO>> GetMyOrderDetailAsync(int orderId)
     {
         if (orderId <= 0)
         {
@@ -145,9 +127,7 @@ public class OrdersController : ControllerBase
 
         // Lấy employee hiện tại từ JWT
         string? userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
         bool isValidUserId = int.TryParse(userIdValue, out int currentUserId);
-
         if (!isValidUserId)
         {
             return Problem(
@@ -156,11 +136,7 @@ public class OrdersController : ControllerBase
                 detail: "Token không chứa mã người dùng hợp lệ.");
         }
 
-        MyOrderDetailDTO? order =
-            await _orderService.GetMyOrderDetailAsync(
-                currentUserId,
-                orderId);
-
+        MyOrderDetailDTO? order = await _orderService.GetMyOrderDetailAsync(currentUserId, orderId);
         if (order is null)
         {
             return Problem(
@@ -196,9 +172,7 @@ public class OrdersController : ControllerBase
         }
 
         string? userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
         bool isValidUserId = int.TryParse(userIdValue, out int currentUserId);
-
         if (!isValidUserId)
         {
             return Problem(
@@ -207,12 +181,7 @@ public class OrdersController : ControllerBase
                 detail: "Token đăng nhập không hợp lệ.");
         }
 
-        ReportOrderResult result =
-            await _orderService.ReportOrderAsync(
-                currentUserId,
-                orderId,
-                request);
-
+        ReportOrderResult result = await _orderService.ReportOrderAsync(currentUserId, orderId, request);
         if (!result.IsReportValid)
         {
             return Problem(

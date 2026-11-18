@@ -2,7 +2,6 @@
 @using TuanKietBranchFlow.Application.DTOs.Orders.Management
 @using TuanKietBranchFlow.Web.Services.Orders
 @inject OrderManagementApiService Api
-
 @if (_adjusting)
 {
     <OrderAdjustmentPanel Order="Order" OnResolved="OnResolved" OnCancel='() => _adjusting = false' />
@@ -11,32 +10,53 @@ else
 {
     <section class="card mb-3 border-warning" aria-labelledby="resolve-review-title">
         <div class="card-body">
-            <h2 id="resolve-review-title" class="h5">Xử lý báo sai</h2>
-            <p class="small text-body-secondary">Kiểm tra đơn trước khi xử lý. Món, giá và nội dung báo sai sẽ được giữ trong lịch sử.</p>
-            @if (_error != null)
+            <h2 id="resolve-review-title" class="h5">
+                Xử lý báo sai
+            </h2>
+            <p class="small text-body-secondary">
+                Kiểm tra đơn trước khi xử lý. Món, giá và nội dung báo sai sẽ được giữ trong lịch sử.
+            </p>
+            @if (_errorMessage != null)
             {
-                <div class="alert alert-danger" role="alert">@_error</div>
+                <div class="alert alert-danger" role="alert">
+                    @_errorMessage
+                </div>
                 @if (_mustReload)
                 {
-                    <button class="btn btn-outline-primary" disabled="@_saving" @onclick="ReloadAsync">Tải lại đơn</button>
+                    <button class="btn btn-outline-primary" disabled="@_isSaving" @onclick="ReloadAsync">
+                        Tải lại đơn
+                    </button>
                 }
-
             }
             @if (!_mustReload)
             {
-                <fieldset disabled="@_saving">
-                    <legend class="visually-hidden">Quyết định xử lý báo sai</legend>
-                    <label class="form-label" for="review-reason">Lý do xử lý <span class="text-danger">*</span>
+                <fieldset disabled="@_isSaving">
+                    <legend class="visually-hidden">
+                        Quyết định xử lý báo sai
+                    </legend>
+                    <label class="form-label" for="review-reason">
+                        Lý do xử lý
+                        <span class="text-danger">
+                            *
+                        </span>
                     </label>
                     <textarea id="review-reason" class="form-control mb-2" rows="3" maxlength="500" @bind="_reason" @bind:event="oninput" placeholder="Mô tả kết quả kiểm tra và lý do quyết định...">
                     </textarea>
-                    <small class="text-body-secondary d-block mb-3">@_reason.Length/500 ký tự</small>
+                    <small class="text-body-secondary d-block mb-3">
+                        @_reason.Length/500 ký tự
+                    </small>
                     @if (_action == "")
                     {
                         <div class="d-flex flex-wrap gap-2">
-                            <button class="btn btn-primary flex-grow-1" @onclick='() => Prepare("KEEP")'>Giữ nguyên đơn</button>
-                            <button class="btn btn-outline-primary flex-grow-1" @onclick='() => _adjusting = true'>Điều chỉnh đơn</button>
-                            <button class="btn btn-outline-danger flex-grow-1" @onclick='() => Prepare("CANCEL")'>Hủy đơn</button>
+                            <button class="btn btn-primary flex-grow-1" @onclick='() => Prepare("KEEP")'>
+                                Giữ nguyên đơn
+                            </button>
+                            <button class="btn btn-outline-primary flex-grow-1" @onclick='() => _adjusting = true'>
+                                Điều chỉnh đơn
+                            </button>
+                            <button class="btn btn-outline-danger flex-grow-1" @onclick='() => Prepare("CANCEL")'>
+                                Hủy đơn
+                            </button>
                         </div>
                     }
                     else
@@ -44,28 +64,42 @@ else
                         <div class="alert @(_action == "CANCEL" ? "alert-danger" : "alert-info")" role="status">
                             @if (_action == "CANCEL")
                             {
-                                <p class="mb-0">Xác nhận hủy đơn <strong>@Order.Code</strong>? Đơn sẽ không được tính vào giá trị hoàn tất và chưa hỗ trợ mở lại.</p>
+                                <p class="mb-0">
+                                    Xác nhận hủy đơn
+                                    <strong>
+                                        @Order.Code
+                                    </strong>
+                                    ? Đơn sẽ không được tính vào giá trị hoàn tất và chưa hỗ trợ mở lại.
+                                </p>
                             }
                             else
                             {
-                                <p class="mb-0">Xác nhận giữ nguyên đơn <strong>@Order.Code</strong>? Đơn trở về Hoàn tất, không thay đổi món hoặc giá.</p>
+                                <p class="mb-0">
+                                    Xác nhận giữ nguyên đơn
+                                    <strong>
+                                        @Order.Code
+                                    </strong>
+                                    ? Đơn trở về Hoàn tất, không thay đổi món hoặc giá.
+                                </p>
                             }
-
                         </div>
                         <div class="d-flex gap-2">
-                            <button class="btn @(_action == "CANCEL" ? "btn-danger" : "btn-primary") flex-grow-1" @onclick="SubmitAsync">@(_saving ? "Đang lưu..." : "Xác nhận xử lý")</button>
-                            <button class="btn btn-outline-secondary" @onclick='() => _action = ""'>Quay lại</button>
+                            <button class="btn @(_action == "CANCEL" ? "btn-danger" : "btn-primary") flex-grow-1" @onclick="SubmitAsync">
+                                @(_isSaving ? "Đang lưu..." : "Xác nhận xử lý")
+                            </button>
+                            <button class="btn btn-outline-secondary" @onclick='() => _action = ""'>
+                                Quay lại
+                            </button>
                         </div>
                     }
-
                 </fieldset>
             }
-
         </div>
     </section>
 }
 
-@code {
+@code
+{
     [Parameter, EditorRequired]
     public OrderManagementDetailDTO Order { get; set; } = default!;
 
@@ -74,17 +108,17 @@ else
 
     private string _reason = "";
     private string _action = "";
-    private string? _error;
-    private bool _saving;
+    private string? _errorMessage;
+    private bool _isSaving;
     private bool _mustReload;
     private bool _adjusting;
     // Hai bước để tránh chạm nhầm nút hủy trên điện thoại.
     private void Prepare(string action)
     {
-        _error = null;
+        _errorMessage = null;
         if (string.IsNullOrWhiteSpace(_reason))
         {
-            _error = "Vui lòng nhập lý do xử lý.";
+            _errorMessage = "Vui lòng nhập lý do xử lý.";
             return;
         }
 
@@ -94,28 +128,36 @@ else
     // Chỉ gửi một lần; sau lỗi bất định yêu cầu đọc lại, không gửi lặp mù quáng.
     private async Task SubmitAsync()
     {
-        if (_saving || _mustReload)
+        if (_isSaving || _mustReload)
         {
             return;
         }
 
         if (string.IsNullOrWhiteSpace(_reason))
         {
-            _error = "Vui lòng nhập lý do xử lý.";
+            _errorMessage = "Vui lòng nhập lý do xử lý.";
             return;
         }
 
-        _saving = true;
-        _error = null;
+        _isSaving = true;
+        _errorMessage = null;
         try
         {
-            await Api.ResolveReviewAsync(Order.Id, new() { Action = _action, Reason = _reason.Trim(), ExpectedReportedAt = Order.ReportedAt, ExpectedHistoryId = Order.LatestHistoryId });
+            await Api.ResolveReviewAsync(
+                Order.Id,
+                new()
+            {
+                Action = _action,
+                Reason = _reason.Trim(),
+                ExpectedReportedAt = Order.ReportedAt,
+                ExpectedHistoryId = Order.LatestHistoryId
+            });
             await OnResolved.InvokeAsync();
         }
         catch (HttpRequestException ex)
         {
             _mustReload = ex.StatusCode != HttpStatusCode.BadRequest;
-            _error = ex.StatusCode switch
+            _errorMessage = ex.StatusCode switch
             {
                 HttpStatusCode.BadRequest => "Thao tác hoặc lý do không hợp lệ. Hãy kiểm tra lại.",
                 HttpStatusCode.Unauthorized => "Phiên đăng nhập đã kết thúc. Vui lòng đăng nhập lại.",
@@ -127,7 +169,7 @@ else
         }
         finally
         {
-            _saving = false;
+            _isSaving = false;
         }
     }
 

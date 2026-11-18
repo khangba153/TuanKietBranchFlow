@@ -20,5 +20,5 @@ public class UpdateProductRequestDTO
     // Danh sách size–giá sau khi ADMIN chỉnh sửa.
     [Required(ErrorMessage = "Danh sách size không được để trống.")]
     [MinLength(2, ErrorMessage = "Sản phẩm phải có ít nhất hai size.")]
-    public List<UpdateProductSizeRequestDTO> ProductSizes { get; set; } = new();
+    public List<UpdateProductSizeRequestDTO> ProductSizes { get; set; } = new List<UpdateProductSizeRequestDTO>();
 }

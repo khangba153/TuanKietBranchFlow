@@ -9,47 +9,29 @@ namespace TuanKietBranchFlow.Web.Services.Auth;
 public class WebCookieAuthenticationEvents : CookieAuthenticationEvents
 {
     public const string WebSessionIdClaim = "web_session_id";
-
     private readonly IWebAuthSessionStore _sessionStore;
-
-    public WebCookieAuthenticationEvents(
-        IWebAuthSessionStore sessionStore)
+    public WebCookieAuthenticationEvents(IWebAuthSessionStore sessionStore)
     {
         _sessionStore = sessionStore;
     }
 
     // Chỉ chấp nhận cookie có mã phiên và tài khoản khớp kho RAM
-    public override async Task ValidatePrincipal(
-        CookieValidatePrincipalContext context)
+    public override async Task ValidatePrincipal(CookieValidatePrincipalContext context)
     {
-        string? sessionIdValue =
-            context.Principal?.FindFirstValue(WebSessionIdClaim);
-
-        string? userIdValue =
-            context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
-
-        if (!Guid.TryParse(sessionIdValue, out Guid sessionId) ||
-            sessionId == Guid.Empty ||
-            !int.TryParse(userIdValue, out int userId) ||
-            userId <= 0)
+        string? sessionIdValue = context.Principal?.FindFirstValue(WebSessionIdClaim);
+        string? userIdValue = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(sessionIdValue, out Guid sessionId) || sessionId == Guid.Empty || !int.TryParse(userIdValue, out int userId) || userId <= 0)
         {
             context.RejectPrincipal();
-
-            await context.HttpContext.SignOutAsync(
-                context.Scheme.Name);
-
+            await context.HttpContext.SignOutAsync(context.Scheme.Name);
             return;
         }
 
-        WebAuthSession? session =
-            _sessionStore.GetById(sessionId);
-
+        WebAuthSession? session = _sessionStore.GetById(sessionId);
         if (session == null || session.UserId != userId)
         {
             context.RejectPrincipal();
-
-            await context.HttpContext.SignOutAsync(
-                context.Scheme.Name);
+            await context.HttpContext.SignOutAsync(context.Scheme.Name);
         }
     }
 }

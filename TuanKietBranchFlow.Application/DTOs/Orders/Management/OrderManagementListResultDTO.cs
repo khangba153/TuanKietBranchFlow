@@ -7,5 +7,5 @@ public class OrderManagementListResultDTO
     public bool IsForbidden { get; set; }
     public bool IsBranchFound { get; set; } = true;
     public string? ErrorMessage { get; set; }
-    public OrderManagementPageDTO Data { get; set; } = new();
+    public OrderManagementPageDTO Data { get; set; } = new OrderManagementPageDTO();
 }

@@ -1,52 +1,52 @@
 @inherits LayoutComponentBase
-
 <div class="bf-shell">
     <aside class="bf-sidebar">
         <NavMenu />
     </aside>
-
     <div class="bf-main-column">
         <header class="bf-topbar">
             <div class="bf-topbar-brand">
-                <span class="bf-brand-mark">BF</span>
-
+                <span class="bf-brand-mark">
+                    BF
+                </span>
                 <div>
-                    <strong>BranchFlow</strong>
+                    <strong>
+                        BranchFlow
+                    </strong>
                 </div>
             </div>
-
             <AuthorizeView>
                 <Authorized>
                     <div class="bf-user-area">
                         <div class="bf-user-information">
-                            <span class="bf-user-label">Xin chào</span>
-                            <strong>@context.User.Identity?.Name</strong>
+                            <span class="bf-user-label">
+                                Xin chào
+                            </span>
+                            <strong>
+                                @context.User.Identity?.Name
+                            </strong>
                         </div>
-
                         @* Gửi HTTP POST để controller có thể xóa cookie trong response. *@
                         <form method="post"
                             action="/auth/logout"
                             data-enhance="false"
                             class="m-0">
                             <AntiforgeryToken />
-
                             <button type="submit"
-                                    class="btn btn-outline-danger btn-sm">
+                                class="btn btn-outline-danger btn-sm">
                                 Đăng xuất
                             </button>
                         </form>
                     </div>
                 </Authorized>
-
                 <NotAuthorized>
                     <NavLink class="btn btn-outline-primary btn-sm"
-                             href="/login">
+                        href="/login">
                         Đăng nhập
                     </NavLink>
                 </NotAuthorized>
             </AuthorizeView>
         </header>
-
         <main class="content bf-content">
             <div class="bf-content-container">
                 @Body
@@ -54,13 +54,16 @@
         </main>
     </div>
 </div>
-
 <div id="blazor-error-ui" data-nosnippet>
-    <span>Đã xảy ra lỗi ngoài dự kiến.</span>
-    <a href="." class="reload">Tải lại</a>
+    <span>
+        Đã xảy ra lỗi ngoài dự kiến.
+    </span>
+    <a href="." class="reload">
+        Tải lại
+    </a>
     <button type="button"
-            class="dismiss"
-            aria-label="Đóng thông báo lỗi">
+        class="dismiss"
+        aria-label="Đóng thông báo lỗi">
         Đóng
     </button>
 </div>

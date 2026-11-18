@@ -7,7 +7,6 @@ namespace TuanKietBranchFlow.Infrastructure.Repositories.Common;
 public class RepositoryBase<TEntity> : IRepositoryBase<TEntity> where TEntity : class
 {
     protected readonly BranchFlowDbContext Context;
-
     // Nhận DbContext từ Dependency Injection để truy cập database
     public RepositoryBase(BranchFlowDbContext context)
     {
@@ -27,15 +26,13 @@ public class RepositoryBase<TEntity> : IRepositoryBase<TEntity> where TEntity : 
     }
 
     // Lấy 1 entity duy nhất thỏa mãn điều kiện
-    public async Task<TEntity?> SingleOrDefaultAsync(
-        Expression<Func<TEntity, bool>> condition)
+    public async Task<TEntity?> SingleOrDefaultAsync(Expression<Func<TEntity, bool>> condition)
     {
         return await Context.Set<TEntity>().SingleOrDefaultAsync(condition);
     }
 
     // Lấy danh sách entity thỏa mãn điều kiện
-    public async Task<List<TEntity>> WhereAsync(
-        Expression<Func<TEntity, bool>> condition)
+    public async Task<List<TEntity>> WhereAsync(Expression<Func<TEntity, bool>> condition)
     {
         return await Context.Set<TEntity>().Where(condition).ToListAsync();
     }
@@ -51,6 +48,4 @@ public class RepositoryBase<TEntity> : IRepositoryBase<TEntity> where TEntity : 
     {
         Context.Set<TEntity>().Update(entity);
     }
-
-
 }

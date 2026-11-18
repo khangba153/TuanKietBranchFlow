@@ -35,17 +35,15 @@ public class EmployeeCreateDTO : IValidatableObject
     [StringLength(100, ErrorMessage = "Chức vụ không được vượt quá 100 ký tự.")]
     public string? Position { get; set; }
 
-    [Range(typeof(decimal), "0", "9999999999999999.99",
-        ParseLimitsInInvariantCulture = true,
-        ErrorMessage = "Lương cơ bản phải từ 0 đến 9.999.999.999.999.999,99.")]
+    [Range(typeof(decimal), "0", "9999999999999999.99", ParseLimitsInInvariantCulture = true, ErrorMessage = "Lương cơ bản phải từ 0 đến 9.999.999.999.999.999,99.")]
     public decimal BaseSalary { get; set; }
-    
+
     [StringLength(500, ErrorMessage = "Địa chỉ không được vượt quá 500 ký tự.")]
     public string? Address { get; set; }
 
     // Chi nhánh mà ADMIN đang chọn để phân công nhân viên
     [Range(1, int.MaxValue, ErrorMessage = "BranchId phải lớn hơn 0.")]
-    public int BranchId { get; set; } 
+    public int BranchId { get; set; }
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {

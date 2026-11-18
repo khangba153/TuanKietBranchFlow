@@ -1,0 +1,10 @@
+.catalog-page { max-width: 1120px; margin-inline: auto; }
+.catalog-page .btn, .catalog-page .form-control, .catalog-page .form-select { min-height: 44px; }
+.catalog-list { display: grid; gap: .65rem; }
+.catalog-row { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1rem; border: 1px solid #dce6e4; border-radius: 12px; background: white; }
+.catalog-row > div { min-width: 0; overflow-wrap: anywhere; }
+.catalog-actions { display: flex; gap: .5rem; flex-shrink: 0; }
+@media (max-width: 575.98px) {
+    .catalog-row { align-items: stretch; flex-direction: column; }
+    .catalog-actions .btn { flex: 1; }
+}

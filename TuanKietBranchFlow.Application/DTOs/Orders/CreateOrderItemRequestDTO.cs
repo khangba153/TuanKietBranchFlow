@@ -10,12 +10,8 @@ public class CreateOrderItemRequestDTO
 
     [Range(1, int.MaxValue, ErrorMessage = "Số lượng món phải lớn hơn 0.")]
     public int Quantity { get; set; }
-
     // Topping là tùy chọn của riêng từng dòng món
-    public List<CreateOrderItemToppingRequestDTO> Toppings { get; set; } =
-        new List<CreateOrderItemToppingRequestDTO>();
-
+    public List<CreateOrderItemToppingRequestDTO> Toppings { get; set; } = new List<CreateOrderItemToppingRequestDTO>();
     // Ghi chú chỉ gửi ID; Backend đọc lại tên và nhóm từ database
-    public List<int> NoteOptionIds { get; set; } =
-        new List<int>();
+    public List<int> NoteOptionIds { get; set; } = new List<int>();
 }

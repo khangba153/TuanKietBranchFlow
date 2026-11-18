@@ -7,26 +7,71 @@ namespace TuanKietBranchFlow.Application.Services.Orders;
 
 public class OrderReviewService : IOrderReviewService
 {
-    private readonly IOrderManagementService _management;
-    private readonly IOrderRepository _orders;
+    private readonly IOrderManagementService _orderManagementService;
+    private readonly IOrderRepository _orderRepository;
     private readonly IUnitOfWork _work;
-
-    public OrderReviewService(IOrderManagementService management, IOrderRepository orders, IUnitOfWork work)
-    { _management = management; _orders = orders; _work = work; }
+    public OrderReviewService(
+        IOrderManagementService management,
+        IOrderRepository orders,
+        IUnitOfWork work)
+    {
+        _orderManagementService = management;
+        _orderRepository = orders;
+        _work = work;
+    }
 
     // Giữ nguyên/hủy đơn và ghi lịch sử là một transaction, không sửa món/giá hoặc báo sai gốc.
-    public async Task<OrderReviewResultDTO> ResolveAsync(int userId, string role, int orderId, ResolveOrderReviewRequestDTO request)
+    public async Task<OrderReviewResultDTO> ResolveAsync(
+        int userId,
+        string role,
+        int orderId,
+        ResolveOrderReviewRequestDTO request)
     {
-        if (userId <= 0 || role != "ADMIN") return new() { IsForbidden = true };
-        string reason = request.Reason?.Trim() ?? "";
-        if (orderId <= 0 || (request.Action != "KEEP" && request.Action != "CANCEL") ||
-            reason.Length == 0 || reason.Length > 500 || request.ExpectedReportedAt == null || request.ExpectedHistoryId < 0)
-            return new() { IsInvalid = true };
+        if (userId <= 0 || role != "ADMIN")
+        {
+            return new OrderReviewResultDTO()
 
-        OrderManagementDetailDTO? detail = await _management.GetDetailAsync(userId, role, orderId);
-        if (detail == null) return new() { IsNotFound = true };
-        if (detail.Status != "NEEDS_REVIEW" || detail.ReportedAt != request.ExpectedReportedAt ||
-            detail.LatestHistoryId != request.ExpectedHistoryId) return new() { IsConflict = true };
+            {
+
+                IsForbidden = true
+
+            };
+        }
+
+        string reason = request.Reason?.Trim() ?? "";
+        if (orderId <= 0 || (request.Action != "KEEP" && request.Action != "CANCEL") || reason.Length == 0 || reason.Length > 500 || request.ExpectedReportedAt == null || request.ExpectedHistoryId < 0)
+        {
+            return new OrderReviewResultDTO()
+
+            {
+
+                IsInvalid = true
+
+            };
+        }
+
+        OrderManagementDetailDTO? detail = await _orderManagementService.GetDetailAsync(userId, role, orderId);
+        if (detail == null)
+        {
+            return new OrderReviewResultDTO()
+
+            {
+
+                IsNotFound = true
+
+            };
+        }
+
+        if (detail.Status != "NEEDS_REVIEW" || detail.ReportedAt != request.ExpectedReportedAt || detail.LatestHistoryId != request.ExpectedHistoryId)
+        {
+            return new OrderReviewResultDTO()
+
+            {
+
+                IsConflict = true
+
+            };
+        }
 
         string beforeData = OrderSnapshot.Serialize(detail);
         string targetStatus = request.Action == "KEEP" ? "COMPLETED" : "CANCELLED";
@@ -34,22 +79,45 @@ public class OrderReviewService : IOrderReviewService
         await _work.BeginTransactionAsync();
         try
         {
-            int changed = await _orders.TryResolveReviewAsync(orderId, userId, DateOnly.FromDateTime(DateTime.Today),
-                request.ExpectedReportedAt.Value, request.ExpectedHistoryId, targetStatus, now);
+            int changed = await _orderRepository.TryResolveReviewAsync(
+                orderId,
+                userId,
+                DateOnly.FromDateTime(DateTime.Today),
+                request.ExpectedReportedAt.Value,
+                request.ExpectedHistoryId,
+                targetStatus,
+                now);
             if (changed != 1)
             {
                 await _work.RollbackTransactionAsync();
-                return new() { IsConflict = true };
+                return new OrderReviewResultDTO()
+
+                {
+
+                    IsConflict = true
+
+                };
             }
+
             detail.Status = targetStatus;
-            await _orders.AddReviewHistoryAsync(new OrderAdjustment
+            await _orderRepository.AddReviewHistoryAsync(new OrderAdjustment
             {
-                SalesOrderId = orderId, AdjustedByUserId = userId, Reason = reason,
-                BeforeData = beforeData, AfterData = OrderSnapshot.Serialize(detail), CreatedAt = now
+                SalesOrderId = orderId,
+                AdjustedByUserId = userId,
+                Reason = reason,
+                BeforeData = beforeData,
+                AfterData = OrderSnapshot.Serialize(detail),
+                CreatedAt = now
             });
             await _work.SaveChangesAsync();
             await _work.CommitTransactionAsync();
-            return new() { Status = targetStatus };
+            return new OrderReviewResultDTO()
+
+            {
+
+                Status = targetStatus
+
+            };
         }
         catch
         {
@@ -58,5 +126,4 @@ public class OrderReviewService : IOrderReviewService
             throw;
         }
     }
-
 }

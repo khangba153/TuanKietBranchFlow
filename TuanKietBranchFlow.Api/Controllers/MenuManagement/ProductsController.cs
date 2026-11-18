@@ -11,7 +11,6 @@ namespace TuanKietBranchFlow.Api.Controllers.MenuManagement;
 public class ProductsController : ControllerBase
 {
     private readonly IProductService _productService;
-
     public ProductsController(IProductService productService)
     {
         _productService = productService;
@@ -26,9 +25,7 @@ public class ProductsController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<List<MenuProductDTO>>> GetAllProductsAsync()
     {
-        List<MenuProductDTO> products =
-            await _productService.GetAllProductsAsync();
-
+        List<MenuProductDTO> products = await _productService.GetAllProductsAsync();
         return Ok(products);
     }
 
@@ -44,12 +41,9 @@ public class ProductsController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<MenuProductDTO>> CreateProductAsync(
-        [FromBody] CreateProductRequestDTO request)
+    public async Task<ActionResult<MenuProductDTO>> CreateProductAsync([FromBody] CreateProductRequestDTO request)
     {
-        CreateProductResultDTO result =
-            await _productService.CreateProductAsync(request);
-
+        CreateProductResultDTO result = await _productService.CreateProductAsync(request);
         if (result.IsRequestInvalid)
         {
             return Problem(
@@ -111,9 +105,7 @@ public class ProductsController : ControllerBase
         int productId,
         [FromBody] UpdateProductRequestDTO request)
     {
-        UpdateProductResultDTO result =
-            await _productService.UpdateProductAsync(productId, request);
-
+        UpdateProductResultDTO result = await _productService.UpdateProductAsync(productId, request);
         if (result.IsRequestInvalid)
         {
             return Problem(
@@ -178,9 +170,7 @@ public class ProductsController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> DeleteProductAsync(int productId)
     {
-        DeleteProductResultDTO result =
-            await _productService.DeleteProductAsync(productId);
-
+        DeleteProductResultDTO result = await _productService.DeleteProductAsync(productId);
         if (result.IsProductNotFound)
         {
             return Problem(

@@ -14,7 +14,7 @@ public class AdjustOrderRequestDTO
     public int ExpectedHistoryId { get; set; }
 
     [Required, MinLength(1), MaxLength(100)]
-    public List<AdjustOrderItemRequestDTO> Items { get; set; } = new();
+    public List<AdjustOrderItemRequestDTO> Items { get; set; } = new List<AdjustOrderItemRequestDTO>();
 
     [StringLength(64)]
     public string? PreviewHash { get; set; }

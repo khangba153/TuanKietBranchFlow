@@ -11,7 +11,6 @@ namespace TuanKietBranchFlow.Api.Controllers.MenuManagement;
 public class ToppingsController : ControllerBase
 {
     private readonly IToppingService _toppingService;
-
     public ToppingsController(IToppingService toppingService)
     {
         _toppingService = toppingService;
@@ -28,12 +27,9 @@ public class ToppingsController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<MenuToppingDTO>> CreateToppingAsync(
-        [FromBody] CreateToppingRequestDTO request)
+    public async Task<ActionResult<MenuToppingDTO>> CreateToppingAsync([FromBody] CreateToppingRequestDTO request)
     {
-        CreateToppingResultDTO result =
-            await _toppingService.CreateToppingAsync(request);
-
+        CreateToppingResultDTO result = await _toppingService.CreateToppingAsync(request);
         if (result.IsRequestInvalid)
         {
             return Problem(
@@ -86,9 +82,7 @@ public class ToppingsController : ControllerBase
         int toppingId,
         [FromBody] UpdateToppingRequestDTO request)
     {
-        UpdateToppingResultDTO result =
-            await _toppingService.UpdateToppingAsync(toppingId, request);
-
+        UpdateToppingResultDTO result = await _toppingService.UpdateToppingAsync(toppingId, request);
         if (result.IsRequestInvalid)
         {
             return Problem(
@@ -136,9 +130,7 @@ public class ToppingsController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> DeleteToppingAsync(int toppingId)
     {
-        DeleteToppingResultDTO result =
-            await _toppingService.DeleteToppingAsync(toppingId);
-
+        DeleteToppingResultDTO result = await _toppingService.DeleteToppingAsync(toppingId);
         if (result.IsToppingNotFound)
         {
             return Problem(

@@ -12,7 +12,6 @@ namespace TuanKietBranchFlow.Api.Controllers.Auth;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
-
     // Nhận AuthService từ DI
     public AuthController(IAuthService authService)
     {
@@ -27,11 +26,9 @@ public class AuthController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status429TooManyRequests)]
-    public async Task<ActionResult<LoginResponseDTO>> LoginAsync(
-        [FromBody] LoginRequestDTO request)
+    public async Task<ActionResult<LoginResponseDTO>> LoginAsync([FromBody] LoginRequestDTO request)
     {
         LoginResponseDTO? response = await _authService.LoginAsync(request);
-
         // Trả cùng 1 thông báo để không tiết lộ tài khoản có tồn tại hay ko
         if (response == null)
         {
@@ -42,7 +39,6 @@ public class AuthController : ControllerBase
         }
 
         return Ok(response);
-
     }
 
     /// <summary>
@@ -55,12 +51,9 @@ public class AuthController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<LoginResponseDTO>> RefreshAsync(
-        [FromBody] RefreshTokenRequestDTO request)
+    public async Task<ActionResult<LoginResponseDTO>> RefreshAsync([FromBody] RefreshTokenRequestDTO request)
     {
-        LoginResponseDTO? response =
-            await _authService.RefreshAsync(request);
-
+        LoginResponseDTO? response = await _authService.RefreshAsync(request);
         // Không tiết lộ chi tiết trạng thái token hoặc tài khoản.
         if (response == null)
         {
@@ -84,12 +77,8 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> LogoutAsync()
     {
         // Lấy tài khoản từ JWT đã được xác thực
-        string? userIdValue =
-            User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-        bool isValidUserId =
-            int.TryParse(userIdValue, out int userId);
-
+        string? userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        bool isValidUserId = int.TryParse(userIdValue, out int userId);
         if (!isValidUserId || userId <= 0)
         {
             return Problem(
@@ -100,7 +89,6 @@ public class AuthController : ControllerBase
 
         // Chỉ trả thành công sau khi việc thu hồi đã được lưu
         await _authService.LogoutAllAsync(userId);
-
         return NoContent();
     }
 
@@ -114,13 +102,9 @@ public class AuthController : ControllerBase
         string? userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
         string? userName = User.FindFirstValue(ClaimTypes.Name);
         string? role = User.FindFirstValue(ClaimTypes.Role);
-
         // Token hợp lệ phải có đủ 3 claim
         bool isValidUserId = int.TryParse(userIdValue, out int userId);
-
-        if (!isValidUserId
-            || string.IsNullOrWhiteSpace(userName)
-            || string.IsNullOrWhiteSpace(role))
+        if (!isValidUserId || string.IsNullOrWhiteSpace(userName) || string.IsNullOrWhiteSpace(role))
         {
             return Problem(
                 statusCode: StatusCodes.Status401Unauthorized,
@@ -129,13 +113,14 @@ public class AuthController : ControllerBase
         }
 
         CurrentUserDTO response = new CurrentUserDTO
+
         {
+
             UserId = userId,
             Username = userName,
             Role = role
-        };
 
+        };
         return Ok(response);
     }
-
 }

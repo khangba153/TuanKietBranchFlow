@@ -12,7 +12,6 @@ namespace TuanKietBranchFlow.Api.Controllers.Orders;
 public class OrderMenuController : ControllerBase
 {
     private readonly IOrderMenuService _orderMenuService;
-
     public OrderMenuController(IOrderMenuService orderMenuService)
     {
         _orderMenuService = orderMenuService;
@@ -27,8 +26,7 @@ public class OrderMenuController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<OrderMenuResponseDTO>> GetOrderMenuAsync(
-        [FromQuery] int branchId)
+    public async Task<ActionResult<OrderMenuResponseDTO>> GetOrderMenuAsync([FromQuery] int branchId)
     {
         // Kiểm tra id chi nhánh phải phải là số nguyên dương
         if (branchId <= 0)
@@ -42,7 +40,6 @@ public class OrderMenuController : ControllerBase
         // Đọc id empployee hiện tại từ JWT
         string? userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
         bool isValidUserId = int.TryParse(userIdValue, out int currentUserId);
-
         if (!isValidUserId)
         {
             return Problem(
@@ -52,9 +49,7 @@ public class OrderMenuController : ControllerBase
         }
 
         // Service kiểm tra chi nhánh, phân công và lấy menu
-        OrderMenuResultDTO result =
-            await _orderMenuService.GetOrderMenuAsync(currentUserId, branchId);
-
+        OrderMenuResultDTO result = await _orderMenuService.GetOrderMenuAsync(currentUserId, branchId);
         if (!result.IsBranchFound)
         {
             return Problem(

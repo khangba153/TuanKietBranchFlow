@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using TuanKietBranchFlow.Application.DTOs.Orders;
 using TuanKietBranchFlow.Application.DTOs.Orders.Management;
 using TuanKietBranchFlow.Infrastructure.Models;
 using TuanKietBranchFlow.Infrastructure.Repositories.Orders;
@@ -14,7 +15,6 @@ public class OrderAdjustmentService : IOrderAdjustmentService
     private readonly IOrderMenuRepository _orderMenuRepository;
     private readonly IOrderRepository _orderRepository;
     private readonly IUnitOfWork _unitOfWork;
-
     public OrderAdjustmentService(
         IOrderManagementService orderManagementService,
         IOrderMenuRepository orderMenuRepository,
@@ -28,48 +28,70 @@ public class OrderAdjustmentService : IOrderAdjustmentService
     }
 
     // Chỉ ADMIN trong phạm vi và đúng trạng thái mới được lấy lựa chọn chỉnh đơn.
-    public async Task<OrderAdjustmentResultDTO> GetOptionsAsync(int userId, string role, int orderId)
+    public async Task<OrderAdjustmentResultDTO> GetOptionsAsync(
+        int userId,
+        string role,
+        int orderId)
     {
         if (userId <= 0 || role != "ADMIN")
         {
-            return new()
+            return new OrderAdjustmentResultDTO()
+
             {
+
                 IsForbidden = true
+
             };
         }
 
         OrderManagementDetailDTO? order = await _orderManagementService.GetDetailAsync(userId, role, orderId);
         if (order == null)
         {
-            return new()
+            return new OrderAdjustmentResultDTO()
+
             {
+
                 IsNotFound = true
+
             };
         }
 
         if (order.Status != "NEEDS_REVIEW")
         {
-            return new()
+            return new OrderAdjustmentResultDTO()
+
             {
+
                 IsConflict = true
+
             };
         }
 
-        return new()
+        return new OrderAdjustmentResultDTO()
+
         {
+
             Before = order,
             Options = await LoadOptionsAsync(order)
+
         };
     }
 
     // Tính giá ở Backend; Preview không mở transaction hoặc ghi database.
-    public async Task<OrderAdjustmentResultDTO> PreviewAsync(int userId, string role, int orderId, AdjustOrderRequestDTO request)
+    public async Task<OrderAdjustmentResultDTO> PreviewAsync(
+        int userId,
+        string role,
+        int orderId,
+        AdjustOrderRequestDTO request)
     {
         if (userId <= 0 || role != "ADMIN")
         {
-            return new()
+            return new OrderAdjustmentResultDTO()
+
             {
+
                 IsForbidden = true
+
             };
         }
 
@@ -81,17 +103,23 @@ public class OrderAdjustmentService : IOrderAdjustmentService
         OrderManagementDetailDTO? before = await _orderManagementService.GetDetailAsync(userId, role, orderId);
         if (before == null)
         {
-            return new()
+            return new OrderAdjustmentResultDTO()
+
             {
+
                 IsNotFound = true
+
             };
         }
 
         if (before.Status != "NEEDS_REVIEW" || before.ReportedAt != request.ExpectedReportedAt || before.LatestHistoryId != request.ExpectedHistoryId)
         {
-            return new()
+            return new OrderAdjustmentResultDTO()
+
             {
+
                 IsConflict = true
+
             };
         }
 
@@ -121,8 +149,10 @@ public class OrderAdjustmentService : IOrderAdjustmentService
                 return Invalid($"Size mới của {original.ProductName} không còn được bán hoặc thuộc món khác.");
             }
 
-            OrderManagementItemDTO item = new()
+            OrderManagementItemDTO item = new OrderManagementItemDTO()
+
             {
+
                 Id = original.Id,
                 ProductId = original.ProductId,
                 ProductSizeId = row.ProductSizeId,
@@ -130,6 +160,7 @@ public class OrderAdjustmentService : IOrderAdjustmentService
                 SizeName = changedSize ? newSize!.Name : original.SizeName,
                 Quantity = row.Quantity,
                 UnitPrice = changedSize ? newSize!.Price : original.UnitPrice
+
             };
             if (row.Toppings.Any(top => top == null) || row.Toppings.Select(top => top.ToppingId).Distinct().Count() != row.Toppings.Count)
             {
@@ -137,7 +168,7 @@ public class OrderAdjustmentService : IOrderAdjustmentService
             }
 
             decimal configuredPrice = item.UnitPrice;
-            foreach (var selected in row.Toppings.OrderBy(top => top.ToppingId))
+            foreach (CreateOrderItemToppingRequestDTO? selected in row.Toppings.OrderBy(top => top.ToppingId))
             {
                 OrderAdjustmentToppingDTO? current = options.Toppings.FirstOrDefault(top => top.Id == selected.ToppingId);
                 if (current == null || selected.Quantity < 1 || selected.Quantity > current.MaxQuantity)
@@ -157,7 +188,7 @@ public class OrderAdjustmentService : IOrderAdjustmentService
                 configuredPrice += price * selected.Quantity;
             }
 
-            List<int> noteGroups = new();
+            List<int> noteGroups = new List<int>();
             foreach (int selected in row.NoteOptionIds.OrderBy(id => id))
             {
                 OrderAdjustmentNoteDTO? note = options.Notes.FirstOrDefault(note => note.Id == selected);
@@ -195,16 +226,23 @@ public class OrderAdjustmentService : IOrderAdjustmentService
 
         // Hash chỉ phát hiện thay đổi giá/dữ liệu giữa preview và submit, không thay thế quyền truy cập.
         string hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(userId + "|" + before.LatestHistoryId + "|" + request.Reason.Trim() + "|" + OrderSnapshot.Serialize(before) + "|" + OrderSnapshot.Serialize(after))));
-        return new()
+        return new OrderAdjustmentResultDTO()
+
         {
+
             Before = before,
             After = after,
             PreviewHash = hash
+
         };
     }
 
     // Tính lại giá rồi giành quyền xử lý; dữ liệu món, tổng tiền và history commit cùng nhau.
-    public async Task<OrderAdjustmentResultDTO> AdjustAsync(int userId, string role, int orderId, AdjustOrderRequestDTO request)
+    public async Task<OrderAdjustmentResultDTO> AdjustAsync(
+        int userId,
+        string role,
+        int orderId,
+        AdjustOrderRequestDTO request)
     {
         OrderAdjustmentResultDTO result = await PreviewAsync(userId, role, orderId, request);
         if (result.After == null)
@@ -214,10 +252,13 @@ public class OrderAdjustmentService : IOrderAdjustmentService
 
         if (string.IsNullOrEmpty(request.PreviewHash) || request.PreviewHash != result.PreviewHash)
         {
-            return new()
+            return new OrderAdjustmentResultDTO()
+
             {
+
                 IsConflict = true,
                 Error = "Giá hoặc nội dung đã thay đổi. Hãy xem trước lại."
+
             };
         }
 
@@ -225,21 +266,33 @@ public class OrderAdjustmentService : IOrderAdjustmentService
         await _unitOfWork.BeginTransactionAsync();
         try
         {
-            int changed = await _orderRepository.TryResolveReviewAsync(orderId, userId, DateOnly.FromDateTime(DateTime.Today), request.ExpectedReportedAt!.Value, request.ExpectedHistoryId, "ADJUSTED", now);
+            int changed = await _orderRepository.TryResolveReviewAsync(
+                orderId,
+                userId,
+                DateOnly.FromDateTime(DateTime.Today),
+                request.ExpectedReportedAt!.Value,
+                request.ExpectedHistoryId,
+                "ADJUSTED",
+                now);
             if (changed != 1)
             {
                 await _unitOfWork.RollbackTransactionAsync();
-                return new()
+                return new OrderAdjustmentResultDTO()
+
                 {
+
                     IsConflict = true
+
                 };
             }
 
-            List<OrderItem> items = new();
+            List<OrderItem> items = new List<OrderItem>();
             foreach (OrderManagementItemDTO row in result.After.Items)
             {
-                OrderItem item = new()
+                OrderItem item = new OrderItem()
+
                 {
+
                     Id = row.Id,
                     ProductSizeId = row.ProductSizeId,
                     ProductNameSnapshot = row.ProductName,
@@ -247,8 +300,9 @@ public class OrderAdjustmentService : IOrderAdjustmentService
                     Quantity = row.Quantity,
                     UnitPriceSnapshot = row.UnitPrice,
                     SubtotalAmount = row.SubtotalAmount
+
                 };
-                foreach (var top in row.Toppings)
+                foreach (OrderManagementToppingDTO top in row.Toppings)
                 {
                     item.OrderItemToppings.Add(new()
                     {
@@ -296,7 +350,7 @@ public class OrderAdjustmentService : IOrderAdjustmentService
     // Menu hiện tại chỉ dùng để xác thực lựa chọn mới/đang giữ; không ghi đè giá snapshot cũ.
     private async Task<OrderAdjustmentOptionsDTO> LoadOptionsAsync(OrderManagementDetailDTO order)
     {
-        OrderAdjustmentOptionsDTO result = new();
+        OrderAdjustmentOptionsDTO result = new OrderAdjustmentOptionsDTO();
         List<int> productIds = order.Items.Select(item => item.ProductId).Distinct().ToList();
         foreach (Category category in await _orderMenuRepository.GetAvailableCategoriesAsync(order.BranchId))
         {
@@ -347,7 +401,10 @@ public class OrderAdjustmentService : IOrderAdjustmentService
     }
 
     private static OrderAdjustmentResultDTO Invalid(string message) => new()
+
     {
+
         Error = message
+
     };
 }

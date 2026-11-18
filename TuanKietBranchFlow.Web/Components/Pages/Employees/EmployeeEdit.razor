@@ -8,35 +8,51 @@
 @inject EmployeeApiService EmployeeApiService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IJSRuntime JS
-
-<PageTitle>Sửa thông tin nhân viên</PageTitle>
+<PageTitle>
+    Sửa thông tin nhân viên
+</PageTitle>
 <NavigationLock ConfirmExternalNavigation="@HasUnsavedChanges"
-                OnBeforeInternalNavigation="ConfirmNavigationAsync" />
-
+    OnBeforeInternalNavigation="ConfirmNavigationAsync" />
 <div class="employee-edit-page bf-page">
     <AuthorizeView Roles="ADMIN">
         <Authorized Context="adminContext">
             <header class="employee-edit-header">
-                <a class="btn btn-outline-secondary" href="@DetailUrl">Hồ sơ nhân viên</a>
-                <h1 class="h3 mt-3 mb-1">Sửa thông tin nhân viên</h1>
-                <p class="text-body-secondary mb-0 text-break">@(_employee?.FullName ?? "Hồ sơ nhân viên")</p>
+                <a class="btn btn-outline-secondary" href="@DetailUrl">
+                    Hồ sơ nhân viên
+                </a>
+                <h1 class="h3 mt-3 mb-1">
+                    Sửa thông tin nhân viên
+                </h1>
+                <p class="text-body-secondary mb-0 text-break">
+                    @(_employee?.FullName ?? "Hồ sơ nhân viên")
+                </p>
             </header>
-
             @if (_isLoading)
             {
                 <div class="bf-surface-card p-4 text-center" role="status">
-                    <span class="spinner-border text-success" aria-hidden="true"></span>
-                    <p class="mt-3 mb-0">Đang tải hồ sơ để chỉnh sửa...</p>
+                    <span class="spinner-border text-success" aria-hidden="true">
+                    </span>
+                    <p class="mt-3 mb-0">
+                        Đang tải hồ sơ để chỉnh sửa...
+                    </p>
                 </div>
             }
             else if (_employee is null || _editContext is null)
             {
                 <section class="bf-surface-card p-4" role="alert">
-                    <h2 class="h5">Không thể mở form sửa</h2>
-                    <p>@_errorMessage</p>
+                    <h2 class="h5">
+                        Không thể mở form sửa
+                    </h2>
+                    <p>
+                        @_errorMessage
+                    </p>
                     <div class="d-flex flex-wrap gap-2">
-                        <a class="btn btn-outline-secondary" href="@ListUrl">Danh sách nhân viên</a>
-                        <button class="btn btn-primary" @onclick="LoadEmployeeAsync">Thử tải lại</button>
+                        <a class="btn btn-outline-secondary" href="@ListUrl">
+                            Danh sách nhân viên
+                        </a>
+                        <button class="btn btn-primary" @onclick="LoadEmployeeAsync">
+                            Thử tải lại
+                        </button>
                     </div>
                 </section>
             }
@@ -44,110 +60,152 @@
             {
                 <div class="employee-edit-context bf-surface-card">
                     <div>
-                        <span class="small text-body-secondary">Chi nhánh</span>
-                        <strong class="d-block text-break">@BranchName</strong>
+                        <span class="small text-body-secondary">
+                            Chi nhánh
+                        </span>
+                        <strong class="d-block text-break">
+                            @BranchName
+                        </strong>
                     </div>
                     <div>
-                        <span class="small text-body-secondary">Trạng thái hiện tại</span>
-                        <strong class="d-block">@(_employee.IsActive ? "Đang làm việc" : "Đã nghỉ việc")</strong>
+                        <span class="small text-body-secondary">
+                            Trạng thái hiện tại
+                        </span>
+                        <strong class="d-block">
+                            @(_employee.IsActive ? "Đang làm việc" : "Đã nghỉ việc")
+                        </strong>
                     </div>
                 </div>
                 <p class="small text-body-secondary">
                     Trang này chỉ sửa hồ sơ; không đổi tài khoản, trạng thái làm việc hoặc phân công chi nhánh.
                 </p>
-
                 <EditForm EditContext="_editContext" OnValidSubmit="SaveEmployeeAsync"
-                          OnInvalidSubmit="ShowValidationErrors" FormName="employee-edit" novalidate>
+                    OnInvalidSubmit="ShowValidationErrors" FormName="employee-edit" novalidate>
                     <DataAnnotationsValidator />
-
                     <div tabindex="-1" @ref="_feedbackPanel">
-                    @if (!string.IsNullOrWhiteSpace(_successMessage))
-                    {
-                        <div class="alert alert-success" role="status">@_successMessage</div>
-                    }
-                    @if (!string.IsNullOrWhiteSpace(_errorMessage))
-                    {
-                        <div class="alert alert-danger text-break" role="alert">
-                            <p class="mb-0">@_errorMessage</p>
-                            @if (_mustReload)
-                            {
-                                <button type="button" class="btn btn-outline-danger mt-2" @onclick="ReloadEmployeeAsync">
-                                    Tải lại hồ sơ để kiểm tra
-                                </button>
-                            }
-                        </div>
-                    }
-
-                    <ValidationSummary class="text-danger" />
+                        @if (!string.IsNullOrWhiteSpace(_successMessage))
+                        {
+                            <div class="alert alert-success" role="status">
+                                @_successMessage
+                            </div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(_errorMessage))
+                        {
+                            <div class="alert alert-danger text-break" role="alert">
+                                <p class="mb-0">
+                                    @_errorMessage
+                                </p>
+                                @if (_mustReload)
+                                {
+                                    <button type="button" class="btn btn-outline-danger mt-2" @onclick="ReloadEmployeeAsync">
+                                        Tải lại hồ sơ để kiểm tra
+                                    </button>
+                                }
+                            </div>
+                        }
+                        <ValidationSummary class="text-danger" />
                     </div>
-
                     <fieldset disabled="@(_isSaving || _mustReload)" class="employee-edit-fields"
-                              @oninput="MarkUnsavedChanges" @onchange="MarkUnsavedChanges">
-                        <legend class="visually-hidden">Thông tin được phép chỉnh sửa</legend>
+                        @oninput="MarkUnsavedChanges" @onchange="MarkUnsavedChanges">
+                        <legend class="visually-hidden">
+                            Thông tin được phép chỉnh sửa
+                        </legend>
                         <section class="bf-surface-card employee-edit-section" aria-labelledby="edit-personal-title">
-                            <h2 id="edit-personal-title" class="h5 mb-3">Thông tin cá nhân và liên hệ</h2>
+                            <h2 id="edit-personal-title" class="h5 mb-3">
+                                Thông tin cá nhân và liên hệ
+                            </h2>
                             <div class="row g-3">
                                 <div class="col-12 col-md-7">
-                                    <label for="edit-full-name" class="form-label">Họ và tên <span class="text-danger">*</span></label>
+                                    <label for="edit-full-name" class="form-label">
+                                        Họ và tên
+                                        <span class="text-danger">
+                                            *
+                                        </span>
+                                    </label>
                                     <EmployeeEditTextInput id="edit-full-name" class="form-control" maxlength="150"
-                                               autocomplete="name" @bind-Value="_editModel.FullName" />
+                                        autocomplete="name" @bind-Value="_editModel.FullName" />
                                     <ValidationMessage For="() => _editModel.FullName" />
                                 </div>
                                 <div class="col-12 col-md-5">
-                                    <label for="edit-date-of-birth" class="form-label">Ngày sinh</label>
+                                    <label for="edit-date-of-birth" class="form-label">
+                                        Ngày sinh
+                                    </label>
                                     <InputDate id="edit-date-of-birth" class="form-control" lang="vi-VN"
-                                               max="@TodayValue" @bind-Value="_editModel.DateOfBirth" />
+                                        max="@TodayValue" @bind-Value="_editModel.DateOfBirth" />
                                     <ValidationMessage For="() => _editModel.DateOfBirth" />
                                 </div>
                                 <div class="col-12 col-md-5">
-                                    <label for="edit-phone" class="form-label">Số điện thoại</label>
+                                    <label for="edit-phone" class="form-label">
+                                        Số điện thoại
+                                    </label>
                                     <EmployeeEditTextInput id="edit-phone" class="form-control" type="tel" maxlength="30"
-                                               autocomplete="tel" @bind-Value="_editModel.Phone" />
+                                        autocomplete="tel" @bind-Value="_editModel.Phone" />
                                     <ValidationMessage For="() => _editModel.Phone" />
                                 </div>
                                 <div class="col-12 col-md-7">
-                                    <label for="edit-email" class="form-label">Email</label>
+                                    <label for="edit-email" class="form-label">
+                                        Email
+                                    </label>
                                     <EmployeeEditTextInput id="edit-email" class="form-control" type="email" maxlength="254"
-                                               autocomplete="email" @bind-Value="_editModel.Email" />
+                                        autocomplete="email" @bind-Value="_editModel.Email" />
                                     <ValidationMessage For="() => _editModel.Email" />
                                 </div>
                                 <div class="col-12">
-                                    <label for="edit-address" class="form-label">Địa chỉ</label>
+                                    <label for="edit-address" class="form-label">
+                                        Địa chỉ
+                                    </label>
                                     <EmployeeEditTextArea id="edit-address" class="form-control" rows="3" maxlength="500"
-                                                   autocomplete="street-address" @bind-Value="_editModel.Address" />
+                                        autocomplete="street-address" @bind-Value="_editModel.Address" />
                                     <ValidationMessage For="() => _editModel.Address" />
                                 </div>
                             </div>
                         </section>
-
                         <section class="bf-surface-card employee-edit-section" aria-labelledby="edit-work-title">
-                            <h2 id="edit-work-title" class="h5 mb-3">Thông tin công việc</h2>
+                            <h2 id="edit-work-title" class="h5 mb-3">
+                                Thông tin công việc
+                            </h2>
                             <div class="row g-3">
                                 <div class="col-12 col-md-6">
-                                    <label for="edit-employee-code" class="form-label">Mã nhân viên <span class="text-danger">*</span></label>
+                                    <label for="edit-employee-code" class="form-label">
+                                        Mã nhân viên
+                                        <span class="text-danger">
+                                            *
+                                        </span>
+                                    </label>
                                     <EmployeeEditTextInput id="edit-employee-code" class="form-control" maxlength="30"
-                                               @bind-Value="_editModel.EmployeeCode" />
+                                        @bind-Value="_editModel.EmployeeCode" />
                                     <ValidationMessage For="() => _editModel.EmployeeCode" />
                                 </div>
                                 <div class="col-12 col-md-6">
-                                    <label for="edit-hire-date" class="form-label">Ngày vào làm <span class="text-danger">*</span></label>
+                                    <label for="edit-hire-date" class="form-label">
+                                        Ngày vào làm
+                                        <span class="text-danger">
+                                            *
+                                        </span>
+                                    </label>
                                     <InputDate id="edit-hire-date" class="form-control" lang="vi-VN" max="@TodayValue"
-                                               @bind-Value="_editModel.HireDate" />
+                                        @bind-Value="_editModel.HireDate" />
                                     <ValidationMessage For="() => _editModel.HireDate" />
                                 </div>
                                 <div class="col-12 col-md-6">
-                                    <label for="edit-position" class="form-label">Chức vụ</label>
+                                    <label for="edit-position" class="form-label">
+                                        Chức vụ
+                                    </label>
                                     <EmployeeEditTextInput id="edit-position" class="form-control" maxlength="100"
-                                               @bind-Value="_editModel.Position" />
+                                        @bind-Value="_editModel.Position" />
                                     <ValidationMessage For="() => _editModel.Position" />
                                 </div>
                                 <div class="col-12 col-md-6">
-                                    <label for="edit-base-salary" class="form-label">Lương cơ bản (VNĐ)</label>
+                                    <label for="edit-base-salary" class="form-label">
+                                        Lương cơ bản (VNĐ)
+                                    </label>
                                     <EmployeeEditSalaryInput id="edit-base-salary" class="form-control" min="0" step="0.01"
-                                                 ParsingErrorMessage="Lương cơ bản phải là số hợp lệ."
-                                                 @bind-Value="_editModel.BaseSalary" />
+                                        ParsingErrorMessage="Lương cơ bản phải là số hợp lệ."
+                                        @bind-Value="_editModel.BaseSalary" />
                                     <ValidationMessage For="() => _editModel.BaseSalary" />
-                                    <span class="form-text">@_editModel.BaseSalary.ToString("N0") đ</span>
+                                    <span class="form-text">
+                                        @_editModel.BaseSalary.ToString("N0") đ
+                                    </span>
                                 </div>
                             </div>
                             <p class="small text-body-secondary mt-3 mb-0">
@@ -155,15 +213,16 @@
                             </p>
                         </section>
                     </fieldset>
-
                     <div class="employee-edit-actions">
                         <span class="small text-body-secondary" role="status">
                             @(_isSaving ? "Đang lưu hồ sơ..." : HasUnsavedChanges ? "Có thay đổi chưa lưu" : "Không có thay đổi chưa lưu")
                         </span>
                         <div class="employee-edit-action-buttons">
-                            <a class="btn btn-outline-secondary" href="@DetailUrl">@(_successMessage is null ? "Hủy" : "Xem hồ sơ")</a>
+                            <a class="btn btn-outline-secondary" href="@DetailUrl">
+                                @(_successMessage is null ? "Hủy" : "Xem hồ sơ")
+                            </a>
                             <button type="submit" class="btn btn-primary"
-                                    disabled="@(_isSaving || _mustReload || !HasUnsavedChanges)">
+                                disabled="@(_isSaving || _mustReload || !HasUnsavedChanges)">
                                 @(_isSaving ? "Đang lưu..." : "Lưu thay đổi")
                             </button>
                         </div>
@@ -173,15 +232,22 @@
         </Authorized>
         <NotAuthorized>
             <section class="bf-surface-card p-4" role="alert">
-                <h1 class="h4">Chỉ ADMIN được sửa hồ sơ nhân viên</h1>
-                <p>OWNER chỉ có quyền xem; nhân viên không được mở form quản lý này.</p>
-                <a class="btn btn-outline-secondary" href="@ListUrl">Quay lại danh sách</a>
+                <h1 class="h4">
+                    Chỉ ADMIN được sửa hồ sơ nhân viên
+                </h1>
+                <p>
+                    OWNER chỉ có quyền xem; nhân viên không được mở form quản lý này.
+                </p>
+                <a class="btn btn-outline-secondary" href="@ListUrl">
+                    Quay lại danh sách
+                </a>
             </section>
         </NotAuthorized>
     </AuthorizeView>
 </div>
 
-@code {
+@code
+{
     [Parameter]
     public int EmployeeId { get; set; }
 
@@ -203,13 +269,11 @@
     private ElementReference _feedbackPanel;
     private bool _focusFeedback;
     private bool _hasUnsavedChanges;
-
     private bool HasUnsavedChanges => _hasUnsavedChanges;
     private string DetailUrl => $"/employees/{EmployeeId}?branchId={BranchId}";
     private string ListUrl => $"/employees?branchId={BranchId}";
     private string TodayValue => DateOnly.FromDateTime(DateTime.Today).ToString("yyyy-MM-dd");
-    private string BranchName => _employee?.BranchHistory
-        .FirstOrDefault(history => history.BranchId == BranchId)?.BranchName ?? $"Chi nhánh #{BranchId}";
+    private string BranchName => _employee?.BranchHistory.FirstOrDefault(history => history.BranchId == BranchId)?.BranchName ?? $"Chi nhánh #{BranchId}";
 
     // Chỉ ADMIN tải dữ liệu form; API vẫn kiểm tra quyền khi đọc và ghi.
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -228,7 +292,6 @@
         _loadedEmployeeId = EmployeeId;
         _loadedBranchId = BranchId;
         AuthenticationState authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-
         if (authenticationState.User.IsInRole("ADMIN"))
         {
             await LoadEmployeeAsync();
@@ -249,7 +312,6 @@
         _successMessage = null;
         int employeeId = EmployeeId;
         int branchId = BranchId;
-
         try
         {
             if (employeeId <= 0 || branchId <= 0)
@@ -259,7 +321,6 @@
             }
 
             EmployeeDetailApiResult result = await EmployeeApiService.GetEmployeeForEditAsync(employeeId, branchId);
-
             if (_disposed || employeeId != EmployeeId || branchId != BranchId)
             {
                 return;
@@ -274,8 +335,7 @@
             SetEmployeeModel(result.Employee);
             _mustReload = false;
         }
-        catch (Exception exception) when (exception is HttpRequestException
-            || exception is JsonException || exception is OperationCanceledException)
+        catch (Exception exception)when (exception is HttpRequestException || exception is JsonException || exception is OperationCanceledException)
         {
             _errorMessage = "Không tải được hồ sơ. Kiểm tra kết nối rồi thử tải lại.";
         }
@@ -296,7 +356,9 @@
         _employee = employee;
         _hasUnsavedChanges = false;
         _editModel = new EmployeeUpdateDTO
+
         {
+
             FullName = employee.FullName,
             EmployeeCode = employee.EmployeeCode,
             Email = employee.Email,
@@ -306,19 +368,21 @@
             Position = employee.Position,
             BaseSalary = employee.BaseSalary,
             Address = employee.Address
+
         };
         _editContext = new EditContext(_editModel);
         _serverMessages = new ValidationMessageStore(_editContext);
         _editContext.OnFieldChanged += OnFieldChanged;
     }
 
-    private void OnFieldChanged(object? sender, FieldChangedEventArgs args)
+    private void OnFieldChanged(
+        object? sender,
+        FieldChangedEventArgs args)
     {
         _hasUnsavedChanges = true;
         _serverMessages?.Clear(args.FieldIdentifier);
         _editContext?.NotifyValidationStateChanged();
         _successMessage = null;
-
         if (!_mustReload)
         {
             _errorMessage = null;
@@ -351,12 +415,9 @@
         _errorMessage = null;
         _successMessage = null;
         _serverMessages?.Clear();
-
         try
         {
-            EmployeeDetailApiResult result = await EmployeeApiService.UpdateEmployeeAsync(
-                EmployeeId, BranchId, _editModel);
-
+            EmployeeDetailApiResult result = await EmployeeApiService.UpdateEmployeeAsync(EmployeeId, BranchId, _editModel);
             if (_disposed)
             {
                 return;
@@ -366,7 +427,6 @@
             {
                 _errorMessage = GetFailureMessage(result);
                 _mustReload = result.StatusCode != 400 && result.StatusCode != 409;
-
                 foreach (KeyValuePair<string, string[]> error in result.ValidationErrors)
                 {
                     string fieldName = error.Key.Split('.').Last();
@@ -380,8 +440,7 @@
             SetEmployeeModel(result.Employee);
             _successMessage = "Đã lưu thông tin nhân viên thành công.";
         }
-        catch (Exception exception) when (exception is HttpRequestException
-            || exception is JsonException || exception is OperationCanceledException)
+        catch (Exception exception)when (exception is HttpRequestException || exception is JsonException || exception is OperationCanceledException)
         {
             _mustReload = true;
             _errorMessage = "Chưa xác định được kết quả lưu. Hãy tải lại hồ sơ để kiểm tra trước khi gửi tiếp.";
@@ -408,9 +467,7 @@
     {
         if (HasUnsavedChanges)
         {
-            bool discard = await JS.InvokeAsync<bool>("confirm",
-                "Tải lại sẽ bỏ nội dung đang sửa và đọc dữ liệu đã lưu. Bạn muốn tiếp tục?");
-
+            bool discard = await JS.InvokeAsync<bool>("confirm", "Tải lại sẽ bỏ nội dung đang sửa và đọc dữ liệu đã lưu. Bạn muốn tiếp tục?");
             if (!discard)
             {
                 return;
@@ -431,9 +488,7 @@
 
         if (HasUnsavedChanges)
         {
-            bool discard = await JS.InvokeAsync<bool>("confirm",
-                "Bạn có thay đổi chưa lưu. Rời trang và bỏ các thay đổi này?");
-
+            bool discard = await JS.InvokeAsync<bool>("confirm", "Bạn có thay đổi chưa lưu. Rời trang và bỏ các thay đổi này?");
             if (!discard)
             {
                 context.PreventNavigation();
@@ -444,7 +499,6 @@
     public void Dispose()
     {
         _disposed = true;
-
         if (_editContext is not null)
         {
             _editContext.OnFieldChanged -= OnFieldChanged;

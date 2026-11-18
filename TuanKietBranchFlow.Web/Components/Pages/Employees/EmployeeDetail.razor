@@ -1,29 +1,37 @@
 @using TuanKietBranchFlow.Web.Services.Employees
 @page "/employees/{EmployeeId:int}"
-
 @using TuanKietBranchFlow.Application.DTOs.Employees
-
 @inject EmployeeApiService EmployeeApiService
-
-<PageTitle>@(_employee?.FullName ?? "Hồ sơ nhân viên")</PageTitle>
+<PageTitle>
+    @(_employee?.FullName ?? "Hồ sơ nhân viên")
+</PageTitle>
 <NavigationLock ConfirmExternalNavigation="@_isStatusSaving" OnBeforeInternalNavigation="PreventNavigationWhileSaving" />
-
 <div class="employee-detail-page bf-page">
     @if (_isLoading)
     {
         <section class="employee-detail-state bf-surface-card" aria-live="polite">
             <div class="spinner-border text-success" role="status">
-                <span class="visually-hidden">Đang tải hồ sơ nhân viên</span>
+                <span class="visually-hidden">
+                    Đang tải hồ sơ nhân viên
+                </span>
             </div>
-            <h1 class="h5 mb-0">Đang tải hồ sơ</h1>
-            <p>Hệ thống đang lấy thông tin nhân viên và lịch sử phân công.</p>
+            <h1 class="h5 mb-0">
+                Đang tải hồ sơ
+            </h1>
+            <p>
+                Hệ thống đang lấy thông tin nhân viên và lịch sử phân công.
+            </p>
         </section>
     }
     else if (!string.IsNullOrWhiteSpace(_errorMessage))
     {
         <section class="employee-detail-state employee-detail-state-error bf-surface-card" role="alert">
-            <h1 class="h5 mb-0">Không thể tải hồ sơ</h1>
-            <p>@_errorMessage</p>
+            <h1 class="h5 mb-0">
+                Không thể tải hồ sơ
+            </h1>
+            <p>
+                @_errorMessage
+            </p>
             <div class="d-flex flex-wrap justify-content-center gap-2">
                 <a class="btn btn-outline-secondary" href="@($"/employees?branchId={BranchId}")">
                     Quay lại danh sách
@@ -37,8 +45,12 @@
     else if (_employee is null)
     {
         <section class="employee-detail-state bf-surface-card" role="status">
-            <h1 class="h5 mb-0">Không tìm thấy hồ sơ nhân viên</h1>
-            <p>Hãy quay lại danh sách và chọn hồ sơ bạn cần xem.</p>
+            <h1 class="h5 mb-0">
+                Không tìm thấy hồ sơ nhân viên
+            </h1>
+            <p>
+                Hãy quay lại danh sách và chọn hồ sơ bạn cần xem.
+            </p>
             <a class="btn btn-outline-primary" href="@($"/employees?branchId={BranchId}")">
                 Quay lại danh sách
             </a>
@@ -49,9 +61,11 @@
         <header class="employee-detail-hero">
             <div class="employee-detail-hero-copy">
                 <a class="employee-detail-back-link" href="@($"/employees?branchId={BranchId}")">
-                     Danh sách nhân viên
+                    Danh sách nhân viên
                 </a>
-                <h1>@_employee.FullName</h1>
+                <h1>
+                    @_employee.FullName
+                </h1>
                 <span class="employee-detail-status @(_employee.IsActive ? "is-active" : "is-inactive")">
                     @(_employee.IsActive ? "Đang làm việc" : "Đã nghỉ việc")
                 </span>
@@ -62,13 +76,13 @@
                     {
                         <div class="employee-detail-actions" role="group" aria-label="Thao tác hồ sơ nhân viên">
                             <a class="btn btn-primary employee-detail-edit-button"
-                               href="@($"/employees/{EmployeeId}/edit?branchId={BranchId}")">
+                                href="@($"/employees/{EmployeeId}/edit?branchId={BranchId}")">
                                 Sửa thông tin
                             </a>
                             @if (_employee.IsActive)
                             {
                                 <a class="btn btn-outline-primary employee-detail-edit-button"
-                                   href="@($"/employees/{EmployeeId}/transfer?branchId={BranchId}")">
+                                    href="@($"/employees/{EmployeeId}/transfer?branchId={BranchId}")">
                                     Chuyển chi nhánh
                                 </a>
                             }
@@ -77,22 +91,20 @@
                 </Authorized>
             </AuthorizeView>
         </header>
-
         <AuthorizeView Roles="ADMIN">
             <Authorized>
                 <EmployeeStatusPanel @key="EmployeeId" Employee="_employee" BranchId="BranchId"
-                                     OnChanged="HandleStatusChanged" OnReload="LoadEmployeeAsync"
-                                     OnBusyChanged="HandleStatusBusyChanged" />
+                    OnChanged="HandleStatusChanged" OnReload="LoadEmployeeAsync"
+                    OnBusyChanged="HandleStatusBusyChanged" />
             </Authorized>
         </AuthorizeView>
-
         <div class="employee-detail-content">
             <aside class="employee-detail-profile bf-surface-card" aria-label="Tóm tắt nhân viên">
                 @if (!string.IsNullOrWhiteSpace(_employee.AvatarUrl))
                 {
                     <img class="employee-detail-avatar"
-                         src="@_employee.AvatarUrl"
-                         alt="Ảnh đại diện của @_employee.FullName" />
+                        src="@_employee.AvatarUrl"
+                        alt="Ảnh đại diện của @_employee.FullName" />
                 }
                 else
                 {
@@ -100,100 +112,152 @@
                         @GetEmployeeInitial(_employee.FullName)
                     </span>
                 }
-
-                <p class="employee-detail-code">@_employee.EmployeeCode</p>
-                <p class="employee-detail-position">@DisplayValue(_employee.Position)</p>
-
-                <div class="employee-detail-profile-separator"></div>
-
+                <p class="employee-detail-code">
+                    @_employee.EmployeeCode
+                </p>
+                <p class="employee-detail-position">
+                    @DisplayValue(_employee.Position)
+                </p>
+                <div class="employee-detail-profile-separator">
+                </div>
                 <dl class="employee-detail-profile-facts">
                     <div>
-                        <dt>Ngày vào làm</dt>
-                        <dd>@_employee.HireDate.ToString("dd/MM/yyyy")</dd>
+                        <dt>
+                            Ngày vào làm
+                        </dt>
+                        <dd>
+                            @_employee.HireDate.ToString("dd/MM/yyyy")
+                        </dd>
                     </div>
                     <div>
-                        <dt>Lần phân công</dt>
-                        <dd>@_employee.BranchHistory.Count</dd>
+                        <dt>
+                            Lần phân công
+                        </dt>
+                        <dd>
+                            @_employee.BranchHistory.Count
+                        </dd>
                     </div>
                 </dl>
             </aside>
-
             <div class="employee-detail-main">
                 <section class="employee-detail-section bf-surface-card" aria-labelledby="employee-personal-title">
                     <div class="employee-detail-section-heading">
                         <div>
-                            <h2 id="employee-personal-title">Thông tin cá nhân</h2>
+                            <h2 id="employee-personal-title">
+                                Thông tin cá nhân
+                            </h2>
                         </div>
                     </div>
-
                     <dl class="employee-detail-fields">
                         <div>
-                            <dt>Mã nhân viên</dt>
-                            <dd>@_employee.EmployeeCode</dd>
+                            <dt>
+                                Mã nhân viên
+                            </dt>
+                            <dd>
+                                @_employee.EmployeeCode
+                            </dd>
                         </div>
                         <div>
-                            <dt>Họ và tên</dt>
-                            <dd>@_employee.FullName</dd>
+                            <dt>
+                                Họ và tên
+                            </dt>
+                            <dd>
+                                @_employee.FullName
+                            </dd>
                         </div>
                         <div>
-                            <dt>Ngày sinh</dt>
-                            <dd>@(_employee.DateOfBirth?.ToString("dd/MM/yyyy") ?? "Chưa cập nhật")</dd>
+                            <dt>
+                                Ngày sinh
+                            </dt>
+                            <dd>
+                                @(_employee.DateOfBirth?.ToString("dd/MM/yyyy") ?? "Chưa cập nhật")
+                            </dd>
                         </div>
                         <div>
-                            <dt>Chức vụ</dt>
-                            <dd>@DisplayValue(_employee.Position)</dd>
+                            <dt>
+                                Chức vụ
+                            </dt>
+                            <dd>
+                                @DisplayValue(_employee.Position)
+                            </dd>
                         </div>
                         <div>
-                            <dt>Ngày vào làm</dt>
-                            <dd>@_employee.HireDate.ToString("dd/MM/yyyy")</dd>
+                            <dt>
+                                Ngày vào làm
+                            </dt>
+                            <dd>
+                                @_employee.HireDate.ToString("dd/MM/yyyy")
+                            </dd>
                         </div>
                         <div>
-                            <dt>Lương cơ bản</dt>
-                            <dd>@_employee.BaseSalary.ToString("N0") đ</dd>
+                            <dt>
+                                Lương cơ bản
+                            </dt>
+                            <dd>
+                                @_employee.BaseSalary.ToString("N0") đ
+                            </dd>
                         </div>
                         @if (!_employee.IsActive)
                         {
                             <div>
-                                <dt>Ngày bắt đầu nghỉ</dt>
-                                <dd>@(_employee.LeaveDate?.ToString("dd/MM/yyyy") ?? "Chưa cập nhật")</dd>
+                                <dt>
+                                    Ngày bắt đầu nghỉ
+                                </dt>
+                                <dd>
+                                    @(_employee.LeaveDate?.ToString("dd/MM/yyyy") ?? "Chưa cập nhật")
+                                </dd>
                             </div>
                         }
                     </dl>
                 </section>
-
                 <section class="employee-detail-section bf-surface-card" aria-labelledby="employee-contact-title">
                     <div class="employee-detail-section-heading">
                         <div>
-                            <h2 id="employee-contact-title">Thông tin liên hệ</h2>
+                            <h2 id="employee-contact-title">
+                                Thông tin liên hệ
+                            </h2>
                         </div>
                     </div>
-
                     <dl class="employee-detail-fields">
                         <div>
-                            <dt>Số điện thoại</dt>
-                            <dd>@DisplayValue(_employee.Phone)</dd>
+                            <dt>
+                                Số điện thoại
+                            </dt>
+                            <dd>
+                                @DisplayValue(_employee.Phone)
+                            </dd>
                         </div>
                         <div>
-                            <dt>Email</dt>
-                            <dd>@DisplayValue(_employee.Email)</dd>
+                            <dt>
+                                Email
+                            </dt>
+                            <dd>
+                                @DisplayValue(_employee.Email)
+                            </dd>
                         </div>
                         <div class="employee-detail-field-wide">
-                            <dt>Địa chỉ</dt>
-                            <dd>@DisplayValue(_employee.Address)</dd>
+                            <dt>
+                                Địa chỉ
+                            </dt>
+                            <dd>
+                                @DisplayValue(_employee.Address)
+                            </dd>
                         </div>
                     </dl>
                 </section>
             </div>
         </div>
-
         <section class="employee-detail-history bf-surface-card" aria-labelledby="employee-history-title">
             <div class="employee-detail-section-heading">
                 <div>
-                    <h2 id="employee-history-title">Lịch sử chi nhánh</h2>
+                    <h2 id="employee-history-title">
+                        Lịch sử chi nhánh
+                    </h2>
                 </div>
-                <span class="employee-detail-history-count">@_employee.BranchHistory.Count lần phân công</span>
+                <span class="employee-detail-history-count">
+                    @_employee.BranchHistory.Count lần phân công
+                </span>
             </div>
-
             @if (_employee.BranchHistory.Count == 0)
             {
                 <div class="employee-detail-history-empty" role="status">
@@ -206,22 +270,31 @@
                     @foreach (EmployeeBranchHistoryDTO history in _employee.BranchHistory)
                     {
                         <li class="employee-detail-timeline-item" @key="history">
-                            <span class="employee-detail-timeline-dot" aria-hidden="true"></span>
+                            <span class="employee-detail-timeline-dot" aria-hidden="true">
+                            </span>
                             <div class="employee-detail-timeline-body">
                                 <div class="employee-detail-timeline-heading">
-                                    <h3>@history.BranchName</h3>
+                                    <h3>
+                                        @history.BranchName
+                                    </h3>
                                     @if (history.ActiveFrom > DateOnly.FromDateTime(DateTime.Today))
                                     {
-                                        <span class="employee-detail-current">Sắp tới</span>
+                                        <span class="employee-detail-current">
+                                            Sắp tới
+                                        </span>
                                     }
                                     else if (!history.ActiveTo.HasValue || history.ActiveTo >= DateOnly.FromDateTime(DateTime.Today))
                                     {
-                                        <span class="employee-detail-current">Hiện tại</span>
+                                        <span class="employee-detail-current">
+                                            Hiện tại
+                                        </span>
                                     }
                                 </div>
                                 <p>
                                     @history.ActiveFrom.ToString("dd/MM/yyyy")
-                                    <span aria-hidden="true">–</span>
+                                    <span aria-hidden="true">
+                                        –
+                                    </span>
                                     @(history.ActiveTo?.ToString("dd/MM/yyyy") ?? "Chưa kết thúc")
                                 </p>
                             </div>
@@ -233,7 +306,8 @@
     }
 </div>
 
-@code {
+@code
+{
     [Parameter]
     public int EmployeeId { get; set; }
 
@@ -247,7 +321,6 @@
     private int _loadedEmployeeId;
     private int _loadedBranchId;
     private bool _isStatusSaving;
-
     private void HandleStatusChanged(EmployeeDetailDTO employee)
     {
         _employee = employee;
@@ -288,7 +361,6 @@
         _errorMessage = null;
         int requestedEmployeeId = EmployeeId;
         int requestedBranchId = BranchId;
-
         try
         {
             if (EmployeeId <= 0 || BranchId <= 0)
@@ -297,9 +369,7 @@
                 return;
             }
 
-            EmployeeDetailDTO? employee =
-                await EmployeeApiService.GetEmployeeDetailAsync(requestedEmployeeId, requestedBranchId);
-
+            EmployeeDetailDTO? employee = await EmployeeApiService.GetEmployeeDetailAsync(requestedEmployeeId, requestedBranchId);
             if (requestedEmployeeId != EmployeeId || requestedBranchId != BranchId)
             {
                 return;
@@ -346,7 +416,6 @@
         }
 
         string[] nameParts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-
         if (nameParts.Length == 1)
         {
             return nameParts[0][0].ToString().ToUpperInvariant();
@@ -354,7 +423,6 @@
 
         string firstInitial = nameParts[0][0].ToString();
         string lastInitial = nameParts[nameParts.Length - 1][0].ToString();
-
         return (firstInitial + lastInitial).ToUpperInvariant();
     }
 }

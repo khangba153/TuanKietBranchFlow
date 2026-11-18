@@ -10,7 +10,6 @@ public class WebLogoutService
     private readonly IWebAuthSessionStore _sessionStore;
     private readonly IWebTokenService _webTokenService;
     private readonly WebCookieSignInService _cookieSignInService;
-
     public WebLogoutService(
         AuthApiService authApiService,
         IWebAuthSessionStore sessionStore,
@@ -28,44 +27,25 @@ public class WebLogoutService
     {
         if (httpContext.Response.HasStarted)
         {
-            throw new InvalidOperationException(
-                "Không thể đăng xuất sau khi HTTP response đã bắt đầu.");
+            throw new InvalidOperationException("Không thể đăng xuất sau khi HTTP response đã bắt đầu.");
         }
 
         bool isApiLogoutConfirmed = false;
-
         ClaimsPrincipal user = httpContext.User;
-
-        string? sessionIdValue = user.FindFirstValue(
-            WebCookieAuthenticationEvents.WebSessionIdClaim);
-
-        string? userIdValue = user.FindFirstValue(
-            ClaimTypes.NameIdentifier);
-
+        string? sessionIdValue = user.FindFirstValue(WebCookieAuthenticationEvents.WebSessionIdClaim);
+        string? userIdValue = user.FindFirstValue(ClaimTypes.NameIdentifier);
         // Chỉ gọi API khi danh tính cookie có thông tin phiên hợp lệ.
-        if (user.Identity?.IsAuthenticated == true &&
-            Guid.TryParse(sessionIdValue, out Guid sessionId) &&
-            sessionId != Guid.Empty &&
-            int.TryParse(userIdValue, out int userId) &&
-            userId > 0)
+        if (user.Identity?.IsAuthenticated == true && Guid.TryParse(sessionIdValue, out Guid sessionId) && sessionId != Guid.Empty && int.TryParse(userIdValue, out int userId) && userId > 0)
         {
-            WebAuthSession? session =
-                _sessionStore.GetById(sessionId);
-
+            WebAuthSession? session = _sessionStore.GetById(sessionId);
             // Không sử dụng phiên RAM thuộc tài khoản khác.
             if (session != null && session.UserId == userId)
             {
-                List<Guid> sessionIds =
-                    _sessionStore.GetSessionIdsByUserId(userId);
-
-                string? accessToken =
-                    await _webTokenService.GetAccessTokenAsync(sessionId);
-
+                List<Guid> sessionIds = _sessionStore.GetSessionIdsByUserId(userId);
+                string? accessToken = await _webTokenService.GetAccessTokenAsync(sessionId);
                 if (!string.IsNullOrWhiteSpace(accessToken))
                 {
-                    isApiLogoutConfirmed =
-                        await _authApiService.LogoutByAccessTokenAsync(
-                            accessToken);
+                    isApiLogoutConfirmed = await _authApiService.LogoutByAccessTokenAsync(accessToken);
                 }
 
                 // Chỉ dọn các phiên cùng tài khoản khi API xác nhận.
@@ -83,7 +63,6 @@ public class WebLogoutService
         }
 
         await _cookieSignInService.SignOutAsync(httpContext);
-
         return isApiLogoutConfirmed;
     }
 }

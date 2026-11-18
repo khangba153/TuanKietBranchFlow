@@ -1,0 +1,48 @@
+---
+description: Bám phong cách các luồng nhân viên và order ban đầu của BranchFlow
+alwaysApply: true
+---
+
+# Phong cách code BranchFlow — chốt 2026-11-18
+
+Áp dụng cho code viết tay C#/Razor trong project, không sửa code Database First sinh tự động.
+Trước mỗi feature, đọc ít nhất một luồng tương đồng thực tế từ controller đến Web.
+
+## Mẫu nguồn
+
+- Git f07bd06: EmployeeService.GetEmployeesByBranchAsync, EmployeesController,
+  EmployeeRepository.GetByBranchAsync, EmployeeApiService.GetEmployeesAsync, Employees.razor.
+- Git 16172d5: OrderService.CreateOrderAsync và MyOrders.razor.
+- Đường dẫn cũ trong Git: Services/EmployeeService.cs và Services/OrderService.cs;
+  code hiện tại đã gom vào thư mục Employees/Orders. Dùng git show, không restore bản cũ.
+- Không lấy code kho/transfer do assistant mới viết làm mẫu mặc định thay phong cách gốc.
+
+## Checklist trước khi bàn giao
+
+- Tên đầy đủ: currentUserId, currentUserRole, inventoryRepository, inventoryItems,
+  errorMessage, isLoading; tránh id/name/data/result khi làm mất ý nghĩa nghiệp vụ.
+- Khai báo kiểu rõ và new đầy đủ như `List<Ingredient> ingredients = new List<Ingredient>();`.
+- Một câu lệnh mỗi dòng; một thuộc tính initializer mỗi dòng; Allman braces.
+- Tham số dài/call dài xuống dòng, mỗi tham số một dòng, thụt lề nhất quán.
+- Luồng service tuần tự: validate -> scope -> đọc dữ liệu -> nghiệp vụ -> lưu -> map DTO.
+- Comment tiếng Việt ngắn theo bước nghiệp vụ; tránh comment trang trí/diễn giải mọi dòng.
+- Dùng biến trung gian có tên cho điều kiện dài; if/else/foreach trực tiếp, có ngoặc.
+- Ánh xạ nhiều trường bằng foreach và DTO cục bộ rồi Add như EmployeeService gốc.
+- LINQ cơ bản, mỗi bước Where/Select/OrderBy tách dòng khi chuỗi dài; không nén truy vấn.
+- Không gộp create/update/status thành method đa mục đích chỉ để tiết kiệm dòng.
+- Helper chỉ khi có trách nhiệm rõ hoặc tái sử dụng thật, không làm flow phải nhảy file nhiều.
+- Controller dùng result DTO/ActionResult và nhánh HTTP rõ như luồng gốc;
+  ưu tiên StatusCodes thay số 400/403/409 rải rác; không tự đổi hợp đồng API đã có.
+- Razor tách thẻ/khối điều kiện; không viết cả form/card hoặc nhiều control trên một dòng.
+- Method UI gọi API và cập nhật state có bước rõ; không gộp nhiều thao tác thành one-liner.
+- Switch mapping ngắn vẫn hợp lệ như MyOrders gốc, nhưng mỗi case một dòng.
+- Không sao chép lỗi chính tả/comment cũ, auth LocalStorage cũ, EF Update graph hoặc lỗi
+  concurrency. Giữ bảo mật/transaction/hiệu năng đúng, trình bày bằng phong cách dễ đọc.
+
+Ví dụ không dùng: `Id = item.Id, Name = item.Name, IsActive = item.IsActive` trên một dòng.
+Ví dụ nên dùng: mỗi thuộc tính trên một dòng trong block `new IngredientDTO { ... }`.
+Rà diff theo checklist này trước build/test; formatter không thay được rà flow/tên biến.
+
+`.editorconfig` tại root hỗ trợ định dạng. Khi chạy formatter, loại trừ
+`TuanKietBranchFlow.Infrastructure/Models` và `Infrastructure/Data/BranchFlowDbContext.cs`
+(đường dẫn đầy đủ theo project) để giữ nguyên code Database First sinh tự động.

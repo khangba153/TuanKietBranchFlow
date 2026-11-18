@@ -1,0 +1,595 @@
+@page "/inventory"
+@using System.Globalization
+@using System.Net
+@using System.Text.Json
+@using Microsoft.JSInterop
+@using TuanKietBranchFlow.Application.DTOs.Branches
+@using TuanKietBranchFlow.Application.DTOs.Inventory
+@using TuanKietBranchFlow.Web.Services.Branches
+@using TuanKietBranchFlow.Web.Services.Inventory
+@inject InventoryApiService InventoryApi
+@inject BranchApiService BranchApi
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJSRuntime JS
+<NavigationLock ConfirmExternalNavigation="@(_isSaving || HasChanges)" OnBeforeInternalNavigation="ConfirmNavigationAsync" />
+<PageTitle>
+    Kho nguyên liệu
+</PageTitle>
+<div class="bf-page inventory-page">
+    <header class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+        <div>
+            <h1 class="h3 mb-1">
+                Kho nguyên liệu
+            </h1>
+            <p class="text-body-secondary mb-0">
+                Tồn và ngưỡng cảnh báo theo chi nhánh.
+            </p>
+        </div>
+        <AuthorizeView Roles="ADMIN,OWNER">
+            <a class="btn btn-outline-primary" href="/inventory/catalog">
+                Danh mục nguyên liệu
+            </a>
+        </AuthorizeView>
+    </header>
+    <AuthorizeView Roles="ADMIN,OWNER,EMPLOYEE">
+        <Authorized>
+            @if (_loadingBranches)
+            {
+                <p role="status">
+                    Đang tải chi nhánh...
+                </p>
+            }
+            else if (_accessibleBranches.Count == 0)
+            {
+                <div class="alert alert-info">
+                    @(_errorMessage ?? "Không có chi nhánh được phép truy cập.")
+                </div>
+                <button class="btn btn-outline-secondary" @onclick="InitializeAsync">
+                    Tải lại
+                </button>
+            }
+            else
+            {
+                @if (_inventoryPage != null && !_isLoading && _errorMessage == null)
+                {
+                    <section class="row g-2 mb-2" aria-label="Tổng hợp kho">
+                        <div class="col-6 col-lg-3">
+                            <div class="stock-metric">
+                                <span>
+                                    Đã cấu hình
+                                </span>
+                                <strong>
+                                    @_inventoryPage.ConfiguredCount
+                                </strong>
+                            </div>
+                        </div>
+                        <div class="col-6 col-lg-3">
+                            <div class="stock-metric">
+                                <span>
+                                    Hết hàng
+                                </span>
+                                <strong>
+                                    @_inventoryPage.OutOfStockCount
+                                </strong>
+                            </div>
+                        </div>
+                        <div class="col-6 col-lg-3">
+                            <div class="stock-metric">
+                                <span>
+                                    Sắp hết
+                                </span>
+                                <strong>
+                                    @_inventoryPage.LowStockCount
+                                </strong>
+                            </div>
+                        </div>
+                        <div class="col-6 col-lg-3">
+                            <div class="stock-metric">
+                                <span>
+                                    Chưa cấu hình
+                                </span>
+                                <strong>
+                                    @_inventoryPage.UnconfiguredCount
+                                </strong>
+                            </div>
+                        </div>
+                    </section>
+                    <p class="small text-body-secondary">
+                        Tổng hợp theo tên/trạng thái nguyên liệu, trước lọc tồn và phân trang.
+                    </p>
+                }
+                <form @onsubmit="SearchAsync" @onsubmit:preventDefault class="card card-body mb-3">
+                    <fieldset disabled="@(_isLoading || _isSaving || _editingIngredient != null)">
+                        <legend class="visually-hidden">
+                            Bộ lọc tồn kho
+                        </legend>
+                        <div class="row g-3">
+                            <div class="col-12 col-md-5">
+                                <label for="stock-branch" class="form-label">
+                                    Chi nhánh
+                                </label>
+                                <select id="stock-branch" class="form-select" @bind="_selectedBranchId" @bind:after="SearchAsync">
+                                    @foreach (AccessibleBranchDTO branch in _accessibleBranches)
+                                    {
+                                        <option value="@branch.Id">
+                                            @branch.Name@(!branch.IsActive ? " (ngừng hoạt động)" : "")
+                                        </option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-7">
+                                <label for="stock-search" class="form-label">
+                                    Nguyên liệu
+                                </label>
+                                <input id="stock-search" class="form-control" maxlength="150" @bind="_search" @bind:event="oninput" placeholder="Tìm theo tên nguyên liệu" />
+                            </div>
+                            <details class="col-12">
+                                <summary class="mb-2">
+                                    Bộ lọc trạng thái
+                                </summary>
+                                <div class="row g-3">
+                                    <div class="col-12 col-md-6">
+                                        <label for="stock-status" class="form-label">
+                                            Tồn kho
+                                        </label>
+                                        <select id="stock-status" class="form-select" @bind="_stockStatus">
+                                            <option value="">
+                                                Tất cả
+                                            </option>
+                                            <option value="UNCONFIGURED">
+                                                Chưa cấu hình
+                                            </option>
+                                            <option value="OUT">
+                                                Hết hàng
+                                            </option>
+                                            <option value="LOW">
+                                                Sắp hết
+                                            </option>
+                                            <option value="AVAILABLE">
+                                                Còn hàng
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12 col-md-6">
+                                        <label for="stock-active" class="form-label">
+                                            Trạng thái nguyên liệu
+                                        </label>
+                                        <select id="stock-active" class="form-select" @bind="_activeFilter">
+                                            <option value="">
+                                                Tất cả
+                                            </option>
+                                            <option value="true">
+                                                Đang dùng
+                                            </option>
+                                            <option value="false">
+                                                Ngừng dùng
+                                            </option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </details>
+                            <div class="col-12 d-flex gap-2 align-items-end">
+                                <button type="submit" class="btn btn-primary">
+                                    Áp dụng
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" @onclick="ResetAsync">
+                                    Đặt lại
+                                </button>
+                            </div>
+                        </div>
+                    </fieldset>
+                </form>
+                @if (_feedbackMessage != null)
+                {
+                    <div class="alert @(_hasUnknownSaveResult ? "alert-warning" : "alert-info")" role="status">
+                        @_feedbackMessage
+                    </div>
+                }
+                @if (_errorMessage != null)
+                {
+                    <div class="alert alert-danger" role="alert">
+                        <p>
+                            @_errorMessage
+                        </p>
+                        <button class="btn btn-outline-danger" disabled="@(_isLoading || _isSaving)" @onclick="ReloadAsync">
+                            Tải lại dữ liệu
+                        </button>
+                        <a class="btn btn-link" href="/login">
+                            Đăng nhập lại
+                        </a>
+                    </div>
+                }
+                @if (_isLoading)
+                {
+                    <p class="py-4" role="status">
+                        Đang tải tồn kho...
+                    </p>
+                }
+                else if (_inventoryPage != null && _errorMessage == null)
+                {
+                    @if (!_accessibleBranches.First(branch => branch.Id == _appliedQuery.BranchId).IsActive)
+                    {
+                        <div class="alert alert-secondary">
+                            Chi nhánh ngừng hoạt động: chỉ xem tồn.
+                        </div>
+                    }
+                    @if (_editingIngredient != null)
+                    {
+                        <section class="card card-body mb-3 stock-editor" aria-label="Cấu hình cảnh báo">
+                            <h2 class="h5">
+                                @(_editingIngredient.ConfigurationId.HasValue ? "Sửa ngưỡng cảnh báo" : "Thêm vào kho chi nhánh")
+                            </h2>
+                            <p class="mb-2">
+                                <strong>
+                                    @_editingIngredient.Name
+                                </strong>
+                                · @_editingIngredient.UnitName
+                            </p>
+                            @if (!_editingIngredient.ConfigurationId.HasValue)
+                            {
+                                <p class="small text-body-secondary">
+                                    Tồn bắt đầu bằng 0. Nhập kho sẽ được triển khai ở bước tiếp theo.
+                                </p>
+                            }
+                            <form @onsubmit="SaveAsync" @onsubmit:preventDefault>
+                                <fieldset disabled="@(_isSaving || _hasUnknownSaveResult)">
+                                    <legend class="visually-hidden">
+                                        Ngưỡng cảnh báo
+                                    </legend>
+                                    <label for="stock-threshold" class="form-label">
+                                        Ngưỡng cảnh báo (@_editingIngredient.UnitName)
+                                    </label>
+                                    <input @ref="_thresholdInput" id="stock-threshold" class="form-control mb-2" inputmode="decimal" maxlength="24" @bind="_thresholdText" @bind:event="oninput" aria-describedby="threshold-help" />
+                                    <p id="threshold-help" class="small text-body-secondary">
+                                        Không âm, tối đa 3 số lẻ. Ngưỡng 0 tắt cảnh báo sắp hết, vẫn báo hết hàng.
+                                    </p>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-primary" type="submit">
+                                            @(_isSaving ? "Đang lưu..." : "Lưu cấu hình")
+                                        </button>
+                                        <button class="btn btn-outline-secondary" type="button" @onclick="CloseEditor">
+                                            Hủy
+                                        </button>
+                                    </div>
+                                </fieldset>
+                            </form>
+                            @if (_hasUnknownSaveResult)
+                            {
+                                <button class="btn btn-outline-primary mt-3" @onclick="ReloadAsync">
+                                    Tải lại để đối chiếu
+                                </button>
+                            }
+                        </section>
+                    }
+                    @if (_inventoryPage.Items.Count == 0)
+                    {
+                        <div class="card card-body text-center py-4">
+                            Không có nguyên liệu phù hợp. ADMIN có thể tạo nguyên liệu trong danh mục dùng chung.
+                        </div>
+                    }
+                    <div class="stock-list">
+                        @foreach (InventoryRowDTO item in _inventoryPage.Items)
+                        {
+                            <article class="stock-row" @key="item.IngredientId">
+                                <div class="stock-name">
+                                    <strong>
+                                        @item.Name
+                                    </strong>
+                                    <span class="small text-body-secondary">
+                                        @item.UnitName · @(item.IsActive ? "Đang dùng" : "Ngừng dùng")
+                                    </span>
+                                </div>
+                                <div>
+                                    <span class="stock-label">
+                                        Tồn hiện tại
+                                    </span>
+                                    <strong>
+                                        @(item.Quantity.HasValue ? Number(item.Quantity.Value) + " " + item.UnitName : "—")
+                                    </strong>
+                                </div>
+                                <div>
+                                    <span class="stock-label">
+                                        Ngưỡng cảnh báo
+                                    </span>
+                                    <span>
+                                        @(item.WarningThreshold.HasValue ? Number(item.WarningThreshold.Value) + " " + item.UnitName : "—")
+                                    </span>
+                                </div>
+                                <div>
+                                    <span class="badge @StatusClass(item.StockStatus)">
+                                        @StatusLabel(item.StockStatus)
+                                    </span>
+                                    <small class="d-block text-body-secondary mt-1">
+                                        @(item.UpdatedAt.HasValue ? item.UpdatedAt.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm") : "Chưa có cấu hình")
+                                    </small>
+                                </div>
+                                @if (_inventoryPage.CanConfigure)
+                                {
+                                    <button class="btn btn-outline-primary" disabled="@(_isSaving || _hasUnknownSaveResult || _editingIngredient != null || (!item.ConfigurationId.HasValue && !item.IsActive))" @onclick="() => Edit(item)">
+                                        @(item.ConfigurationId.HasValue ? "Sửa ngưỡng" : "Thêm vào kho")
+                                    </button>
+                                }
+                            </article>
+                        }
+                    </div>
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
+                        <span class="small">
+                            @_inventoryPage.TotalCount nguyên liệu · Trang @_inventoryPage.Page
+                        </span>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-outline-secondary" disabled="@(_inventoryPage.Page <= 1 || _isSaving || _hasUnknownSaveResult)" @onclick="PreviousAsync">
+                                Trước
+                            </button>
+                            <button class="btn btn-outline-secondary" disabled="@(_inventoryPage.Page * _inventoryPage.PageSize >= _inventoryPage.TotalCount || _isSaving || _hasUnknownSaveResult)" @onclick="NextAsync">
+                                Sau
+                            </button>
+                        </div>
+                    </div>
+                    <p class="small text-body-secondary mt-3">
+                        Chưa triển khai nhập–xuất hoặc kiểm kê. Trang này không cho sửa số tồn trực tiếp.
+                    </p>
+                }
+            }
+        </Authorized>
+        <NotAuthorized>
+            <div class="alert alert-warning">
+                Bạn cần đăng nhập tài khoản được phép xem kho.
+                <a href="/login">
+                    Đăng nhập
+                </a>
+            </div>
+        </NotAuthorized>
+    </AuthorizeView>
+</div>
+
+@code
+{
+    private List<AccessibleBranchDTO> _accessibleBranches = new List<AccessibleBranchDTO>();
+    private bool _loadingBranches = true;
+    private bool _isLoading;
+    private bool _isSaving;
+    private bool _hasUnknownSaveResult;
+    private string? _errorMessage;
+    private string? _feedbackMessage;
+    private int _selectedBranchId;
+    private string _search = "";
+    private string _stockStatus = "";
+    private string _activeFilter = "";
+    private InventoryQueryDTO _appliedQuery = new InventoryQueryDTO();
+    private InventoryPageDTO? _inventoryPage;
+    private InventoryRowDTO? _editingIngredient;
+    private string _thresholdText = "0";
+    private string _initialThreshold = "0";
+    private ElementReference _thresholdInput;
+    private bool _focusThreshold;
+    private bool HasChanges => _editingIngredient != null && _thresholdText != _initialThreshold;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_focusThreshold)
+        {
+            _focusThreshold = false;
+            await _thresholdInput.FocusAsync();
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        if (state.User.Identity?.IsAuthenticated == true)
+        {
+            await InitializeAsync();
+        }
+
+        _loadingBranches = false;
+    }
+
+    private async Task InitializeAsync()
+    {
+        _loadingBranches = true;
+        _errorMessage = null;
+        try
+        {
+            _accessibleBranches = await BranchApi.GetAccessibleBranchesAsync() ?? throw new HttpRequestException("Không tải được chi nhánh. Hãy kiểm tra phiên đăng nhập.");
+            if (_accessibleBranches.Count > 0)
+            {
+                _selectedBranchId = _accessibleBranches[0].Id;
+                await SearchAsync();
+            }
+        }
+        catch (Exception exception)when (exception is HttpRequestException or TaskCanceledException or JsonException)
+        {
+            _errorMessage = "Không tải được chi nhánh. Hãy thử lại hoặc đăng nhập lại.";
+        }
+        finally
+        {
+            _loadingBranches = false;
+        }
+    }
+
+    private Task SearchAsync()
+    {
+        if (_isSaving)
+        {
+            return Task.CompletedTask;
+        }
+
+        _appliedQuery = new InventoryQueryDTO
+
+        {
+
+            BranchId = _selectedBranchId,
+            Search = _search,
+            StockStatus = _stockStatus,
+            IsActive = bool.TryParse(_activeFilter, out bool active) ? active : null,
+            Page = 1
+
+        };
+        return ReloadAsync();
+    }
+
+    private Task ResetAsync()
+    {
+        _search = "";
+        _stockStatus = "";
+        _activeFilter = "";
+        return SearchAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        if (_isLoading || _isSaving)
+        {
+            return;
+        }
+
+        _isLoading = true;
+        _errorMessage = null;
+        try
+        {
+            _inventoryPage = await InventoryApi.GetStockAsync(_appliedQuery);
+            _editingIngredient = null;
+            _hasUnknownSaveResult = false;
+        }
+        catch (HttpRequestException exception)
+        {
+            _errorMessage = exception.StatusCode.HasValue ? exception.Message : "Không kết nối được API kho.";
+        }
+        catch (Exception exception)when (exception is TaskCanceledException or JsonException)
+        {
+            _errorMessage = "Không đọc được dữ liệu kho. Hãy tải lại.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void Edit(InventoryRowDTO item)
+    {
+        _editingIngredient = item;
+        _thresholdText = (item.WarningThreshold ?? 0).ToString(CultureInfo.GetCultureInfo("vi-VN"));
+        _initialThreshold = _thresholdText;
+        _focusThreshold = true;
+        _feedbackMessage = null;
+    }
+
+    private async Task CloseEditor()
+    {
+        if (HasChanges && !await JS.InvokeAsync<bool>("confirm", "Bỏ ngưỡng cảnh báo chưa lưu?"))
+        {
+            return;
+        }
+
+        _editingIngredient = null;
+        _feedbackMessage = null;
+    }
+
+    private async Task ConfirmNavigationAsync(LocationChangingContext context)
+    {
+        if (_isSaving || (HasChanges && !await JS.InvokeAsync<bool>("confirm", "Rời trang và bỏ cấu hình chưa lưu?")))
+        {
+            context.PreventNavigation();
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_isSaving || _hasUnknownSaveResult || _editingIngredient == null)
+        {
+            return;
+        }
+
+        // Không chấp nhận dấu phân nhóm để tránh nhầm 1.000 là 1 hay 1000.
+        string text = _thresholdText.Trim().Replace(',', '.');
+        if (!decimal.TryParse(
+            text,
+            NumberStyles.AllowDecimalPoint,
+            CultureInfo.InvariantCulture,
+            out decimal threshold) || threshold < 0 || threshold > 999999999999999.999m || decimal.Round(threshold, 3) != threshold)
+        {
+            _feedbackMessage = "Nhập ngưỡng không âm, tối đa 3 số lẻ; không dùng dấu phân nhóm hàng nghìn.";
+            return;
+        }
+
+        _isSaving = true;
+        try
+        {
+            if (_editingIngredient.ConfigurationId.HasValue)
+            {
+                await InventoryApi.WriteAsync(
+                    HttpMethod.Put,
+                    $"api/inventory/configurations/{_editingIngredient.ConfigurationId}/warning-threshold",
+                    new InventoryThresholdRequestDTO
+                {
+                    WarningThreshold = threshold,
+                    ExpectedRowVersion = _editingIngredient.RowVersion
+                });
+            }
+            else
+            {
+                await InventoryApi.WriteAsync(
+                    HttpMethod.Post,
+                    "api/inventory/configurations",
+                    new InventoryConfigurationRequestDTO
+                {
+                    BranchId = _appliedQuery.BranchId,
+                    IngredientId = _editingIngredient.IngredientId,
+                    WarningThreshold = threshold
+                });
+            }
+
+            _feedbackMessage = "Đã lưu cấu hình kho.";
+        }
+        catch (HttpRequestException exception)when (exception.StatusCode.HasValue && (int)exception.StatusCode.Value < 500)
+        {
+            _feedbackMessage = exception.Message;
+            if (exception.StatusCode == HttpStatusCode.Conflict)
+            {
+                _hasUnknownSaveResult = true;
+            }
+
+            return;
+        }
+        catch (Exception exception)when (exception is HttpRequestException or TaskCanceledException or JsonException)
+        {
+            _hasUnknownSaveResult = true;
+            _feedbackMessage = "Chưa xác định kết quả lưu. Không gửi lại; hãy tải lại để đối chiếu.";
+            return;
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+
+        await ReloadAsync();
+    }
+
+    private Task PreviousAsync()
+    {
+        _appliedQuery.Page--;
+        return ReloadAsync();
+    }
+
+    private Task NextAsync()
+    {
+        _appliedQuery.Page++;
+        return ReloadAsync();
+    }
+
+    private static string Number(decimal value) => value.ToString("N3", CultureInfo.GetCultureInfo("vi-VN")).TrimEnd('0').TrimEnd(',');
+    private static string StatusLabel(string status) => status switch
+    {
+        "OUT" => "Hết hàng",
+        "LOW" => "Sắp hết",
+        "AVAILABLE" => "Còn hàng",
+        _ => "Chưa cấu hình"
+    };
+    private static string StatusClass(string status) => status switch
+    {
+        "OUT" => "text-bg-danger",
+        "LOW" => "text-bg-warning",
+        "AVAILABLE" => "text-bg-success",
+        _ => "text-bg-light border"
+    };
+}

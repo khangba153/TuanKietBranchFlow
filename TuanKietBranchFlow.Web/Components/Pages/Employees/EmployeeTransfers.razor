@@ -3,46 +3,66 @@
 @using TuanKietBranchFlow.Web.Services.Employees
 @inject EmployeeTransferApiService TransferApiService
 @inject AuthenticationStateProvider AuthenticationStateProvider
-
-<PageTitle>Điều chuyển nhân viên</PageTitle>
+<PageTitle>
+    Điều chuyển nhân viên
+</PageTitle>
 <NavigationLock ConfirmExternalNavigation="@_isSaving" OnBeforeInternalNavigation="PreventNavigation" />
-
 <AuthorizeView Roles="ADMIN,OWNER">
     <Authorized>
         <div class="bf-page transfers-page">
             <header>
-                <h1>Điều chuyển nhân viên</h1>
-                <p>Theo dõi yêu cầu và lịch sử chuyển chi nhánh. Yêu cầu đang chờ chưa thay đổi nơi làm việc.</p>
+                <h1>
+                    Điều chuyển nhân viên
+                </h1>
+                <p>
+                    Theo dõi yêu cầu và lịch sử chuyển chi nhánh. Yêu cầu đang chờ chưa thay đổi nơi làm việc.
+                </p>
             </header>
             <div class="transfers-toolbar">
                 <AuthorizeView Roles="ADMIN" Context="adminContext">
                     <Authorized>
                         <div class="transfers-tabs" aria-label="Nhóm yêu cầu">
                             <button class="btn @(!_incoming ? "btn-primary" : "btn-outline-primary")"
-                                    aria-pressed="@(!_incoming)" disabled="@(_isSaving || _isLoading)" @onclick="ShowSentAsync">Đã gửi</button>
+                                aria-pressed="@(!_incoming)" disabled="@(_isSaving || _isLoading)" @onclick="ShowSentAsync">
+                                Đã gửi
+                            </button>
                             <button class="btn @(_incoming ? "btn-primary" : "btn-outline-primary")"
-                                    aria-pressed="@_incoming" disabled="@(_isSaving || _isLoading)" @onclick="ShowIncomingAsync">Cần tiếp nhận</button>
+                                aria-pressed="@_incoming" disabled="@(_isSaving || _isLoading)" @onclick="ShowIncomingAsync">
+                                Cần tiếp nhận
+                            </button>
                         </div>
                     </Authorized>
                     <NotAuthorized>
-                        <span>Toàn bộ yêu cầu · Chỉ xem</span>
+                        <span>
+                            Toàn bộ yêu cầu · Chỉ xem
+                        </span>
                     </NotAuthorized>
                 </AuthorizeView>
-                <button class="btn btn-outline-secondary" disabled="@(_isLoading || _isSaving)" @onclick="LoadAsync">Tải lại</button>
+                <button class="btn btn-outline-secondary" disabled="@(_isLoading || _isSaving)" @onclick="LoadAsync">
+                    Tải lại
+                </button>
             </div>
-            @if (!string.IsNullOrWhiteSpace(_message))
+            @if (!string.IsNullOrWhiteSpace(_feedbackMessage))
             {
-                <div class="alert alert-info" role="status" tabindex="-1" @ref="_messageElement">@_message</div>
+                <div class="alert alert-info" role="status" tabindex="-1" @ref="_messageElement">
+                    @_feedbackMessage
+                </div>
             }
             @if (_isLoading)
             {
-                <p role="status">Đang tải yêu cầu…</p>
+                <p role="status">
+                    Đang tải yêu cầu…
+                </p>
             }
             else if (_requests.Count == 0)
             {
                 <section class="bf-surface-card p-4">
-                    <h2>Chưa có yêu cầu</h2>
-                    <p class="mb-0">Yêu cầu thuộc phạm vi chi nhánh của bạn sẽ hiển thị tại đây.</p>
+                    <h2>
+                        Chưa có yêu cầu
+                    </h2>
+                    <p class="mb-0">
+                        Yêu cầu thuộc phạm vi chi nhánh của bạn sẽ hiển thị tại đây.
+                    </p>
                 </section>
             }
             else
@@ -53,51 +73,90 @@
                         <article class="bf-surface-card transfer-card" @key="request.Id">
                             <div class="transfer-card-heading">
                                 <div>
-                                    <h2>@request.EmployeeName</h2>
-                                    <p class="text-body-secondary">@request.EmployeeCode · Yêu cầu #@request.Id</p>
+                                    <h2>
+                                        @request.EmployeeName
+                                    </h2>
+                                    <p class="text-body-secondary">
+                                        @request.EmployeeCode · Yêu cầu #@request.Id
+                                    </p>
                                 </div>
-                                <span class="badge @(request.Status == "TRANSFERRED" ? "text-bg-success" : "text-bg-light")">@StatusLabel(request.Status)</span>
+                                <span class="badge @(request.Status == "TRANSFERRED" ? "text-bg-success" : "text-bg-light")">
+                                    @StatusLabel(request.Status)
+                                </span>
                             </div>
                             <dl class="transfer-facts">
                                 <div>
-                                    <dt>Từ chi nhánh</dt>
-                                    <dd>@request.SourceBranchName</dd>
+                                    <dt>
+                                        Từ chi nhánh
+                                    </dt>
+                                    <dd>
+                                        @request.SourceBranchName
+                                    </dd>
                                 </div>
                                 <div>
-                                    <dt>Đến chi nhánh</dt>
-                                    <dd>@request.TargetBranchName</dd>
+                                    <dt>
+                                        Đến chi nhánh
+                                    </dt>
+                                    <dd>
+                                        @request.TargetBranchName
+                                    </dd>
                                 </div>
                                 <div>
-                                    <dt>Người gửi</dt>
-                                    <dd>@request.RequestedByName</dd>
+                                    <dt>
+                                        Người gửi
+                                    </dt>
+                                    <dd>
+                                        @request.RequestedByName
+                                    </dd>
                                 </div>
                                 <div>
-                                    <dt>Thời gian gửi</dt>
-                                    <dd>@request.RequestedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
+                                    <dt>
+                                        Thời gian gửi
+                                    </dt>
+                                    <dd>
+                                        @request.RequestedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                    </dd>
                                 </div>
                                 @if (request.ProcessedAt.HasValue)
                                 {
                                     <div>
-                                        <dt>Người xử lý</dt>
-                                        <dd>@(request.ProcessedByName ?? "Hệ thống")</dd>
+                                        <dt>
+                                            Người xử lý
+                                        </dt>
+                                        <dd>
+                                            @(request.ProcessedByName ?? "Hệ thống")
+                                        </dd>
                                     </div>
                                     <div>
-                                        <dt>Thời gian xử lý</dt>
-                                        <dd>@request.ProcessedAt.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
+                                        <dt>
+                                            Thời gian xử lý
+                                        </dt>
+                                        <dd>
+                                            @request.ProcessedAt.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                        </dd>
                                     </div>
                                 }
                             </dl>
                             @if (request.EffectiveDate.HasValue)
                             {
-                                <p>Ngày chuyển: <strong>@request.EffectiveDate.Value.ToString("dd/MM/yyyy")</strong></p>
+                                <p>
+                                    Ngày chuyển:
+                                    <strong>
+                                        @request.EffectiveDate.Value.ToString("dd/MM/yyyy")
+                                    </strong>
+                                </p>
                             }
                             @if (!string.IsNullOrWhiteSpace(request.Note))
                             {
-                                <p>Ghi chú: @request.Note</p>
+                                <p>
+                                    Ghi chú: @request.Note
+                                </p>
                             }
                             @if (!string.IsNullOrWhiteSpace(request.ResolutionReason))
                             {
-                                <p>Lý do: @request.ResolutionReason</p>
+                                <p>
+                                    Lý do: @request.ResolutionReason
+                                </p>
                             }
                             @if (request.Status == "PENDING" && !_mustReload)
                             {
@@ -106,18 +165,29 @@
                                         @if (_selectedId == request.Id)
                                         {
                                             <div class="transfer-decision">
-                                                <h3>@ActionLabel(_action)</h3>
-                                                <p>@(_action == "accept"
+                                                <h3>
+                                                    @ActionLabel(_action)
+                                                </h3>
+                                                <p>
+                                                    @(_action == "accept"
                                                     ? "Hiệu lực hôm nay: đóng phân công nguồn từ hôm qua, tạo phân công đích và thu hồi phiên cũ. Nhân viên cần đăng nhập lại."
-                                                    : "Thao tác này kết thúc yêu cầu, không chuyển nơi làm việc của nhân viên.")</p>
-                                                <label class="form-label" for="transfer-reason">@(_action == "reject" ? "Lý do từ chối (bắt buộc)" : "Ghi chú (không bắt buộc)")</label>
+                                                    : "Thao tác này kết thúc yêu cầu, không chuyển nơi làm việc của nhân viên.")
+                                                </p>
+                                                <label class="form-label" for="transfer-reason">
+                                                    @(_action == "reject" ? "Lý do từ chối (bắt buộc)" : "Ghi chú (không bắt buộc)")
+                                                </label>
                                                 <textarea id="transfer-reason" class="form-control" rows="2" maxlength="500"
-                                                          @bind="_reason" @bind:event="oninput" disabled="@_isSaving"></textarea>
+                                                    @bind="_reason" @bind:event="oninput" disabled="@_isSaving">
+                                                </textarea>
                                                 <div class="transfer-card-actions mt-3">
                                                     <button class="btn @(_action == "reject" ? "btn-danger" : "btn-primary")"
-                                                            disabled="@(_isSaving || (_action == "reject" && string.IsNullOrWhiteSpace(_reason)))"
-                                                            @onclick="SaveDecisionAsync">@(_isSaving ? "Đang xử lý…" : "Xác nhận")</button>
-                                                    <button class="btn btn-outline-secondary" disabled="@_isSaving" @onclick="CloseDecision">Đóng</button>
+                                                        disabled="@(_isSaving || (_action == "reject" && string.IsNullOrWhiteSpace(_reason)))"
+                                                        @onclick="SaveDecisionAsync">
+                                                        @(_isSaving ? "Đang xử lý…" : "Xác nhận")
+                                                    </button>
+                                                    <button class="btn btn-outline-secondary" disabled="@_isSaving" @onclick="CloseDecision">
+                                                        Đóng
+                                                    </button>
                                                 </div>
                                             </div>
                                         }
@@ -126,12 +196,18 @@
                                             <div class="transfer-card-actions">
                                                 @if (_incoming)
                                                 {
-                                                    <button class="btn btn-primary" disabled="@_isSaving" @onclick='() => OpenDecision(request.Id, "accept")'>Đồng ý tiếp nhận</button>
-                                                    <button class="btn btn-outline-danger" disabled="@_isSaving" @onclick='() => OpenDecision(request.Id, "reject")'>Từ chối</button>
+                                                    <button class="btn btn-primary" disabled="@_isSaving" @onclick='() => OpenDecision(request.Id, "accept")'>
+                                                        Đồng ý tiếp nhận
+                                                    </button>
+                                                    <button class="btn btn-outline-danger" disabled="@_isSaving" @onclick='() => OpenDecision(request.Id, "reject")'>
+                                                        Từ chối
+                                                    </button>
                                                 }
                                                 else
                                                 {
-                                                    <button class="btn btn-outline-secondary" disabled="@_isSaving" @onclick='() => OpenDecision(request.Id, "cancel")'>Rút yêu cầu</button>
+                                                    <button class="btn btn-outline-secondary" disabled="@_isSaving" @onclick='() => OpenDecision(request.Id, "cancel")'>
+                                                        Rút yêu cầu
+                                                    </button>
                                                 }
                                             </div>
                                         }
@@ -142,19 +218,28 @@
                     }
                 </div>
                 <div class="transfers-pagination">
-                    <button class="btn btn-outline-secondary" disabled="@(_page <= 1 || _isSaving || _isLoading)" @onclick="PreviousAsync">Trang trước</button>
-                    <span>Trang @_page</span>
-                    <button class="btn btn-outline-secondary" disabled="@(_requests.Count <= 20 || _isSaving || _isLoading)" @onclick="NextAsync">Trang sau</button>
+                    <button class="btn btn-outline-secondary" disabled="@(_page <= 1 || _isSaving || _isLoading)" @onclick="PreviousAsync">
+                        Trang trước
+                    </button>
+                    <span>
+                        Trang @_page
+                    </span>
+                    <button class="btn btn-outline-secondary" disabled="@(_requests.Count <= 20 || _isSaving || _isLoading)" @onclick="NextAsync">
+                        Trang sau
+                    </button>
                 </div>
             }
         </div>
     </Authorized>
     <NotAuthorized>
-        <div class="alert alert-warning">Bạn không có quyền xem quản lý điều chuyển nhân viên.</div>
+        <div class="alert alert-warning">
+            Bạn không có quyền xem quản lý điều chuyển nhân viên.
+        </div>
     </NotAuthorized>
 </AuthorizeView>
 
-@code {
+@code
+{
     private List<EmployeeTransferDTO> _requests = new List<EmployeeTransferDTO>();
     private bool _incoming;
     private bool _isLoading = true;
@@ -164,10 +249,9 @@
     private int _selectedId;
     private string _action = string.Empty;
     private string? _reason;
-    private string? _message;
+    private string? _feedbackMessage;
     private ElementReference _messageElement;
     private bool _focusMessage;
-
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -177,9 +261,10 @@
             {
                 await LoadAsync();
             }
+
             StateHasChanged();
         }
-        else if (_focusMessage && !string.IsNullOrWhiteSpace(_message))
+        else if (_focusMessage && !string.IsNullOrWhiteSpace(_feedbackMessage))
         {
             _focusMessage = false;
             await _messageElement.FocusAsync();
@@ -189,17 +274,17 @@
     private async Task LoadAsync()
     {
         _isLoading = true;
-        _message = null;
+        _feedbackMessage = null;
         CloseDecision();
         try
         {
             _requests = await TransferApiService.GetRequestsAsync(_incoming, _page);
             _mustReload = false;
         }
-        catch (Exception exception) when (exception is HttpRequestException or System.Text.Json.JsonException or OperationCanceledException)
+        catch (Exception exception)when (exception is HttpRequestException or System.Text.Json.JsonException or OperationCanceledException)
         {
             _requests.Clear();
-            _message = "Không thể tải danh sách yêu cầu. Hãy tải lại; nếu phiên hết hạn, đăng nhập lại.";
+            _feedbackMessage = "Không thể tải danh sách yêu cầu. Hãy tải lại; nếu phiên hết hạn, đăng nhập lại.";
             _mustReload = true;
         }
         finally
@@ -234,12 +319,14 @@
         await LoadAsync();
     }
 
-    private void OpenDecision(int requestId, string action)
+    private void OpenDecision(
+        int requestId,
+        string action)
     {
         _selectedId = requestId;
         _action = action;
         _reason = null;
-        _message = null;
+        _feedbackMessage = null;
     }
 
     private void CloseDecision()
@@ -254,25 +341,27 @@
         {
             return;
         }
+
         _isSaving = true;
         try
         {
             EmployeeTransferDTO result = await TransferApiService.DecideAsync(_selectedId, _action, _reason);
             await LoadAsync();
-            _message = "Kết quả: " + StatusLabel(result.Status) + ". " + result.ResolutionReason;
+            _feedbackMessage = "Kết quả: " + StatusLabel(result.Status) + ". " + result.ResolutionReason;
             _focusMessage = true;
         }
-        catch (Exception exception) when (exception is HttpRequestException or System.Text.Json.JsonException or OperationCanceledException)
+        catch (Exception exception)when (exception is HttpRequestException or System.Text.Json.JsonException or OperationCanceledException)
         {
-            _message = "Chưa xác định được kết quả. Hãy tải lại trước khi thao tác tiếp.";
+            _feedbackMessage = "Chưa xác định được kết quả. Hãy tải lại trước khi thao tác tiếp.";
             if (exception is HttpRequestException httpException && httpException.StatusCode.HasValue)
             {
                 int statusCode = (int)httpException.StatusCode.Value;
                 if (statusCode >= 400 && statusCode < 500)
                 {
-                    _message = httpException.Message + " Hãy tải lại trước khi thao tác tiếp.";
+                    _feedbackMessage = httpException.Message + " Hãy tải lại trước khi thao tác tiếp.";
                 }
             }
+
             _mustReload = true;
             _focusMessage = true;
             CloseDecision();
